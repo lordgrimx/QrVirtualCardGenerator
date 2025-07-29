@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function AdminPage() {
   const [formData, setFormData] = useState({
@@ -15,10 +15,32 @@ export default function AdminPage() {
     status: 'active'
   });
 
-  const [activeMenu, setActiveMenu] = useState('members');
+  const [activeMenu, setActiveMenu] = useState('addMember');
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   // Bugünün tarihini al (YYYY-MM-DD formatında)
   const today = new Date().toISOString().split('T')[0];
+
+  // Fetch all members from database
+  const fetchMembers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/members');
+      const data = await response.json();
+      
+      if (data.success) {
+        setMembers(data.members || []);
+      } else {
+        console.error('Failed to fetch members');
+      }
+    } catch (error) {
+      console.error('Error fetching members:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -56,6 +78,10 @@ export default function AdminPage() {
           role: '',
           status: 'active'
         });
+        // Refresh members list if we're on that tab
+        if (activeMenu === 'showMembers') {
+          fetchMembers();
+        }
       } else {
         alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);
       }
@@ -64,8 +90,6 @@ export default function AdminPage() {
       alert('API bağlantı hatası. Backend server\'ın çalıştığından emin olun.');
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
@@ -107,16 +131,33 @@ export default function AdminPage() {
           
           <div 
             className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'members' 
+              activeMenu === 'addMember' 
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
-            onClick={() => setActiveMenu('members')}
+            onClick={() => setActiveMenu('addMember')}
           >
             <div className={`w-6 h-6 rounded-lg ${
-              activeMenu === 'members' ? 'bg-white/20' : 'bg-gray-300'
+              activeMenu === 'addMember' ? 'bg-white/20' : 'bg-gray-300'
             }`}></div>
-            <span className="text-sm font-semibold">Members</span>
+            <span className="text-sm font-semibold">Add New Member</span>
+          </div>
+          
+          <div 
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
+              activeMenu === 'showMembers' 
+                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+            }`}
+            onClick={() => {
+              setActiveMenu('showMembers');
+              fetchMembers();
+            }}
+          >
+            <div className={`w-6 h-6 rounded-lg ${
+              activeMenu === 'showMembers' ? 'bg-white/20' : 'bg-gray-300'
+            }`}></div>
+            <span className="text-sm font-semibold">Show all Members</span>
           </div>
           
           <div 
@@ -145,188 +186,300 @@ export default function AdminPage() {
                 <div className="w-5 h-5 bg-white rounded-md"></div>
               </div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-600 bg-clip-text text-transparent">
-                Add New Member
+                {activeMenu === 'addMember' ? 'Add New Member' : 
+                 activeMenu === 'showMembers' ? 'All Members' : 
+                 activeMenu === 'dashboard' ? 'Dashboard' : 
+                 'Settings'}
               </h1>
             </div>
-            <p className="text-gray-600 ml-14">Create a new membership card with auto-generated ID and card number</p>
+            <p className="text-gray-600 ml-14">
+              {activeMenu === 'addMember' ? 'Create a new membership card with auto-generated ID and card number' : 
+               activeMenu === 'showMembers' ? 'View and manage all registered members' : 
+               activeMenu === 'dashboard' ? 'Overview of system statistics' : 
+               'System configuration and preferences'}
+            </p>
           </div>
 
-          {/* Form - Single Screen Layout */}
-          <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 flex flex-col shadow-xl border border-white/20">
-              <div className="grid grid-cols-4 gap-6 flex-1">
-                {/* Full Name */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Full Name (Ad Soyad)
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    placeholder="Enter full name"
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  />
+          {/* Add Member Form */}
+          {activeMenu === 'addMember' && (
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 flex flex-col shadow-xl border border-white/20">
+                <div className="grid grid-cols-4 gap-6 flex-1">
+                  {/* Full Name */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Full Name (Ad Soyad)
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      placeholder="Enter full name"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Email Address (E-posta)
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter email address"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Phone Number (Telefon)
+                    </label>
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      placeholder="+90 5XX XXX XXXX"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Date of Birth */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Date of Birth (Doğum Tarihi)
+                    </label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={formData.dateOfBirth}
+                      onChange={handleInputChange}
+                      max={today}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Membership Type */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Membership Type (Üyelik Tipi)
+                    </label>
+                    <select
+                      name="membershipType"
+                      value={formData.membershipType}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    >
+                      <option value="">Select membership type</option>
+                      <option value="standard">Standard</option>
+                      <option value="premium">Premium</option>
+                      <option value="vip">VIP</option>
+                      <option value="corporate">Corporate</option>
+                    </select>
+                  </div>
+
+                  {/* Role */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Role (Rol)
+                    </label>
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    >
+                      <option value="">Select role</option>
+                      <option value="member">Member</option>
+                      <option value="volunteer">Volunteer</option>
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  {/* Status */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Status (Durum)
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+
+                  {/* Emergency Contact */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Emergency Contact (Acil Durum İletişim)
+                    </label>
+                    <input
+                      type="tel"
+                      name="emergencyContact"
+                      value={formData.emergencyContact}
+                      onChange={handleInputChange}
+                      placeholder="+90 5XX XXX XXXX"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Address - Full Width */}
+                  <div className="col-span-4 space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Address (Adres)
+                    </label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter full address"
+                      rows={3}
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
+                      required
+                    />
+                  </div>
                 </div>
 
-                {/* Email */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Email Address (E-posta)
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Enter email address"
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  />
-                </div>
-
-                {/* Phone Number */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Phone Number (Tel No)
-                  </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    placeholder="+90 5XX XXX XXXX"
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  />
-                </div>
-
-                {/* Date of Birth */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Date of Birth (Doğum Tarihi)
-                  </label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={formData.dateOfBirth}
-                    onChange={handleInputChange}
-                    max={today}
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  />
-                </div>
-
-                {/* Membership Type */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Membership Type
-                  </label>
-                  <select
-                    name="membershipType"
-                    value={formData.membershipType}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
+                {/* Submit Button */}
+                <div className="flex justify-end mt-8">
+                  <button
+                    type="submit"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 flex items-center gap-3"
                   >
-                    <option value="" className="text-gray-400">Select Membership Type</option>
-                    <option value="student" className="text-gray-700">Student (Öğrenci)</option>
-                    <option value="volunteer" className="text-gray-700">Volunteer (Gönüllü)</option>
-                    <option value="staff" className="text-gray-700">Staff (Personel)</option>
-                    <option value="premium" className="text-gray-700">Premium (Premium)</option>
-                    <option value="corporate" className="text-gray-700">Corporate (Kurumsal)</option>
-                  </select>
-                </div>
-
-                {/* Role */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Role (Rol)
-                  </label>
-                  <select
-                    name="role"
-                    value={formData.role}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  >
-                    <option value="" className="text-gray-400">Select Role</option>
-                    <option value="member" className="text-gray-700">Member (Üye)</option>
-                    <option value="volunteer" className="text-gray-700">Volunteer (Gönüllü)</option>
-                    <option value="coordinator" className="text-gray-700">Coordinator (Koordinatör)</option>
-                    <option value="manager" className="text-gray-700">Manager (Yönetici)</option>
-                    <option value="admin" className="text-gray-700">Admin (Admin)</option>
-                  </select>
-                </div>
-
-                {/* Status */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Status (Durum)
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  >
-                    <option value="active" className="text-gray-700">Active (Aktif)</option>
-                    <option value="inactive" className="text-gray-700">Inactive (Pasif)</option>
-                    <option value="pending" className="text-gray-700">Pending (Beklemede)</option>
-                    <option value="suspended" className="text-gray-700">Suspended (Askıya Alınmış)</option>
-                  </select>
-                </div>
-
-                {/* Emergency Contact - Separate Row */}
-                <div className="col-span-2 space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Emergency Contact (Acil Durum İletişim)
-                  </label>
-                  <input
-                    type="tel"
-                    name="emergencyContact"
-                    value={formData.emergencyContact}
-                    onChange={handleInputChange}
-                    placeholder="+90 5XX XXX XXXX"
-                    className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    required
-                  />
-                </div>
-
-                {/* Address - Full Width */}
-                <div className="col-span-4 space-y-2">
-                  <label className="block text-sm font-semibold text-gray-800 mb-2">
-                    Address (Adres)
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    placeholder="Enter full address"
-                    rows={3}
-                    className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
-                    required
-                  />
+                    <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-sm"></div>
+                    </div>
+                    Create Member Card
+                  </button>
                 </div>
               </div>
+            </form>
+          )}
 
-              {/* Submit Button */}
-              <div className="flex justify-end mt-8">
-                <button
-                  type="submit"
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 flex items-center gap-3"
-                >
-                  <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-white rounded-sm"></div>
+          {/* Show Members Content */}
+          {activeMenu === 'showMembers' && (
+            <div className="flex-1 flex flex-col">
+              {loading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading members...</p>
                   </div>
-                  Create Member Card
-                </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto">
+                  {members.length === 0 ? (
+                    <div className="col-span-full flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <div className="w-8 h-8 bg-gray-400 rounded-lg"></div>
+                        </div>
+                        <p className="text-gray-600 text-lg">No members found</p>
+                        <p className="text-gray-400 text-sm">Add your first member to get started</p>
+                      </div>
+                    </div>
+                  ) : (
+                    members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                        onClick={() => window.open(`/admin/member/${member.id}`, '_blank')}
+                      >
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">
+                              {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-900">{member.fullName}</h3>
+                            <p className="text-sm text-gray-600">{member.membershipId}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Email:</span>
+                            <span className="text-sm text-gray-900 font-medium">{member.email}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Role:</span>
+                            <span className="text-sm text-gray-900 font-medium capitalize">{member.role}</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Status:</span>
+                            <div className="flex items-center gap-2">
+                              <div className={`w-2 h-2 rounded-full ${
+                                member.status === 'active' ? 'bg-green-500' : 
+                                member.status === 'pending' ? 'bg-yellow-500' : 
+                                member.status === 'suspended' ? 'bg-red-500' : 'bg-gray-500'
+                              }`}></div>
+                              <span className="text-sm text-gray-900 font-medium capitalize">{member.status}</span>
+                            </div>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Member Since:</span>
+                            <span className="text-sm text-gray-900 font-medium">
+                              {new Date(member.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-xs text-blue-600 text-center font-medium">Click to view details</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Dashboard Content */}
+          {activeMenu === 'dashboard' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-8 h-8 bg-white rounded-lg"></div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Dashboard</h3>
+                <p className="text-gray-600">Coming soon...</p>
               </div>
             </div>
-          </form>
+          )}
+
+          {/* Settings Content */}
+          {activeMenu === 'settings' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-8 h-8 bg-white rounded-lg"></div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Settings</h3>
+                <p className="text-gray-600">Coming soon...</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
