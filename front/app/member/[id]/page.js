@@ -12,6 +12,7 @@ export default function MemberPage() {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
 
   // Varsayılan kullanıcı bilgileri (DB'de veri yoksa)
   const defaultUserInfo = {
@@ -50,7 +51,8 @@ export default function MemberPage() {
           emergencyContact: data.member.emergencyContact,
           membershipType: data.member.membershipType,
           address: data.member.address,
-          dateOfBirth: data.member.dateOfBirth
+          dateOfBirth: data.member.dateOfBirth,
+          secureQrCode: data.member.secureQrCode // Güvenli QR kod verisi
         };
         
         setUserInfo(formattedUserInfo);
@@ -72,6 +74,19 @@ export default function MemberPage() {
       fetchMemberById(memberId);
     }
   }, [memberId]);
+
+  // QR kod veri uzunluğunu kontrol et (debug için)
+  useEffect(() => {
+    if (userInfo?.secureQrCode) {
+      console.log('✅ Güvenli QR kod yüklendi:', {
+        length: userInfo.secureQrCode.length,
+        preview: userInfo.secureQrCode.substring(0, 50) + '...',
+        type: 'SECURE_CRYPTO_DATA'
+      });
+    } else if (userInfo) {
+      console.log('⚠️ Güvenli QR kod bulunamadı, fallback kullanılıyor');
+    }
+  }, [userInfo]);
 
   // Loading state
   if (loading) {
@@ -115,13 +130,17 @@ export default function MemberPage() {
     );
   }
 
-  // QR kodu için veri
-  const qrData = JSON.stringify({
-    name: userInfo.name,
-    email: userInfo.email,
-    memberId: userInfo.memberId,
-    org: "Community Connect"
+  // QR kodu için güvenli veri - backend'den alınan secureQrCode kullanılır
+  const qrData = userInfo?.secureQrCode || JSON.stringify({
+    type: "membership_card",
+    data: "Visit our website for more info", 
+    url: "https://community-connect.org",
+    note: "This QR code requires special scanner"
   });
+
+  // QR kod tipini belirle
+  const isSecureQR = Boolean(userInfo?.secureQrCode);
+  console.log(`🔍 QR Kod Tipi: ${isSecureQR ? 'GÜVENLİ KRİPTOGRAFİK' : 'FALLBACK'}`);;
 
   return (
     <div className="min-h-screen bg-white">
@@ -129,24 +148,15 @@ export default function MemberPage() {
       <header className="border-b border-gray-200 px-10 py-4">
         <div className="flex items-center justify-between max-w-[1280px] mx-auto">
           {/* Logo */}
-          <div className="flex items-center gap-4">
+          <a href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
             <div className="w-4 h-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
             <h1 className="text-lg font-bold text-gray-900">Community Connect</h1>
-          </div>
+          </a>
           
           {/* Navigation */}
           <nav className="flex items-center gap-8">
             <a href="/" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
             <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Events</a>
-            <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Resources</a>
-            <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Contact</a>
-            <a 
-              href="/admin" 
-              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm font-bold text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center gap-2"
-            >
-              <div className="w-4 h-4 bg-white/20 rounded-md"></div>
-              Admin Panel
-            </a>
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
               {userInfo.name.split(' ').map(n => n[0]).join('')}
             </div>
@@ -205,19 +215,32 @@ export default function MemberPage() {
                         <div className="text-xs opacity-80">MEMBER</div>
                       </div>
                       
-                      {/* QR Code */}
-                      <div className="absolute top-0 right-0 bg-white p-2 rounded-lg">
-                        <QRCodeCanvas 
-                          value={qrData}
-                          size={50}
-                          bgColor="#ffffff"
-                          fgColor="#000000"
-                          level="M"
-                        />
-                      </div>
+                                      {/* QR Code */}
+                <div className="absolute top-0 right-0 bg-white p-4 rounded-lg shadow-lg group">
+                  <div className="relative">
+                    <QRCodeCanvas 
+                      value={qrData}
+                      size={100}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      level="L"
+                      includeMargin={false}
+                    />
+                    {/* Büyütme İkonu */}
+                    <button
+                      onClick={() => setQrModalOpen(true)}
+                      className="absolute -top-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      title="QR Kodu Büyüt"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
                       
                       {/* Member Info */}
-                      <div className="flex-1 flex flex-col justify-center pr-20">
+                      <div className="flex-1 flex flex-col justify-center pr-28">
                         <h3 className="text-lg font-bold mb-1">{userInfo.name}</h3>
                         <p className="text-sm opacity-90 mb-1">{userInfo.role}</p>
                         <p className="text-xs opacity-80 mb-3">ID: {userInfo.memberId}</p>
@@ -445,6 +468,78 @@ export default function MemberPage() {
           </div>
         </div>
       </main>
+
+      {/* QR Kod Modal */}
+      {qrModalOpen && (
+        <div className="fixed inset-0 bg-white/10 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+            {/* Kapat Butonu */}
+            <button
+              onClick={() => setQrModalOpen(false)}
+              className="absolute top-4 right-4 w-10 h-10 bg-gray-100 hover:bg-red-100 text-black hover:text-red-600 rounded-full flex items-center justify-center transition-colors"
+              title="Kapat"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Modal Başlık */}
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">QR Üyelik Kodu</h2>
+              <p className="text-gray-600">
+                {isSecureQR ? (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Güvenli Kriptografik Kod
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    Standart QR Kod
+                  </span>
+                )}
+              </p>
+            </div>
+
+            {/* Büyük QR Kod */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-white p-6 rounded-xl shadow-inner border-4 border-gray-100">
+                <QRCodeCanvas 
+                  value={qrData}
+                  size={250}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="L"
+                  includeMargin={true}
+                />
+              </div>
+            </div>
+
+            {/* Üye Bilgileri */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-gray-800 mb-1">{userInfo.name}</h3>
+              <p className="text-gray-600 mb-2">{userInfo.role}</p>
+              <p className="text-sm text-gray-500">Üyelik ID: {userInfo.membershipId}</p>
+            </div>
+
+            {/* Kullanım Bilgisi */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 text-center">
+                {isSecureQR ? (
+                  <>Bu QR kod anlaşmalı mağazalarda üyeliğinizi doğrulamak için kullanılabilir.</>
+                ) : (
+                  <>Bu QR kod genel bilgi amaçlıdır. Güvenli sürüm yüklenmeye çalışılıyor.</>
+                )}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

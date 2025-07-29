@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from typing import Optional, List
 from sqlalchemy.orm import Session
@@ -12,6 +13,9 @@ from dotenv import load_dotenv
 
 # Import database components
 from database import get_db, init_db, Member as DBMember
+
+# Import crypto utilities
+from crypto_utils import generate_secure_member_qr, verify_member_qr, get_public_key_pem
 
 # Load environment variables
 load_dotenv()
@@ -172,6 +176,14 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
             "updatedAt": db_member.updated_at
         }
         
+        # Güvenli QR kod oluştur
+        try:
+            secure_qr_data = generate_secure_member_qr(response_data)
+            response_data["secureQrCode"] = secure_qr_data
+        except Exception as e:
+            print(f"QR kod oluşturma hatası: {e}")
+            response_data["secureQrCode"] = None
+        
         return MemberResponse(**response_data)
     
     except HTTPException:
@@ -234,6 +246,15 @@ async def get_member(member_id: int, db: Session = Depends(get_db)):
         "createdAt": member.created_at,
         "updatedAt": member.updated_at
     }
+    
+    # Güvenli QR kod oluştur
+    try:
+        secure_qr_data = generate_secure_member_qr(member_data)
+        member_data["secureQrCode"] = secure_qr_data
+        print(f"✅ QR kod oluşturuldu - Member ID: {member.id}, Data length: {len(secure_qr_data)}")
+    except Exception as e:
+        print(f"❌ QR kod oluşturma hatası: {e}")
+        member_data["secureQrCode"] = None
     
     return {
         "member": member_data,
@@ -346,6 +367,200 @@ async def update_member(member_id: int, member: MemberUpdate, db: Session = Depe
         "message": "Üye bilgileri başarıyla güncellendi",
         "success": True
     }
+
+# Güvenlik endpoint'leri
+
+@app.post("/api/qr/verify")
+async def verify_qr_code(qr_data: dict):
+    """
+    QR kod doğrulama endpoint'i - Mağazalar için
+    ISO 20248 benzeri dijital imza doğrulaması
+    """
+    try:
+        qr_string = qr_data.get("qr_code", "")
+        if not qr_string:
+            raise HTTPException(status_code=400, detail="QR kod verisi gerekli")
+        
+        is_valid, decoded_data, error_msg = verify_member_qr(qr_string)
+        
+        if not is_valid:
+            return {
+                "valid": False,
+                "error": error_msg or "Geçersiz QR kod",
+                "success": False
+            }
+        
+        return {
+            "valid": True,
+            "member_data": {
+                "member_id": decoded_data.get("member_id"),
+                "membership_id": decoded_data.get("membership_id"), 
+                "name": decoded_data.get("name"),
+                "status": decoded_data.get("status"),
+                "organization": decoded_data.get("org"),
+                "issued_at": decoded_data.get("issued_at"),
+                "expires_at": decoded_data.get("expires_at")
+            },
+            "verification_time": datetime.utcnow().isoformat(),
+            "success": True
+        }
+        
+    except Exception as e:
+        return {
+            "valid": False,
+            "error": f"Doğrulama hatası: {str(e)}",
+            "success": False
+        }
+
+@app.get("/api/qr/public-key")
+async def get_public_key():
+    """
+    Public key endpoint'i - Mağaza sistemleri için
+    Offline doğrulama yapmak isteyen mağazalar bu key'i kullanabilir
+    """
+    try:
+        public_key_pem = get_public_key_pem()
+        return {
+            "public_key": public_key_pem,
+            "algorithm": "RSA-PSS-SHA256",
+            "key_format": "PEM",
+            "usage": "QR code signature verification",
+            "organization": "Community Connect",
+            "success": True
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Public key alınamadı: {str(e)}")
+
+@app.get("/api/qr/demo-scanner")
+async def demo_scanner_page():
+    """
+    Demo QR kod tarayıcı sayfası
+    Test amaçlı - gerçek mağaza entegrasyonu simülasyonu
+    """
+    html_content = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Community Connect - QR Scanner Demo</title>
+        <meta charset="utf-8">
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .header { text-align: center; margin-bottom: 30px; }
+            .title { color: #2563eb; margin-bottom: 10px; }
+            .subtitle { color: #6b7280; font-size: 14px; }
+            .form-group { margin-bottom: 20px; }
+            label { display: block; margin-bottom: 5px; font-weight: bold; color: #374151; }
+            textarea { width: 100%; min-height: 100px; padding: 10px; border: 2px solid #d1d5db; border-radius: 5px; font-family: monospace; font-size: 12px; }
+            button { background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+            button:hover { background: #1d4ed8; }
+            .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+            .success { background: #dcfce7; border: 1px solid #16a34a; color: #166534; }
+            .error { background: #fef2f2; border: 1px solid #dc2626; color: #991b1b; }
+            .warning { background: #fffbeb; border: 1px solid #d97706; color: #92400e; }
+            .member-info { background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; margin-top: 10px; }
+            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+            .info-item { padding: 8px; background: rgba(255,255,255,0.7); border-radius: 3px; }
+            .status-active { color: #059669; font-weight: bold; }
+            .status-inactive { color: #dc2626; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1 class="title">🏪 Mağaza QR Tarayıcı</h1>
+                <p class="subtitle">Community Connect - Üye Doğrulama Sistemi</p>
+                <p class="subtitle">ISO 20248 Benzeri Kriptografik İmza Doğrulaması</p>
+            </div>
+            
+            <div class="form-group">
+                <label for="qrInput">QR Kod Verisi:</label>
+                <textarea id="qrInput" placeholder="QR kod verisini buraya yapıştırın..."></textarea>
+            </div>
+            
+            <button onclick="verifyQR()">🔍 QR Kodu Doğrula</button>
+            
+            <div id="result"></div>
+        </div>
+        
+        <script>
+        async function verifyQR() {
+            const qrData = document.getElementById('qrInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!qrData) {
+                resultDiv.innerHTML = '<div class="result warning">⚠️ Lütfen QR kod verisi girin</div>';
+                return;
+            }
+            
+            try {
+                resultDiv.innerHTML = '<div class="result">🔄 Doğrulanıyor...</div>';
+                
+                const response = await fetch('/api/qr/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ qr_code: qrData })
+                });
+                
+                const result = await response.json();
+                
+                if (result.valid) {
+                    const memberData = result.member_data;
+                    const isActive = memberData.status === 'active';
+                    resultDiv.innerHTML = `
+                        <div class="result success">
+                            <h3>✅ Geçerli Üyelik Kartı</h3>
+                            <div class="member-info">
+                                <h4>👤 Üye Bilgileri:</h4>
+                                <div class="info-grid">
+                                    <div class="info-item"><strong>Ad:</strong> ${memberData.name}</div>
+                                    <div class="info-item"><strong>Üye ID:</strong> ${memberData.membership_id}</div>
+                                    <div class="info-item"><strong>Durum:</strong> <span class="status-${isActive ? 'active' : 'inactive'}">${memberData.status.toUpperCase()}</span></div>
+                                    <div class="info-item"><strong>Organizasyon:</strong> ${memberData.organization}</div>
+                                    <div class="info-item"><strong>Veriliş:</strong> ${new Date(memberData.issued_at).toLocaleDateString('tr-TR')}</div>
+                                    <div class="info-item"><strong>Geçerlilik:</strong> ${new Date(memberData.expires_at).toLocaleDateString('tr-TR')}</div>
+                                </div>
+                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
+                                    Doğrulama Zamanı: ${new Date(result.verification_time).toLocaleString('tr-TR')}
+                                </p>
+                            </div>
+                            ${!isActive ? '<div class="result warning" style="margin-top: 10px;">⚠️ Üyelik aktif değil!</div>' : ''}
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="result error">
+                            <h3>❌ Geçersiz QR Kod</h3>
+                            <p><strong>Hata:</strong> ${result.error}</p>
+                            <p style="font-size: 12px; margin-top: 10px;">
+                                Bu QR kod sahte, zamanı dolmuş veya bozulmuş olabilir.
+                            </p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>🚫 Bağlantı Hatası</h3>
+                        <p>Doğrulama servisine bağlanılamıyor: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Enter tuşu ile doğrulama
+        document.getElementById('qrInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                verifyQR();
+            }
+        });
+        </script>
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_content)
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000) 
