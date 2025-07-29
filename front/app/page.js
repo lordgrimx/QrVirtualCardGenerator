@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('front');
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Kullanıcı bilgileri
-  const userInfo = {
+  // Varsayılan kullanıcı bilgileri (DB'de veri yoksa)
+  const defaultUserInfo = {
     name: "Olivia Bennett",
     email: "olivia.bennett@email.com",
     phone: "(555) 123-4567",
@@ -16,6 +19,69 @@ export default function Home() {
     memberId: "CC-2024-001567",
     joinDate: "July 15, 2024"
   };
+
+  // DB'den en son eklenen üyeyi al
+  const fetchLatestMember = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('http://localhost:8000/api/members');
+      const data = await response.json();
+      
+      if (data.success && data.members && data.members.length > 0) {
+        // En son eklenen üyeyi al (en yüksek ID)
+        const latestMember = data.members.reduce((latest, current) => 
+          current.id > latest.id ? current : latest
+        );
+        
+        // DB verilerini client format'ına çevir
+        const formattedUserInfo = {
+          name: latestMember.fullName,
+          email: latestMember.email,
+          phone: latestMember.phoneNumber,
+          role: latestMember.role,
+          status: latestMember.status,
+          memberId: latestMember.membershipId,
+          joinDate: new Date(latestMember.createdAt).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          }),
+          emergencyContact: latestMember.emergencyContact,
+          membershipType: latestMember.membershipType,
+          address: latestMember.address,
+          dateOfBirth: latestMember.dateOfBirth
+        };
+        
+        setUserInfo(formattedUserInfo);
+      } else {
+        // DB'de veri yoksa varsayılan kullan
+        setUserInfo(defaultUserInfo);
+      }
+    } catch (error) {
+      console.error('Error fetching member data:', error);
+      setError('Failed to load member data');
+      // Hata durumunda varsayılan kullan
+      setUserInfo(defaultUserInfo);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLatestMember();
+  }, []);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading member data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // QR kodu için veri
   const qrData = JSON.stringify({
@@ -38,10 +104,11 @@ export default function Home() {
           
           {/* Navigation */}
           <nav className="flex items-center gap-8">
-            <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
+            <a href="/" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
             <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Events</a>
             <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Resources</a>
             <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Contact</a>
+            <a href="/admin" className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-900 rounded-lg transition-colors">Admin Panel</a>
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
               {userInfo.name.split(' ').map(n => n[0]).join('')}
             </div>
@@ -274,17 +341,51 @@ export default function Home() {
               <div className="border border-gray-200 border-l-0 border-t-0 p-4">
                 <p className="text-sm text-gray-600 mb-2">Status</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <p className="text-sm text-gray-900 font-medium">{userInfo.status}</p>
+                  <div className={`w-2 h-2 rounded-full ${
+                    userInfo.status === 'active' ? 'bg-green-500' : 
+                    userInfo.status === 'pending' ? 'bg-yellow-500' : 
+                    userInfo.status === 'suspended' ? 'bg-red-500' : 'bg-gray-500'
+                  }`}></div>
+                  <p className="text-sm text-gray-900 font-medium capitalize">{userInfo.status}</p>
                 </div>
               </div>
             </div>
 
-            {/* Join Date */}
-            <div className="border border-gray-200 border-t-0 p-4">
-              <p className="text-sm text-gray-600 mb-2">Member Since</p>
-              <p className="text-sm text-gray-900 font-medium">{userInfo.joinDate}</p>
+            {/* Membership Type & Emergency Contact */}
+            {userInfo.membershipType && (
+              <div className="grid grid-cols-2 gap-0">
+                <div className="border border-gray-200 border-t-0 p-4">
+                  <p className="text-sm text-gray-600 mb-2">Membership Type</p>
+                  <p className="text-sm text-gray-900 font-medium capitalize">{userInfo.membershipType}</p>
+                </div>
+                <div className="border border-gray-200 border-l-0 border-t-0 p-4">
+                  <p className="text-sm text-gray-600 mb-2">Emergency Contact</p>
+                  <p className="text-sm text-gray-900 font-medium">{userInfo.emergencyContact}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Date of Birth & Join Date */}
+            <div className="grid grid-cols-2 gap-0">
+              <div className="border border-gray-200 border-t-0 p-4">
+                <p className="text-sm text-gray-600 mb-2">Date of Birth</p>
+                <p className="text-sm text-gray-900 font-medium">
+                  {userInfo.dateOfBirth ? new Date(userInfo.dateOfBirth).toLocaleDateString() : 'N/A'}
+                </p>
+              </div>
+              <div className="border border-gray-200 border-l-0 border-t-0 p-4">
+                <p className="text-sm text-gray-600 mb-2">Member Since</p>
+                <p className="text-sm text-gray-900 font-medium">{userInfo.joinDate}</p>
+              </div>
             </div>
+
+            {/* Address - Full Width */}
+            {userInfo.address && (
+              <div className="border border-gray-200 border-t-0 p-4">
+                <p className="text-sm text-gray-600 mb-2">Address</p>
+                <p className="text-sm text-gray-900 font-medium">{userInfo.address}</p>
+              </div>
+            )}
           </div>
         </div>
       </main>
