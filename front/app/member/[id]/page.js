@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image-more';
 
 export default function MemberPage() {
   const params = useParams();
@@ -146,19 +146,25 @@ export default function MemberPage() {
   // Kart indirme fonksiyonu
   const downloadCard = async () => {
     try {
+      // dom-to-image-more için ayarlar
+      const imageOptions = {
+        quality: 1.0,
+        scale: 2,
+        bgcolor: '#ffffff',
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left'
+        }
+      };
+
       // Önce front kartı indir
       const frontCard = document.querySelector('.card-front');
       if (frontCard) {
-        const frontCanvas = await html2canvas(frontCard, {
-          backgroundColor: null,
-          scale: 2,
-          useCORS: true,
-          allowTaint: true
-        });
+        const frontDataUrl = await domtoimage.toPng(frontCard, imageOptions);
         
         const frontLink = document.createElement('a');
         frontLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_front.png`;
-        frontLink.href = frontCanvas.toDataURL();
+        frontLink.href = frontDataUrl;
         frontLink.click();
       }
 
@@ -169,16 +175,11 @@ export default function MemberPage() {
       setTimeout(async () => {
         const backCard = document.querySelector('.card-back');
         if (backCard) {
-          const backCanvas = await html2canvas(backCard, {
-            backgroundColor: null,
-            scale: 2,
-            useCORS: true,
-            allowTaint: true
-          });
+          const backDataUrl = await domtoimage.toPng(backCard, imageOptions);
           
           const backLink = document.createElement('a');
           backLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_back.png`;
-          backLink.href = backCanvas.toDataURL();
+          backLink.href = backDataUrl;
           backLink.click();
         }
         
@@ -188,7 +189,7 @@ export default function MemberPage() {
       
     } catch (error) {
       console.error('Kart indirme hatası:', error);
-      alert('Kart indirme sırasında bir hata oluştu.');
+      alert('Kart indirme sırasında bir hata oluştu. Lütfen tekrar deneyin.');
     }
   };
 
