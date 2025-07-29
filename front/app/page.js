@@ -36,7 +36,7 @@ export default function AdminPage() {
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8000/api/members');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members`);
       const data = await response.json();
       
       if (data.success) {
@@ -91,7 +91,7 @@ export default function AdminPage() {
     try {
       setLoading(true);
       
-      const response = await fetch(`http://localhost:8000/api/members/${editingMember.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members/${editingMember.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ export default function AdminPage() {
       setQrVerifying(true);
       setQrResult(null);
 
-      const response = await fetch('http://localhost:8000/api/qr/verify', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/qr/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ export default function AdminPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:8000/api/members', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

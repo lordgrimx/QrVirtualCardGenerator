@@ -31,7 +31,7 @@ export default function MemberPage() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`http://localhost:8000/api/members/${id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members/${id}`);
       const data = await response.json();
       
       if (response.ok && data.success && data.member) {

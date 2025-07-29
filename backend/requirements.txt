@@ -10,3 +10,4 @@ sqlalchemy==2.0.23
 alembic==1.13.1
 cryptography==41.0.7
 qrcode==7.4.2 
+gunicorn 
