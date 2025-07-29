@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
+import html2canvas from 'html2canvas';
 
 export default function MemberPage() {
   const params = useParams();
@@ -141,6 +142,55 @@ export default function MemberPage() {
   // QR kod tipini belirle
   const isSecureQR = Boolean(userInfo?.secureQrCode);
   console.log(`🔍 QR Kod Tipi: ${isSecureQR ? 'GÜVENLİ KRİPTOGRAFİK' : 'FALLBACK'}`);;
+
+  // Kart indirme fonksiyonu
+  const downloadCard = async () => {
+    try {
+      // Önce front kartı indir
+      const frontCard = document.querySelector('.card-front');
+      if (frontCard) {
+        const frontCanvas = await html2canvas(frontCard, {
+          backgroundColor: null,
+          scale: 2,
+          useCORS: true,
+          allowTaint: true
+        });
+        
+        const frontLink = document.createElement('a');
+        frontLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_front.png`;
+        frontLink.href = frontCanvas.toDataURL();
+        frontLink.click();
+      }
+
+      // Kartı arkaya çevir
+      setActiveTab('back');
+      
+      // Animasyon tamamlanmasını bekle
+      setTimeout(async () => {
+        const backCard = document.querySelector('.card-back');
+        if (backCard) {
+          const backCanvas = await html2canvas(backCard, {
+            backgroundColor: null,
+            scale: 2,
+            useCORS: true,
+            allowTaint: true
+          });
+          
+          const backLink = document.createElement('a');
+          backLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_back.png`;
+          backLink.href = backCanvas.toDataURL();
+          backLink.click();
+        }
+        
+        // Kartı tekrar öne çevir
+        setActiveTab('front');
+      }, 800); // Animasyon süresi (700ms) + buffer
+      
+    } catch (error) {
+      console.error('Kart indirme hatası:', error);
+      alert('Kart indirme sırasında bir hata oluştu.');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -366,11 +416,11 @@ export default function MemberPage() {
 
           {/* Action Buttons */}
           <div className="flex justify-center gap-4 mb-6">
-            <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+            <button 
+              onClick={downloadCard}
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
               Download Card
-            </button>
-            <button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-8 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-              Share QR Code
             </button>
           </div>
 
