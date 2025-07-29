@@ -36,6 +36,8 @@ Modern, QR kodlu dijital üyelik kartı uygulaması. Community Connect için gel
 
 ### Backend
 - **FastAPI** - Modern Python web framework
+- **PostgreSQL** - Production database (Render.com)
+- **SQLAlchemy** - ORM for database operations
 - **Uvicorn** - ASGI server
 - **Python 3.12** - Backend dili
 
@@ -63,9 +65,47 @@ QrVirtualCard/
 ### Ön Gereksinimler
 - Node.js 18+
 - Python 3.12+
+- PostgreSQL Database (Render.com veya local)
 - npm veya yarn
 
-### Frontend Kurulumu
+### 1. PostgreSQL Database Kurulumu
+
+#### Render.com'da PostgreSQL Oluşturun:
+1. [Render.com](https://render.com) hesabınıza giriş yapın
+2. "New" → "PostgreSQL" seçin
+3. Database adını ve planını seçin
+4. Database oluşturduktan sonra connection detaylarını kopyalayın
+
+### 2. Backend Kurulumu
+
+```bash
+cd backend
+
+# Virtual environment oluşturun
+python -m venv myenv
+source myenv/bin/activate  # Linux/Mac
+# veya
+myenv\Scripts\activate     # Windows
+
+# Dependencies kurun
+pip install -r requirements.txt
+
+# Environment dosyası oluşturun
+cp env_template.txt .env
+
+# .env dosyasını düzenleyin ve PostgreSQL bilgilerinizi girin
+# DATABASE_URL="postgresql://username:password@hostname:port/database_name"
+
+# Database tablolarını oluşturun
+python database.py
+
+# API'yi başlatın
+python main.py
+```
+
+Backend `http://localhost:8000` adresinde çalışacak.
+
+### 3. Frontend Kurulumu
 
 ```bash
 cd front
@@ -74,21 +114,6 @@ npm run dev
 ```
 
 Frontend `http://localhost:3000` adresinde çalışacak.
-
-### Backend Kurulumu
-
-```bash
-cd backend
-python -m venv myenv
-source myenv/bin/activate  # Linux/Mac
-# veya
-myenv\Scripts\activate     # Windows
-
-pip install -r requirements.txt
-python main.py
-```
-
-Backend `http://localhost:8000` adresinde çalışacak.
 
 ## 🎯 Kullanım
 
