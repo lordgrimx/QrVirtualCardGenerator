@@ -116,7 +116,21 @@ export default function AdminPage() {
     }
   };
 
-  // QR Doğrulama fonksiyonu
+  // QR tip detection
+  const detectQRType = (qrData) => {
+    // NFC compact QR: base64-urlsafe, yaklaşık 100-120 karakter, padding yok
+    // Standard QR: JSON benzeri veya daha uzun base64
+    
+    if (qrData.length < 200 && 
+        qrData.match(/^[A-Za-z0-9_-]+$/) && 
+        !qrData.includes('{')) {
+      return 'nfc';  // URL-safe base64, compact
+    } else {
+      return 'standard';  // JSON veya normal format
+    }
+  };
+
+  // QR Doğrulama fonksiyonu - Otomatik tip detection
   const verifyQrCode = async () => {
     if (!qrInput.trim()) {
       alert('Lütfen QR kod verisini girin!');
@@ -127,7 +141,12 @@ export default function AdminPage() {
       setQrVerifying(true);
       setQrResult(null);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/qr/verify`, {
+      const qrType = detectQRType(qrInput.trim());
+      const endpoint = qrType === 'nfc' ? '/api/qr/verify-nfc' : '/api/qr/verify';
+
+      console.log(`🔍 QR tip algılandı: ${qrType}, endpoint: ${endpoint}`);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -141,12 +160,15 @@ export default function AdminPage() {
         setQrResult({
           ...data,
           success: true,
-          is_valid: data.valid // Backend'den gelen 'valid' field'ını 'is_valid' olarak eşle
+          is_valid: data.valid, // Backend'den gelen 'valid' field'ını 'is_valid' olarak eşle
+          qr_type: qrType,      // QR tipini ekle
+          algorithm: qrType === 'nfc' ? 'ECDSA P-256' : 'RSA-PSS SHA256'
         });
       } else {
         setQrResult({
           success: false,
-          error: data.detail || 'Doğrulama hatası'
+          error: data.detail || 'Doğrulama hatası',
+          qr_type: qrType
         });
       }
     } catch (error) {
@@ -751,8 +773,13 @@ export default function AdminPage() {
                               </svg>
                             </div>
                             <div>
-                              <h4 className="text-lg font-bold text-green-800">✅ Geçerli Üyelik!</h4>
-                              <p className="text-green-600">QR kod başarıyla doğrulandı</p>
+                              <h4 className="text-lg font-bold text-green-800">
+                                ✅ Geçerli {qrResult.qr_type === 'nfc' ? 'NFC Kompakt' : 'Standart'} QR Kod!
+                              </h4>
+                              <p className="text-green-600">
+                                {qrResult.algorithm} ile doğrulandı
+                                {qrResult.data_source === 'hybrid_nfc_db' && ' • Hibrit Veri (NFC + DB)'}
+                              </p>
                             </div>
                           </div>
                           
@@ -768,12 +795,54 @@ export default function AdminPage() {
                                      qrResult.member_data.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                      'bg-red-100 text-red-800'
                                    }`}>
-                                     {qrResult.member_data.status}
+                                     {qrResult.member_data.status?.toUpperCase()}
                                    </span>
                                  </div>
                                  <div><span className="font-medium text-gray-700">Organizasyon:</span> <span className="text-gray-900 font-semibold">{qrResult.member_data.organization}</span></div>
+                                 
+                                 {/* QR Format Bilgisi */}
+                                 <div><span className="font-medium text-gray-700">QR Format:</span> 
+                                   <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                                     qrResult.qr_type === 'nfc' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                                   }`}>
+                                     {qrResult.qr_type === 'nfc' ? 'NFC Kompakt' : 'Standart'}
+                                   </span>
+                                 </div>
+                                 <div><span className="font-medium text-gray-700">İmza Algorithm:</span> <span className="text-gray-900 font-semibold">{qrResult.algorithm}</span></div>
+                                 
+                                 {/* Veriliş Tarihi */}
                                  <div><span className="font-medium text-gray-700">Veriliş:</span> <span className="text-gray-900 font-semibold">{new Date(qrResult.member_data.issued_at).toLocaleDateString('tr-TR')}</span></div>
-                                 <div><span className="font-medium text-gray-700">Son Geçerlilik:</span> <span className="text-gray-900 font-semibold">{new Date(qrResult.member_data.expires_at).toLocaleDateString('tr-TR')}</span></div>
+                                 
+                                 {/* Geçerlilik - Sadece standart QR'da var */}
+                                 {qrResult.member_data.expires_at && (
+                                   <div><span className="font-medium text-gray-700">Son Geçerlilik:</span> <span className="text-gray-900 font-semibold">{new Date(qrResult.member_data.expires_at).toLocaleDateString('tr-TR')}</span></div>
+                                 )}
+                                 
+                                 {/* NFC Nonce - Sadece NFC'de var */}
+                                 {qrResult.qr_type === 'nfc' && qrResult.member_data.nonce && (
+                                   <div><span className="font-medium text-gray-700">Nonce:</span> <span className="text-gray-900 font-mono text-xs">{qrResult.member_data.nonce}</span></div>
+                                 )}
+                                 
+                                 {/* İsim Doğrulaması - Sadece NFC'de var */}
+                                 {qrResult.qr_type === 'nfc' && qrResult.member_data.name_verified !== undefined && (
+                                   <div><span className="font-medium text-gray-700">İsim Doğrulaması:</span> 
+                                     <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                                       qrResult.member_data.name_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                     }`}>
+                                       {qrResult.member_data.name_verified ? '✅ Eşleşti' : '⚠️ Farklı'}
+                                     </span>
+                                   </div>
+                                 )}
+                                 
+                                 {/* DB İsim - Eğer eşleşmiyorsa göster */}
+                                 {qrResult.qr_type === 'nfc' && !qrResult.member_data.name_verified && qrResult.member_data.db_name && (
+                                   <div><span className="font-medium text-gray-700">DB İsmi:</span> <span className="text-gray-900 font-semibold">{qrResult.member_data.db_name}</span></div>
+                                 )}
+                                 
+                                 {/* Veri Kaynağı */}
+                                 {qrResult.data_source && (
+                                   <div><span className="font-medium text-gray-700">Veri Kaynağı:</span> <span className="text-gray-900 font-semibold">{qrResult.data_source === 'hybrid_nfc_db' ? 'NFC + Veritabanı' : 'QR İçeriği'}</span></div>
+                                 )}
                                </div>
                              </div>
                           )}
@@ -788,20 +857,23 @@ export default function AdminPage() {
                               </svg>
                             </div>
                             <div>
-                              <h4 className="text-lg font-bold text-red-800">❌ Geçersiz QR Kod!</h4>
-                              <p className="text-red-600">Bu QR kod doğrulanamadı</p>
+                              <h4 className="text-red-800 font-semibold">
+                                ❌ Geçersiz {qrResult.qr_type === 'nfc' ? 'NFC Kompakt' : 'Standart'} QR Kod
+                              </h4>
+                              <p className="text-red-600">
+                                {qrResult.qr_type === 'nfc' ? 'ECDSA imza doğrulaması başarısız' : 'RSA imza doğrulaması başarısız'}
+                              </p>
                             </div>
                           </div>
-                                                     <div className="bg-white rounded-lg p-4">
-                             <p className="text-sm text-gray-900">
-                               <span className="font-semibold text-red-700">Hata:</span> <span className="font-medium">{qrResult.error || 'Bilinmeyen doğrulama hatası'}</span>
-                             </p>
-                             {qrResult.reason && (
-                               <p className="text-sm text-gray-800 mt-2">
-                                 <span className="font-semibold text-red-700">Detay:</span> <span className="font-medium">{qrResult.reason}</span>
-                               </p>
-                             )}
-                           </div>
+                          <div className="bg-white rounded-lg p-4">
+                            <p className="text-red-700 font-medium">Hata: {qrResult.error}</p>
+                            <p className="text-red-600 text-sm mt-2">
+                              {qrResult.qr_type === 'nfc' ? 
+                                'Bu NFC QR kod sahte, zamanı dolmuş veya bozulmuş olabilir.' :
+                                'Bu QR kod sahte, zamanı dolmuş veya bozulmuş olabilir.'
+                              }
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>

@@ -14,6 +14,7 @@ export default function MemberPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
+  const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
 
   // Varsayılan kullanıcı bilgileri (DB'de veri yoksa)
   const defaultUserInfo = {
@@ -53,7 +54,8 @@ export default function MemberPage() {
           membershipType: data.member.membershipType,
           address: data.member.address,
           dateOfBirth: data.member.dateOfBirth,
-          secureQrCode: data.member.secureQrCode // Güvenli QR kod verisi
+          secureQrCode: data.member.secureQrCode, // Güvenli QR kod verisi
+          nfcQrCode: data.member.nfcQrCode // NFC kompakt QR kod verisi
         };
         
         setUserInfo(formattedUserInfo);
@@ -79,13 +81,24 @@ export default function MemberPage() {
   // QR kod veri uzunluğunu kontrol et (debug için)
   useEffect(() => {
     if (userInfo?.secureQrCode) {
-      console.log('✅ Güvenli QR kod yüklendi:', {
+      console.log('✅ Standart QR kod yüklendi:', {
         length: userInfo.secureQrCode.length,
         preview: userInfo.secureQrCode.substring(0, 50) + '...',
         type: 'SECURE_CRYPTO_DATA'
       });
-    } else if (userInfo) {
-      console.log('⚠️ Güvenli QR kod bulunamadı, fallback kullanılıyor');
+    }
+    
+    if (userInfo?.nfcQrCode) {
+      console.log('🔧 NFC kompakt QR kod yüklendi:', {
+        length: userInfo.nfcQrCode.length,
+        preview: userInfo.nfcQrCode.substring(0, 30) + '...',
+        type: 'NFC_COMPACT_ECDSA',
+        ntag215_usage: `${userInfo.nfcQrCode.length}/540 bytes (${((userInfo.nfcQrCode.length/540)*100).toFixed(1)}%)`
+      });
+    }
+    
+    if (userInfo && !userInfo.secureQrCode && !userInfo.nfcQrCode) {
+      console.log('⚠️ Hiçbir güvenli QR kod bulunamadı, fallback kullanılıyor');
     }
   }, [userInfo]);
 
@@ -131,17 +144,59 @@ export default function MemberPage() {
     );
   }
 
-  // QR kodu için güvenli veri - backend'den alınan secureQrCode kullanılır
-  const qrData = userInfo?.secureQrCode || JSON.stringify({
-    type: "membership_card",
-    data: "Visit our website for more info", 
-    url: "https://community-connect.org",
-    note: "This QR code requires special scanner"
-  });
+  // QR kodu için veri - seçilen tipe göre
+  const getQrData = () => {
+    if (qrType === 'nfc' && userInfo?.nfcQrCode) {
+      return userInfo.nfcQrCode;
+    } else if (qrType === 'standard' && userInfo?.secureQrCode) {
+      return userInfo.secureQrCode;
+    } else {
+      // Fallback data
+      return JSON.stringify({
+        type: "membership_card",
+        data: "Visit our website for more info", 
+        url: "https://community-connect.org",
+        note: "This QR code requires special scanner"
+      });
+    }
+  };
+
+  const qrData = getQrData();
 
   // QR kod tipini belirle
-  const isSecureQR = Boolean(userInfo?.secureQrCode);
-  console.log(`🔍 QR Kod Tipi: ${isSecureQR ? 'GÜVENLİ KRİPTOGRAFİK' : 'FALLBACK'}`);;
+  const getQrInfo = () => {
+    if (qrType === 'nfc' && userInfo?.nfcQrCode) {
+      return {
+        isSecure: true,
+        type: 'NFC KOMPAKT ECDSA',
+        description: 'NTAG215 Uyumlu',
+        size: userInfo.nfcQrCode.length,
+        maxSize: 540,
+        algorithm: 'ECDSA P-256'
+      };
+    } else if (qrType === 'standard' && userInfo?.secureQrCode) {
+      return {
+        isSecure: true,
+        type: 'STANDART KRİPTOGRAFİK',
+        description: 'RSA-PSS İmzalı',
+        size: userInfo.secureQrCode.length,
+        maxSize: null,
+        algorithm: 'RSA-PSS SHA256'
+      };
+    } else {
+      return {
+        isSecure: false,
+        type: 'FALLBACK',
+        description: 'Temel Bilgi',
+        size: qrData.length,
+        maxSize: null,
+        algorithm: 'None'
+      };
+    }
+  };
+
+  const qrInfo = getQrInfo();
+  console.log(`🔍 QR Kod Tipi: ${qrInfo.type} (${qrType})`);;
 
   // Kart indirme fonksiyonu
   const downloadCard = async () => {
@@ -277,6 +332,11 @@ export default function MemberPage() {
                       level="L"
                       includeMargin={false}
                     />
+                    {/* QR Tip Badge */}
+                    <div className="absolute -top-1 -left-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
+                      {qrInfo.isSecure ? (qrType === 'nfc' ? 'NFC' : 'QR') : 'STD'}
+                    </div>
+                    
                     {/* Büyütme İkonu */}
                     <button
                       onClick={() => setQrModalOpen(true)}
@@ -371,7 +431,8 @@ export default function MemberPage() {
                     <ul className="text-sm text-gray-700 space-y-1">
                       {activeTab === 'front' ? (
                         <>
-                          <li>• QR code for quick verification</li>
+                          <li>• {qrInfo.type} QR code</li>
+                          <li>• {qrInfo.algorithm} signature</li>
                           <li>• Member name and ID</li>
                           <li>• Status indicator</li>
                           <li>• Modern gradient design</li>
@@ -413,6 +474,69 @@ export default function MemberPage() {
             >
               Back
             </button>
+          </div>
+
+          {/* QR Code Type Selector */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <h4 className="text-sm font-semibold text-blue-900 mb-3">QR Code Format</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setQrType('standard')}
+                className={`p-3 rounded-lg border-2 text-left transition-all ${
+                  qrType === 'standard' 
+                    ? 'border-blue-500 bg-blue-100 text-blue-900' 
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-3 h-3 rounded-full ${qrType === 'standard' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                  <span className="font-medium text-sm">Standard QR</span>
+                </div>
+                <p className="text-xs text-gray-600">RSA-PSS Security</p>
+                <p className="text-xs text-gray-500">
+                  {userInfo?.secureQrCode ? `${userInfo.secureQrCode.length} chars` : 'Not available'}
+                </p>
+              </button>
+              
+              <button
+                onClick={() => setQrType('nfc')}
+                className={`p-3 rounded-lg border-2 text-left transition-all ${
+                  qrType === 'nfc' 
+                    ? 'border-purple-500 bg-purple-100 text-purple-900' 
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+                }`}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`w-3 h-3 rounded-full ${qrType === 'nfc' ? 'bg-purple-500' : 'bg-gray-300'}`}></div>
+                  <span className="font-medium text-sm">NFC Compact</span>
+                </div>
+                <p className="text-xs text-gray-600">ECDSA P-256</p>
+                <p className="text-xs text-gray-500">
+                  {userInfo?.nfcQrCode ? `${userInfo.nfcQrCode.length}/540 bytes` : 'Not available'}
+                </p>
+              </button>
+            </div>
+            
+            {/* QR Info Display */}
+            <div className="mt-3 p-2 bg-white border border-gray-200 rounded text-sm">
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Active Format:</span>
+                <span className={`px-2 py-1 rounded text-xs font-bold ${
+                  qrInfo.isSecure 
+                    ? (qrType === 'nfc' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {qrInfo.type}
+                </span>
+              </div>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-gray-600">Size:</span>
+                <span className="text-gray-800 font-mono text-xs">
+                  {qrInfo.size} {qrInfo.maxSize ? `/ ${qrInfo.maxSize}` : ''} 
+                  {qrInfo.maxSize ? ` (${((qrInfo.size/qrInfo.maxSize)*100).toFixed(1)}%)` : ' chars'}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Action Buttons */}
@@ -538,23 +662,65 @@ export default function MemberPage() {
             {/* Modal Başlık */}
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">QR Üyelik Kodu</h2>
+              
+              {/* QR Tip Seçici - Modal İçinde */}
+              <div className="flex justify-center gap-2 mb-4">
+                <button
+                  onClick={() => setQrType('standard')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    qrType === 'standard' 
+                      ? 'bg-blue-500 text-white shadow-lg' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  disabled={!userInfo?.secureQrCode}
+                >
+                  Standard QR
+                </button>
+                <button
+                  onClick={() => setQrType('nfc')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    qrType === 'nfc' 
+                      ? 'bg-purple-500 text-white shadow-lg' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  disabled={!userInfo?.nfcQrCode}
+                >
+                  NFC Compact
+                </button>
+              </div>
+              
               <p className="text-gray-600">
-                {isSecureQR ? (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                {qrInfo.isSecure ? (
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+                    qrType === 'nfc' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-green-100 text-green-800'
+                  }`}>
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    Güvenli Kriptografik Kod
+                    {qrInfo.type}
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                     </svg>
-                    Standart QR Kod
+                    {qrInfo.type}
                   </span>
                 )}
               </p>
+              
+              {/* Boyut Bilgisi */}
+              <div className="mt-2 text-xs text-gray-500">
+                <span className="font-mono">
+                  {qrInfo.size} {qrInfo.maxSize ? `/ ${qrInfo.maxSize}` : ''} 
+                  {qrInfo.maxSize ? ` (${((qrInfo.size/qrInfo.maxSize)*100).toFixed(1)}%)` : ' chars'}
+                </span>
+                {qrType === 'nfc' && (
+                  <span className="ml-2 text-purple-600">• NTAG215 Uyumlu</span>
+                )}
+              </div>
             </div>
 
             {/* Büyük QR Kod */}
@@ -579,14 +745,38 @@ export default function MemberPage() {
             </div>
 
             {/* Kullanım Bilgisi */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800 text-center">
-                {isSecureQR ? (
-                  <>Bu QR kod anlaşmalı mağazalarda üyeliğinizi doğrulamak için kullanılabilir.</>
+            <div className={`mt-6 p-4 rounded-lg ${
+              qrType === 'nfc' ? 'bg-purple-50' : 'bg-blue-50'
+            }`}>
+              <p className={`text-sm text-center ${
+                qrType === 'nfc' ? 'text-purple-800' : 'text-blue-800'
+              }`}>
+                {qrInfo.isSecure ? (
+                  qrType === 'nfc' ? (
+                    <>Bu kompakt QR kod NFC kartlarda (NTAG215) kullanım için optimize edilmiştir. ECDSA P-256 imzalı.</>
+                  ) : (
+                    <>Bu QR kod anlaşmalı mağazalarda üyeliğinizi doğrulamak için kullanılabilir. RSA-PSS imzalı.</>
+                  )
                 ) : (
                   <>Bu QR kod genel bilgi amaçlıdır. Güvenli sürüm yüklenmeye çalışılıyor.</>
                 )}
               </p>
+              
+              {/* Teknik Detaylar */}
+              {qrInfo.isSecure && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <span className="font-medium text-gray-600">Algorithm:</span>
+                      <p className="text-gray-800">{qrInfo.algorithm}</p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-600">Format:</span>
+                      <p className="text-gray-800">{qrInfo.description}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
