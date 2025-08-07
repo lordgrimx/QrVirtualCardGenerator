@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiNfcApp.Views.MainPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MauiNfcApp.ViewModels"
+             x:DataType="vm:MainViewModel"
+             Title="QR NFC Card Reader"
+             BackgroundColor="{AppThemeBinding Light=#F5F5F5, Dark=#1E1E1E}">
+
+    <ContentPage.Resources>
+        <ResourceDictionary>
+            <!-- Style Definitions -->
+            <Style x:Key="CardStyle" TargetType="Frame">
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=White, Dark=#2D2D2D}" />
+                <Setter Property="HasShadow" Value="True" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="20" />
+                <Setter Property="Margin" Value="10,5" />
+            </Style>
+
+            <Style x:Key="HeaderStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light=#333333, Dark=#FFFFFF}" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+            </Style>
+
+            <Style x:Key="StatusStyle" TargetType="Label">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light=#666666, Dark=#CCCCCC}" />
+                <Setter Property="HorizontalTextAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="PrimaryButtonStyle" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="#007AFF" />
+                <Setter Property="TextColor" Value="White" />
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontAttributes" Value="Bold" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="20,12" />
+                <Setter Property="Margin" Value="5" />
+            </Style>
+
+            <Style x:Key="SecondaryButtonStyle" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#E5E5E5, Dark=#404040}" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light=#333333, Dark=#FFFFFF}" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="15,10" />
+                <Setter Property="Margin" Value="5" />
+            </Style>
+        </ResourceDictionary>
+    </ContentPage.Resources>
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="15">
+            
+            <!-- Header Card -->
+            <Frame Style="{StaticResource CardStyle}">
+                <StackLayout>
+                    <Label Text="🚀 QR NFC Card Reader" 
+                           Style="{StaticResource HeaderStyle}"
+                           HorizontalTextAlignment="Center" />
+                    
+                    <Label Text="{Binding StatusMessage}" 
+                           Style="{StaticResource StatusStyle}" />
+                </StackLayout>
+            </Frame>
+
+            <!-- NFC Status Card -->
+            <Frame Style="{StaticResource CardStyle}">
+                <StackLayout>
+                    <Label Text="📡 NFC Durumu" Style="{StaticResource HeaderStyle}" />
+                    
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="5">
+                        <Label Grid.Row="0" Grid.Column="0" Text="NFC Desteği:" />
+                        <Label Grid.Row="0" Grid.Column="1" 
+                               Text="{Binding IsNfcSupported, Converter={StaticResource BoolToYesNoConverter}}"
+                               TextColor="{Binding IsNfcSupported, Converter={StaticResource BoolToColorConverter}}" />
+                        
+                        <Label Grid.Row="1" Grid.Column="0" Text="NFC Etkin:" />
+                        <Label Grid.Row="1" Grid.Column="1" 
+                               Text="{Binding IsNfcEnabled, Converter={StaticResource BoolToYesNoConverter}}"
+                               TextColor="{Binding IsNfcEnabled, Converter={StaticResource BoolToColorConverter}}" />
+                    </Grid>
+                    
+                    <Button Text="🔄 Durumu Yenile" 
+                            Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding CheckNfcStatusCommand}"
+                            Margin="0,10,0,0" />
+                </StackLayout>
+            </Frame>
+
+            <!-- NFC Controls Card -->
+            <Frame Style="{StaticResource CardStyle}">
+                <StackLayout>
+                    <Label Text="🎮 NFC Kontrolleri" Style="{StaticResource HeaderStyle}" />
+                    
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0" 
+                                Text="{Binding IsReading, Converter={StaticResource BoolToReadButtonTextConverter}}"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding StartReadingCommand}"
+                                IsVisible="{Binding IsReading, Converter={StaticResource InverseBoolConverter}}" />
+                        
+                        <Button Grid.Column="0"
+                                Text="⏸️ Durdur"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding StopReadingCommand}"
+                                IsVisible="{Binding IsReading}" />
+                        
+                        <Button Grid.Column="1" 
+                                Text="🔍 Doğrula"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding VerifyLastDataCommand}"
+                                IsEnabled="{Binding LastReadData, Converter={StaticResource StringToHasValueConverter}}" />
+                    </Grid>
+                </StackLayout>
+            </Frame>
+
+            <!-- Member Data Card -->
+            <Frame Style="{StaticResource CardStyle}" 
+                   IsVisible="{Binding MemberData, Converter={StaticResource ObjectToBoolConverter}}">
+                <StackLayout>
+                    <Label Text="👤 Üye Bilgileri" Style="{StaticResource HeaderStyle}" />
+                    
+                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" 
+                          ColumnSpacing="10" RowSpacing="8">
+                        
+                        <Label Grid.Row="0" Grid.Column="0" Text="İsim:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding MemberData.Name}" />
+                        
+                        <Label Grid.Row="1" Grid.Column="0" Text="Üyelik ID:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding MemberData.MembershipId}" />
+                        
+                        <Label Grid.Row="2" Grid.Column="0" Text="Durum:" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding MemberData.Status}" />
+                        
+                        <Label Grid.Row="3" Grid.Column="0" Text="Organizasyon:" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding MemberData.Organization}" />
+                        
+                        <Label Grid.Row="4" Grid.Column="0" Text="Geçerlilik:" FontAttributes="Bold" />
+                        <Label Grid.Row="4" Grid.Column="1" 
+                               Text="{Binding MemberData.ExpiresAt, StringFormat='{0:dd.MM.yyyy HH:mm}'}" />
+                    </Grid>
+                    
+                    <!-- Verification Status -->
+                    <Frame BackgroundColor="{Binding IsVerificationSuccess, Converter={StaticResource BoolToVerificationColorConverter}}"
+                           Padding="10" Margin="0,15,0,0" HasShadow="False" CornerRadius="6">
+                        <Label Text="{Binding IsVerificationSuccess, Converter={StaticResource BoolToVerificationTextConverter}}"
+                               TextColor="White" FontAttributes="Bold" HorizontalTextAlignment="Center" />
+                    </Frame>
+                </StackLayout>
+            </Frame>
+
+            <!-- Error Message Card -->
+            <Frame Style="{StaticResource CardStyle}"
+                   BackgroundColor="#FFE5E5"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource StringToHasValueConverter}}">
+                <StackLayout>
+                    <Label Text="❌ Hata" Style="{StaticResource HeaderStyle}" TextColor="#D32F2F" />
+                    <Label Text="{Binding ErrorMessage}" TextColor="#D32F2F" />
+                </StackLayout>
+            </Frame>
+
+            <!-- Raw Data Card -->
+            <Frame Style="{StaticResource CardStyle}"
+                   IsVisible="{Binding LastReadData, Converter={StaticResource StringToHasValueConverter}}">
+                <StackLayout>
+                    <Label Text="📄 Ham Veri" Style="{StaticResource HeaderStyle}" />
+                    
+                    <Frame BackgroundColor="{AppThemeBinding Light=#F8F8F8, Dark=#333333}" 
+                           Padding="10" HasShadow="False" CornerRadius="6">
+                        <Label Text="{Binding LastReadData}" 
+                               FontFamily="Courier"
+                               FontSize="12"
+                               TextColor="{AppThemeBinding Light=#333333, Dark=#CCCCCC}"
+                               LineBreakMode="WordWrap" />
+                    </Frame>
+                </StackLayout>
+            </Frame>
+
+            <!-- Activity Log Card -->
+            <Frame Style="{StaticResource CardStyle}">
+                <StackLayout>
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,10">
+                        <Label Grid.Column="0" Text="📝 Aktivite Geçmişi" Style="{StaticResource HeaderStyle}" />
+                        <Button Grid.Column="1" 
+                                Text="🗑️ Temizle"
+                                Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding ClearLogsCommand}"
+                                FontSize="12" Padding="10,5" />
+                    </Grid>
+                    
+                    <CollectionView ItemsSource="{Binding NfcLogs}" MaximumHeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:NfcLogEntry">
+                                <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8" Margin="0,2">
+                                    <Label Grid.Column="0" Text="{Binding FormattedTime}" 
+                                           FontSize="11" TextColor="Gray" />
+                                    <Label Grid.Column="1" Text="{Binding TypeIcon}" FontSize="12" />
+                                    <Label Grid.Column="2" Text="{Binding Message}" 
+                                           FontSize="12" LineBreakMode="WordWrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

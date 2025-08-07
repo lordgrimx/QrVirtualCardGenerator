@@ -15,6 +15,35 @@ export default function MemberPage() {
   const [error, setError] = useState(null);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
+  const [nfcWriteStatus, setNfcWriteStatus] = useState('');
+
+  // NFC yazma fonksiyonu
+  const writeToNFC = async (qrData) => {
+    if (!('NDEFReader' in window)) {
+      setNfcWriteStatus('❌ NFC API desteklenmiyor (Android Chrome gerekli)');
+      return;
+    }
+
+    try {
+      setNfcWriteStatus('📡 NFC kartını telefona yaklaştırın...');
+      
+      const ndef = new NDEFReader();
+      await ndef.write({
+        records: [{
+          recordType: "text",
+          data: qrData
+        }]
+      });
+      
+      setNfcWriteStatus('✅ NFC kartına başarıyla yazıldı!');
+      setTimeout(() => setNfcWriteStatus(''), 3000);
+      
+    } catch (error) {
+      console.error('NFC yazma hatası:', error);
+      setNfcWriteStatus(`❌ Yazma hatası: ${error.message}`);
+      setTimeout(() => setNfcWriteStatus(''), 5000);
+    }
+  };
 
   // Varsayılan kullanıcı bilgileri (DB'de veri yoksa)
   const defaultUserInfo = {
@@ -775,6 +804,39 @@ export default function MemberPage() {
                       <p className="text-gray-800">{qrInfo.description}</p>
                     </div>
                   </div>
+                </div>
+              )}
+              
+              {/* NFC Yazma Butonu - Sadece NFC compact için */}
+              {qrType === 'nfc' && qrInfo.isSecure && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => writeToNFC(qrData)}
+                    className="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    disabled={!('NDEFReader' in window)}
+                    title={!('NDEFReader' in window) ? 'NFC API desteklenmiyor (Android Chrome gerekli)' : 'NFC kartına yaz'}
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {('NDEFReader' in window) ? 'NFC Kartına Yaz' : 'NFC Desteklenmiyor'}
+                  </button>
+                  {('NDEFReader' in window) && (
+                    <p className="text-xs text-center text-purple-600 mt-2">
+                      NTAG215 kartını telefona yaklaştırın
+                    </p>
+                  )}
+                  
+                  {/* NFC Yazma Durumu */}
+                  {nfcWriteStatus && (
+                    <div className={`mt-3 p-3 rounded-lg text-sm text-center ${
+                      nfcWriteStatus.includes('✅') ? 'bg-green-100 text-green-800' :
+                      nfcWriteStatus.includes('❌') ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {nfcWriteStatus}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

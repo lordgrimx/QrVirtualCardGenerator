@@ -1,0 +1,104 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net8.0-android;net8.0-ios;net8.0-windows10.0.19041.0</TargetFrameworks>
+        <OutputType>Exe</OutputType>
+        <RootNamespace>MauiNfcApp</RootNamespace>
+        <UseMaui>true</UseMaui>
+        <SingleProject>true</SingleProject>
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <!-- Display Version -->
+        <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+        <ApplicationVersion>1</ApplicationVersion>
+
+        <ApplicationTitle>QR NFC Card Reader</ApplicationTitle>
+        <ApplicationId>com.qrvirtualcard.nfcreader</ApplicationId>
+        <ApplicationIdGuid>C2581A80-4A87-4B19-B145-29D8D6B93C2F</ApplicationIdGuid>
+
+        <!-- App Icon -->
+        <ApplicationIcon>Platforms\Windows\app.ico</ApplicationIcon>
+
+        <!-- Splash Screen -->
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+
+        <!-- Images -->
+        <MauiImage Include="Resources\Images\*" />
+        <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
+
+        <!-- Custom Fonts -->
+        <MauiFont Include="Resources\Fonts\*" />
+
+        <!-- Raw Assets (include files to be copied directly) -->
+        <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
+        <AndroidMinimumVersion>19</AndroidMinimumVersion>
+        <AndroidTargetVersion>34</AndroidTargetVersion>
+        <AndroidCompileVersion>34</AndroidCompileVersion>
+        <AndroidVersionCodeOffset>0</AndroidVersionCodeOffset>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-ios'">
+        <SupportedOSPlatformVersion>11.0</SupportedOSPlatformVersion>
+    </PropertyGroup>
+
+    <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows10.0.19041.0'">
+        <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+        <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- App Icon -->
+        <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#512BD4" />
+
+        <!-- Splash Screen -->
+        <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#512BD4" BaseSize="128,128" />
+
+        <!-- Images -->
+        <MauiImage Include="Resources\Images\*" />
+
+        <!-- Custom Fonts -->
+        <MauiFont Include="Resources\Fonts\*" />
+
+        <!-- Raw Assets -->
+        <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.3" />
+        <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.3" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+        
+        <!-- NFC Packages -->
+        <PackageReference Include="Plugin.NFC" Version="3.0.3" />
+        
+        <!-- Crypto Packages -->
+        <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        
+        <!-- HTTP Client -->
+        <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
+        
+        <!-- MVVM Community Toolkit -->
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
+    </ItemGroup>
+
+    <!-- Windows-specific packages -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-windows10.0.19041.0'">
+        <!-- USB NFC Reader için Windows specific packages -->
+        <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+    </ItemGroup>
+
+    <!-- Platform specific dependencies -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">
+        <PackageReference Include="Xamarin.AndroidX.Collection" Version="1.2.0.5" />
+        <PackageReference Include="Xamarin.AndroidX.Collection.Ktx" Version="1.2.0.2" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-ios'">
+        <PackageReference Include="Xamarin.iOS" Version="16.4.0.323" />
+    </ItemGroup>
+
+</Project>

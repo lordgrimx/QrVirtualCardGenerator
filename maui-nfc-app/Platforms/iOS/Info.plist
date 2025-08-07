@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UIDeviceFamily</key>
+    <array>
+        <integer>1</integer>
+        <integer>2</integer>
+    </array>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+        <!-- NFC capability required -->
+        <string>nfc</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>MinimumOSVersion</key>
+    <string>11.0</string>
+    <key>CFBundleDisplayName</key>
+    <string>QR NFC Reader</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.qrvirtualcard.nfcreader</string>
+    <key>CFBundleVersion</key>
+    <string>1.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    
+    <!-- NFC Usage Description -->
+    <key>NFCReaderUsageDescription</key>
+    <string>Bu uygulama üyelik kartlarındaki NFC verilerini okumak için NFC özelliğini kullanır.</string>
+    
+    <!-- Privacy - Camera Usage (QR kod okuma için, isteğe bağlı) -->
+    <key>NSCameraUsageDescription</key>
+    <string>QR kodlarını okumak için kamera erişimi gereklidir.</string>
+    
+    <!-- Privacy - Local Network Usage (backend API için) -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Üyelik verilerini doğrulamak için yerel ağa erişim gereklidir.</string>
+    
+    <!-- Background Modes (NFC processing için) -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>background-processing</string>
+    </array>
+    
+    <!-- Application supports iTunes file sharing -->
+    <key>UIFileSharingEnabled</key>
+    <false/>
+    
+    <!-- Support multiple windows on iPadOS 13+ -->
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+    
+    <!-- Status bar style -->
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleDefault</string>
+    
+    <!-- Disable App Transport Security for development (production'da kaldırın) -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <key>localhost</key>
+            <dict>
+                <key>NSExceptionAllowsInsecureHTTPLoads</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+</dict>
+</plist>

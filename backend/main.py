@@ -10,6 +10,7 @@ from datetime import datetime
 import random
 import os
 from dotenv import load_dotenv
+import ssl
 
 # Import database components
 from database import get_db, init_db, Member as DBMember
@@ -17,12 +18,12 @@ from database import get_db, init_db, Member as DBMember
 # Import crypto utilities
 from crypto_utils import (
     generate_secure_member_qr, 
-    generate_nfc_compact_qr,
     verify_member_qr, 
-    verify_nfc_compact_qr,
-    get_public_key_pem,
-    get_nfc_public_key_pem
+    get_public_key_pem
 )
+
+# Import NFC service
+from nfc_service import nfc_service
 
 # Load environment variables
 load_dotenv()
@@ -39,12 +40,8 @@ frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        frontend_url,
-        "http://localhost:3000",  # Development
-        "http://127.0.0.1:3000",  # Alternative localhost
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # GEÇİCİ: Tüm origin'lere izin ver (development için)
+    allow_credentials=False,  # Wildcard ile credentials kullanılamaz
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -101,7 +98,7 @@ class MemberResponse(BaseModel):
     createdAt: datetime
     updatedAt: datetime
     secureQrCode: Optional[str] = None  # Standart QR kod
-    nfcQrCode: Optional[str] = None     # NFC kompakt QR kod
+
     success: bool = True
 
     class Config:
@@ -193,14 +190,6 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
             print(f"QR kod oluşturma hatası: {e}")
             response_data["secureQrCode"] = None
         
-        # NFC Compact QR kod oluştur
-        try:
-            nfc_compact_qr = generate_nfc_compact_qr(response_data)
-            response_data["nfcQrCode"] = nfc_compact_qr
-        except Exception as e:
-            print(f"NFC QR kod oluşturma hatası: {e}")
-            response_data["nfcQrCode"] = None
-        
         return MemberResponse(**response_data)
     
     except HTTPException:
@@ -240,6 +229,23 @@ async def get_all_members(db: Session = Depends(get_db)):
         "success": True
     }
 
+# Model for member list dropdown
+class MemberInfo(BaseModel):
+    id: int
+    fullName: str
+
+@app.get("/api/members/list", response_model=List[MemberInfo])
+async def get_members_list(db: Session = Depends(get_db)):
+    """Dropdown için sadece üye ID ve isimlerini döndürür"""
+    try:
+        members = db.query(DBMember).order_by(DBMember.full_name).all()
+        if not members:
+            return []
+        return [MemberInfo(id=member.id, fullName=member.full_name) for member in members]
+    except Exception as e:
+        print(f"Database error in get_members_list: {e}")
+        raise HTTPException(status_code=500, detail="Database connection error")
+
 @app.get("/api/members/{member_id}")
 async def get_member(member_id: int, db: Session = Depends(get_db)):
     """Belirli bir üyeyi getir"""
@@ -272,15 +278,6 @@ async def get_member(member_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"❌ Standart QR kod oluşturma hatası: {e}")
         member_data["secureQrCode"] = None
-    
-    # NFC Compact QR kod oluştur
-    try:
-        nfc_compact_qr = generate_nfc_compact_qr(member_data)
-        member_data["nfcQrCode"] = nfc_compact_qr
-        print(f"✅ NFC compact QR kod oluşturuldu - Member ID: {member.id}, Data length: {len(nfc_compact_qr)}")
-    except Exception as e:
-        print(f"❌ NFC QR kod oluşturma hatası: {e}")
-        member_data["nfcQrCode"] = None
     
     return {
         "member": member_data,
@@ -438,76 +435,6 @@ async def verify_qr_code(qr_data: dict):
             "success": False
         }
 
-@app.post("/api/qr/verify-nfc")
-async def verify_nfc_qr_code(qr_data: dict, db: Session = Depends(get_db)):
-    """
-    NFC kompakt QR kod doğrulama endpoint'i - NTAG215 için
-    Ultra-kompakt ECDSA imza doğrulaması (540 bytes sınırı)
-    """
-    try:
-        qr_string = qr_data.get("qr_code", "")
-        if not qr_string:
-            raise HTTPException(status_code=400, detail="NFC QR kod verisi gerekli")
-        
-        is_valid, decoded_data, error_msg = verify_nfc_compact_qr(qr_string)
-        
-        if not is_valid:
-            return {
-                "valid": False,
-                "error": error_msg or "Geçersiz NFC QR kod",
-                "success": False
-            }
-        
-        # NFC'de member_id ve name var, detayları DB'den çek ve karşılaştır
-        member_id = decoded_data.get("member_id")
-        nfc_name = decoded_data.get("name", "").strip()
-        member = db.query(DBMember).filter(DBMember.id == member_id).first()
-        
-        if not member:
-            return {
-                "valid": False,
-                "error": "Üye kaydı bulunamadı",
-                "success": False
-            }
-        
-        # İsim kontrolü (güvenlik için)
-        db_name = member.full_name.strip()
-        name_match = nfc_name.lower() == db_name.lower()
-        
-        return {
-            "valid": True,
-            "member_data": {
-                "member_id": member_id,
-                "membership_id": member.membership_id,
-                "name": nfc_name,  # NFC'den gelen isim (offline görünür)
-                "db_name": db_name,  # DB'deki isim (karşılaştırma için)
-                "name_verified": name_match,  # İsim eşleşmesi
-                "status": decoded_data.get("status"),  # NFC'den gelen güncel status
-                "organization": "Community Connect",
-                "phone": member.phone_number,
-                "email": member.email,
-                "role": member.role,
-                "issued_at": decoded_data.get("issued_at"),
-                "nonce": decoded_data.get("nonce"),
-                "format": "nfc_compact"
-            },
-            "verification_time": datetime.utcnow().isoformat(),
-            "data_source": "hybrid_nfc_db",
-            "name_verification": {
-                "nfc_name": nfc_name,
-                "db_name": db_name,
-                "match": name_match
-            },
-            "success": True
-        }
-        
-    except Exception as e:
-        return {
-            "valid": False,
-            "error": f"NFC doğrulama hatası: {str(e)}",
-            "success": False
-        }
-
 @app.get("/api/qr/public-key")
 async def get_public_key():
     """
@@ -527,205 +454,207 @@ async def get_public_key():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Public key alınamadı: {str(e)}")
 
-@app.get("/api/qr/nfc-public-key")
-async def get_nfc_public_key():
+@app.get("/download-cert", response_class=HTMLResponse)
+async def download_certificate():
     """
-    NFC Public key endpoint'i - NFC okuyucular için
-    NTAG215 kompakt QR kod doğrulaması için ECDSA P-256 key
+    iOS cihazlarda sertifika kurulumu için
     """
     try:
-        nfc_public_key_pem = get_nfc_public_key_pem()
+        with open("cert.pem", "r") as f:
+            cert_content = f.read()
+        
+        return HTMLResponse(
+            content=f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>SSL Sertifika İndirme</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+            </head>
+            <body>
+                <h2>QR Virtual Card - SSL Sertifika</h2>
+                <p>iOS cihazınızda bu uygulamanın HTTPS bağlantısı için sertifikayı yükleyin:</p>
+                <a href="data:application/x-pem-file;base64,{cert_content.encode('base64').decode()}" 
+                   download="qr-virtual-card.pem" 
+                   style="background: #007AFF; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0;">
+                   📲 Sertifikayı İndir
+                </a>
+                <h3>Kurulum Adımları:</h3>
+                <ol>
+                    <li>Yukarıdaki butona tıklayın</li>
+                    <li>iOS Ayarlar > Genel > VPN ve Cihaz Yönetimi</li>
+                    <li>İndirilen profili seçin ve "Yükle" deyin</li>
+                    <li>Ayarlar > Genel > Hakkında > Sertifika Güveni</li>
+                    <li>QR Virtual Card sertifikasını aktif edin</li>
+                </ol>
+            </body>
+            </html>
+            """,
+            headers={"Content-Type": "text/html"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Sertifika okunamadı: {str(e)}")
+
+# NFC Reader Endpoints
+
+@app.get("/api/nfc/status")
+async def get_nfc_status():
+    """NFC okuyucu durumunu kontrol et"""
+    try:
+        status = nfc_service.get_reader_status()
         return {
-            "public_key": nfc_public_key_pem,
-            "algorithm": "ECDSA-P256-SHA256",
-            "key_format": "PEM",
-            "usage": "NFC compact QR signature verification",
-            "organization": "Community Connect",
-            "memory_optimized": True,
-            "ntag215_compatible": True,
-            "max_size_bytes": 540,
-            "success": True
+            "success": True,
+            "nfc_status": status
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"NFC public key alınamadı: {str(e)}")
+        return {
+            "success": False,
+            "error": f"NFC durum hatası: {str(e)}"
+        }
 
-@app.get("/api/qr/demo-scanner")
-async def demo_scanner_page():
-    """
-    Demo QR kod tarayıcı sayfası
-    Test amaçlı - gerçek mağaza entegrasyonu simülasyonu
-    """
-    html_content = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Community Connect - QR Scanner Demo</title>
-        <meta charset="utf-8">
-        <style>
-            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
-            .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-            .header { text-align: center; margin-bottom: 30px; }
-            .title { color: #2563eb; margin-bottom: 10px; }
-            .subtitle { color: #6b7280; font-size: 14px; }
-            .form-group { margin-bottom: 20px; }
-            label { display: block; margin-bottom: 5px; font-weight: bold; color: #374151; }
-            textarea { width: 100%; min-height: 100px; padding: 10px; border: 2px solid #d1d5db; border-radius: 5px; font-family: monospace; font-size: 12px; }
-            button { background: #2563eb; color: white; padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-            button:hover { background: #1d4ed8; }
-            .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
-            .success { background: #dcfce7; border: 1px solid #16a34a; color: #166534; }
-            .error { background: #fef2f2; border: 1px solid #dc2626; color: #991b1b; }
-            .warning { background: #fffbeb; border: 1px solid #d97706; color: #92400e; }
-            .member-info { background: #eff6ff; border: 1px solid #3b82f6; color: #1e40af; margin-top: 10px; }
-            .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-            .info-item { padding: 8px; background: rgba(255,255,255,0.7); border-radius: 3px; }
-            .status-active { color: #059669; font-weight: bold; }
-            .status-inactive { color: #dc2626; font-weight: bold; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1 class="title">🏪 Mağaza QR Tarayıcı</h1>
-                <p class="subtitle">Community Connect - Üye Doğrulama Sistemi</p>
-                <p class="subtitle">ISO 20248 Benzeri Kriptografik İmza Doğrulaması</p>
-            </div>
-            
-            <div class="form-group">
-                <label for="qrInput">QR Kod Verisi:</label>
-                <textarea id="qrInput" placeholder="QR kod verisini buraya yapıştırın..."></textarea>
-            </div>
-            
-            <button onclick="verifyQR()">🔍 QR Kodu Doğrula</button>
-            
-            <div id="result"></div>
-        </div>
+@app.post("/api/nfc/read")
+async def read_nfc_card():
+    """NFC kartından veri oku"""
+    try:
+        result = nfc_service.read_nfc_card(timeout=10)
+        return {
+            "success": result.get("success", False),
+            "nfc_data": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"NFC okuma hatası: {str(e)}"
+        }
+
+@app.post("/api/nfc/write")
+async def write_nfc_card(nfc_data: dict):
+    """NFC kartına veri yaz"""
+    try:
+        data = nfc_data.get("data", "")
+        card_type = nfc_data.get("type", "text")
         
-        <script>
-        // QR tip detection ve uygun endpoint seçimi
-        function detectQRType(qrData) {
-            // NFC compact QR: base64-urlsafe, yaklaşık 100-120 karakter, padding yok
-            // Standard QR: JSON benzeri veya daha uzun base64
-            
-            if (qrData.length < 200 && 
-                qrData.match(/^[A-Za-z0-9_-]+$/) && 
-                !qrData.includes('{')) {
-                return 'nfc';  // URL-safe base64, compact
-            } else {
-                return 'standard';  // JSON veya normal format
+        if not data:
+            raise HTTPException(status_code=400, detail="Yazılacak veri gerekli")
+        
+        result = nfc_service.write_nfc_card(data, card_type)
+        return {
+            "success": result.get("success", False),
+            "write_result": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"NFC yazma hatası: {str(e)}"
+        }
+
+@app.post("/api/nfc/start-reading")
+async def start_nfc_reading():
+    """Sürekli NFC okuma modunu başlat"""
+    try:
+        result = await nfc_service.start_continuous_reading()
+        return {
+            "success": True,
+            "message": "Sürekli NFC okuma başlatıldı",
+            "result": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"NFC okuma başlatma hatası: {str(e)}"
+        }
+
+@app.post("/api/nfc/stop-reading")
+async def stop_nfc_reading():
+    """Sürekli NFC okuma modunu durdur"""
+    try:
+        result = nfc_service.stop_continuous_reading()
+        return {
+            "success": True,
+            "message": "NFC okuma durduruldu",
+            "result": result
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"NFC okuma durdurma hatası: {str(e)}"
+        }
+
+@app.post("/api/nfc/verify-and-read")
+async def nfc_verify_and_read():
+    """NFC kartından QR kod oku ve doğrula"""
+    try:
+        # NFC kartından veri oku
+        read_result = nfc_service.read_nfc_card(timeout=10)
+        
+        if not read_result.get("success"):
+            return {
+                "success": False,
+                "error": "NFC okuma başarısız",
+                "nfc_error": read_result.get("error")
+            }
+        
+        qr_data = read_result.get("data", "")
+        
+        # QR kodunu doğrula
+        is_valid, decoded_data, error_msg = verify_member_qr(qr_data)
+        
+        return {
+            "success": True,
+            "nfc_read": read_result,
+            "qr_verification": {
+                "valid": is_valid,
+                "member_data": decoded_data if is_valid else None,
+                "error": error_msg if not is_valid else None
             }
         }
         
-        async function verifyQR() {
-            const qrData = document.getElementById('qrInput').value.trim();
-            const resultDiv = document.getElementById('result');
-            
-            if (!qrData) {
-                resultDiv.innerHTML = '<div class="result warning">⚠️ Lütfen QR kod verisi girin</div>';
-                return;
-            }
-            
-            const qrType = detectQRType(qrData);
-            const endpoint = qrType === 'nfc' ? '/api/qr/verify-nfc' : '/api/qr/verify';
-            
-            try {
-                resultDiv.innerHTML = `<div class="result">🔄 ${qrType === 'nfc' ? 'NFC' : 'Standart'} QR kod doğrulanıyor...</div>`;
-                
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ qr_code: qrData })
-                });
-                
-                const result = await response.json();
-                
-                if (result.valid) {
-                    const memberData = result.member_data;
-                    const isActive = memberData.status === 'active';
-                    const formatType = qrType === 'nfc' ? 'NFC Kompakt' : 'Standart';
-                    const algorithm = qrType === 'nfc' ? 'ECDSA P-256' : 'RSA-PSS SHA256';
-                    const dataSource = result.data_source || 'full_qr_data';
-                    
-                    resultDiv.innerHTML = `
-                        <div class="result success">
-                            <h3>✅ Geçerli Üyelik Kartı (${formatType})</h3>
-                            <div class="member-info">
-                                <h4>👤 Üye Bilgileri:</h4>
-                                <div class="info-grid">
-                                    <div class="info-item"><strong>Ad:</strong> ${memberData.name}</div>
-                                    <div class="info-item"><strong>Üye ID:</strong> ${memberData.membership_id}</div>
-                                    <div class="info-item"><strong>Durum:</strong> <span class="status-${isActive ? 'active' : 'inactive'}">${memberData.status.toUpperCase()}</span></div>
-                                    <div class="info-item"><strong>Organizasyon:</strong> ${memberData.organization}</div>
-                                    <div class="info-item"><strong>Algorithm:</strong> ${algorithm}</div>
-                                    <div class="info-item"><strong>Veri Kaynağı:</strong> ${dataSource === 'hybrid_nfc_db' ? 'NFC + DB' : 'QR İçi'}</div>
-                                </div>
-                                
-                                ${qrType === 'standard' && memberData.expires_at ? `
-                                <div class="info-grid" style="margin-top: 10px;">
-                                    <div class="info-item"><strong>Veriliş:</strong> ${new Date(memberData.issued_at).toLocaleDateString('tr-TR')}</div>
-                                    <div class="info-item"><strong>Geçerlilik:</strong> ${new Date(memberData.expires_at).toLocaleDateString('tr-TR')}</div>
-                                </div>
-                                ` : ''}
-                                
-                                ${qrType === 'nfc' && memberData.nonce ? `
-                                <div class="info-grid" style="margin-top: 10px;">
-                                    <div class="info-item"><strong>Veriliş:</strong> ${new Date(memberData.issued_at).toLocaleDateString('tr-TR')}</div>
-                                    <div class="info-item"><strong>Nonce:</strong> ${memberData.nonce}</div>
-                                    ${memberData.name_verified !== undefined ? `
-                                    <div class="info-item"><strong>İsim Doğrulaması:</strong> <span style="color: ${memberData.name_verified ? '#059669' : '#dc2626'}; font-weight: bold;">${memberData.name_verified ? '✅ Eşleşti' : '⚠️ Farklı'}</span></div>
-                                    ${!memberData.name_verified ? `<div class="info-item"><strong>DB İsmi:</strong> ${memberData.db_name}</div>` : ''}
-                                    ` : ''}
-                                </div>
-                                ` : ''}
-                                
-                                <p style="margin-top: 10px; font-size: 12px; opacity: 0.7;">
-                                    Doğrulama Zamanı: ${new Date(result.verification_time).toLocaleString('tr-TR')}
-                                </p>
-                            </div>
-                            ${!isActive ? '<div class="result warning" style="margin-top: 10px;">⚠️ Üyelik aktif değil!</div>' : ''}
-                        </div>
-                    `;
-                } else {
-                    resultDiv.innerHTML = `
-                        <div class="result error">
-                            <h3>❌ Geçersiz QR Kod (${qrType === 'nfc' ? 'NFC' : 'Standart'})</h3>
-                            <p><strong>Hata:</strong> ${result.error}</p>
-                            <p style="font-size: 12px; margin-top: 10px;">
-                                ${qrType === 'nfc' ? 
-                                  'Bu NFC QR kod sahte, zamanı dolmuş veya bozulmuş olabilir. ECDSA imza geçersiz.' :
-                                  'Bu QR kod sahte, zamanı dolmuş veya bozulmuş olabilir. RSA imza geçersiz.'
-                                }
-                            </p>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `
-                    <div class="result error">
-                        <h3>🚫 Bağlantı Hatası</h3>
-                        <p>Doğrulama servisine bağlanılamıyor: ${error.message}</p>
-                        <p style="font-size: 12px; margin-top: 10px;">
-                            Denenen endpoint: ${endpoint} (${qrType === 'nfc' ? 'NFC' : 'Standart'} format)
-                        </p>
-                    </div>
-                `;
-            }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"NFC okuma ve doğrulama hatası: {str(e)}"
         }
-        
-        // Enter tuşu ile doğrulama
-        document.getElementById('qrInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter' && e.ctrlKey) {
-                verifyQR();
-            }
-        });
-        </script>
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_content)
+
+
+
+
+
+
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True) 
+    # SSL sertifikalarının varlığını kontrol et
+    ssl_keyfile = "./key.pem"
+    ssl_certfile = "./cert.pem"
+    
+    use_ssl = os.path.exists(ssl_keyfile) and os.path.exists(ssl_certfile)
+    
+    if use_ssl:
+        print("🔒 HTTPS modunda başlatılıyor...")
+        print(f"🌐 API URL: https://localhost:8000")
+        print(f"🌐 Network API URL: https://192.168.1.104:8000")
+        print(f"📝 API Docs: https://localhost:8000/docs")
+        print(f"🔐 SSL Certificate: {ssl_certfile}")
+        print("📱 Mobil cihazlardan erişim: Tarayıcıda SSL uyarısını kabul edin")
+        
+        # HTTPS ile çalıştır
+        uvicorn.run(
+            "main:app",
+            host="0.0.0.0",
+            port=8000,
+            reload=True,
+            ssl_keyfile=ssl_keyfile,
+            ssl_certfile=ssl_certfile
+        )
+    else:
+        print("⚠️  HTTP modunda başlatılıyor (SSL sertifikaları bulunamadı)")
+        print(f"🌐 API URL: http://localhost:8000")
+        print(f"📝 API Docs: http://localhost:8000/docs")
+        print("💡 HTTPS için: openssl komutu ile cert.pem ve key.pem oluşturun")
+        
+        # HTTP ile çalıştır
+        uvicorn.run(
+            "main:app",
+            host="0.0.0.0",
+            port=8000,
+            reload=True
+        )

@@ -9,5 +9,11 @@ psycopg2-binary==2.9.9
 sqlalchemy==2.0.23
 alembic==1.13.1
 cryptography==41.0.7
-qrcode==7.4.2 
-gunicorn 
+qrcode==7.4.2
+pillow==10.1.0
+websockets==12.0
+gunicorn
+requests==2.31.0
+pyopenssl==24.2.1
+nfcpy==1.0.4
+pynfc==0.1.1 

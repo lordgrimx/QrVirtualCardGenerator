@@ -28,15 +28,35 @@ export default function AdminPage() {
   const [qrInput, setQrInput] = useState('');
   const [qrVerifying, setQrVerifying] = useState(false);
   const [qrResult, setQrResult] = useState(null);
+  const [nfcReading, setNfcReading] = useState(false);
+  const [nfcStatus, setNfcStatus] = useState('');
 
   // Bugünün tarihini al (YYYY-MM-DD formatında)
   const today = new Date().toISOString().split('T')[0];
+
+  // Dinamik API URL tespiti (mobil erişim için)
+  const getApiUrl = () => {
+    // Browser'da çalışıp çalışmadığını kontrol et
+    if (typeof window === 'undefined') {
+      return process.env.NEXT_PUBLIC_API_URL || 'https://localhost:8000';
+    }
+    
+    const hostname = window.location.hostname;
+    
+    // Localhost ise localhost backend kullan
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'https://localhost:8000';
+    }
+    
+    // Network IP ise aynı IP'de backend'i kullan
+    return `https://${hostname}:8000`;
+  };
 
   // Fetch all members from database
   const fetchMembers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members`);
+      const response = await fetch(`${getApiUrl()}/api/members`);
       const data = await response.json();
       
       if (data.success) {
@@ -91,7 +111,7 @@ export default function AdminPage() {
     try {
       setLoading(true);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members/${editingMember.id}`, {
+      const response = await fetch(`${getApiUrl()}/api/members/${editingMember.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +166,7 @@ export default function AdminPage() {
 
       console.log(`🔍 QR tip algılandı: ${qrType}, endpoint: ${endpoint}`);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      const response = await fetch(`${getApiUrl()}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -182,10 +202,76 @@ export default function AdminPage() {
     }
   };
 
+  // iOS ve cihaz tespiti
+  const isIOS = () => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  };
+
+  const isAndroid = () => {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
+    return /Android/.test(navigator.userAgent);
+  };
+
+  // NFC okuma fonksiyonu
+  const readFromNFC = async () => {
+    if (isIOS()) {
+      setNfcStatus('📱 iOS: Kamera ile QR kod tarayın ve metni kopyalayın');
+      // iOS için kamera QR tarayıcısını açma yönergesi
+      alert('iOS\'te NFC Web API desteklenmiyor.\n\n✅ Çözüm:\n1. Kamera uygulamasını açın\n2. QR kodu tarayın\n3. Çıkan metni kopyalayın\n4. Yukarıdaki alana yapıştırın');
+      return;
+    }
+
+    if (!isAndroid()) {
+      setNfcStatus('❌ NFC yalnızca Android Chrome\'da çalışır');
+      return;
+    }
+
+    if (typeof window === 'undefined' || !('NDEFReader' in window)) {
+      setNfcStatus('❌ NFC API desteklenmiyor (Android Chrome gerekli)');
+      return;
+    }
+
+    try {
+      setNfcReading(true);
+      setNfcStatus('📡 NFC kartını telefona yaklaştırın...');
+      
+      const ndef = new NDEFReader();
+      await ndef.scan();
+      
+      ndef.addEventListener("reading", ({ message }) => {
+        for (const record of message.records) {
+          if (record.recordType === "text") {
+            const textDecoder = new TextDecoder();
+            const qrData = textDecoder.decode(record.data);
+            
+            setQrInput(qrData);
+            setNfcStatus('✅ NFC kartından okundu!');
+            setNfcReading(false);
+            
+            // Otomatik doğrulama
+            setTimeout(() => {
+              verifyQrCode();
+            }, 500);
+            
+            return;
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('NFC okuma hatası:', error);
+      setNfcStatus(`❌ Okuma hatası: ${error.message}`);
+      setNfcReading(false);
+    }
+  };
+
   // QR doğrulayıcıyı temizle
   const clearQrVerifier = () => {
     setQrInput('');
     setQrResult(null);
+    setNfcStatus('');
   };
 
   const handleInputChange = (e) => {
@@ -200,7 +286,7 @@ export default function AdminPage() {
     e.preventDefault();
     
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/members`, {
+      const response = await fetch(`${getApiUrl()}/api/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -343,6 +429,34 @@ export default function AdminPage() {
               </svg>
             </div>
             {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">QR Doğrulayıcı</span>}
+          </div>
+          
+          {/* NFC Reader Link */}
+          <div 
+            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900`}
+            onClick={() => window.open('/nfc-reader', '_blank')}
+            title={sidebarCollapsed ? "NFC Reader" : ""}
+          >
+            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-500`}>
+              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </div>
+            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">📖 NFC Reader</span>}
+          </div>
+
+          {/* NFC Writer Link */}
+          <div 
+            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900`}
+            onClick={() => window.open('/nfc-writer', '_blank')}
+            title={sidebarCollapsed ? "NFC Writer" : ""}
+          >
+            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500`}>
+              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </div>
+            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">📝 NFC Writer</span>}
           </div>
           
           <div 
@@ -751,12 +865,52 @@ export default function AdminPage() {
                         </button>
                         
                         <button
+                          onClick={readFromNFC}
+                          disabled={nfcReading}
+                          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                          title={isIOS() ? 'iOS: Kamera ile QR tarayın' : isAndroid() && (typeof window !== 'undefined' && 'NDEFReader' in window) ? 'NFC kartından oku' : 'NFC API desteklenmiyor'}
+                        >
+                          {nfcReading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              Okuma...
+                            </>
+                          ) : isIOS() ? (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              📱 QR Tara
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              NFC Oku
+                            </>
+                          )}
+                        </button>
+                        
+                        <button
                           onClick={clearQrVerifier}
                           className="px-6 py-3 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold transition-colors"
                         >
                           Temizle
                         </button>
                       </div>
+                      
+                      {/* NFC Durum Mesajı */}
+                      {nfcStatus && (
+                        <div className={`mt-4 p-4 rounded-xl text-sm text-center font-medium ${
+                          nfcStatus.includes('✅') ? 'bg-green-100 text-green-800' :
+                          nfcStatus.includes('❌') ? 'bg-red-100 text-red-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {nfcStatus}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -890,7 +1044,8 @@ export default function AdminPage() {
                       <div>
                         <h5 className="font-semibold text-blue-800 mb-2">Nasıl Kullanılır?</h5>
                         <ul className="text-sm text-blue-700 space-y-1">
-                          <li>• Üyelik kartındaki QR kod'u telefonla tarayın</li>
+                          <li>• <strong>iOS:</strong> Kamera uygulamasıyla QR kod tarayın</li>
+                          <li>• <strong>Android:</strong> "NFC Oku" butonu ile veya kamera</li>
                           <li>• Çıkan metni kopyalayıp yukarıdaki alana yapıştırın</li>
                           <li>• "QR Kod Doğrula" butonuna tıklayın</li>
                           <li>• Sistem üyeliğin geçerliliğini kontrol eder</li>

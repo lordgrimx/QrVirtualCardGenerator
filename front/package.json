@@ -4,8 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "dev:https": "next dev --turbopack --experimental-https",
+    "dev:ssl": "HTTPS=true SSL_CRT_FILE=./cert.pem SSL_KEY_FILE=./key.pem next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start",
+    "start:https": "next start --experimental-https",
     "lint": "next lint"
   },
   "dependencies": {
