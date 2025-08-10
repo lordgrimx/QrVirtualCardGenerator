@@ -1,3 +1,63 @@
+# General
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vs/
+*.log
+*.user
+*.suo
+*.swp
+*.tmp
+.env
+.env.*
+
+# Node / Next.js (front)
+front/node_modules/
+front/.next/
+front/out/
+front/.vercel/
+front/.turbo/
+
+# Python (backend)
+backend/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
+backend/**/*.pyd
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/.venv/
+backend/venv/
+backend/myenv/
+
+# Secrets / certs
+backend/crypto_keys/private_key.pem
+backend/key.pem
+backend/cert.pem
+*.pem
+*.pfx
+
+# .NET / MAUI
+**/bin/
+**/obj/
+**/*.apk
+**/*.aab
+**/*.ipa
+**/*.appx
+**/*.appxbundle
+**/*.msix
+**/*.msixbundle
+**/*.appxupload
+**/*.nupkg
+
+# Android SDK/tools downloaded locally
+commandlinetools-win-*/
+commandlinetools-*/
+
+# IDE
+*.userprefs
+*.sln.docstates
+
 # Dependencies
 node_modules/
 npm-debug.log*

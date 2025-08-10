@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiNfcReader.MainPage"
+             Title="">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30,0"
+            Spacing="25">
+            <Image
+                Source="dotnet_bot.png"
+                HeightRequest="150"
+                Aspect="AspectFit" />
+
+            <Label
+                Text="NFC Kart Okuyucu"
+                FontSize="32"
+                FontAttributes="Bold"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Windows USB NFC Okuyucu ile&#10;şifrelenmiş kartları okuyun"
+                FontSize="18"
+                HorizontalOptions="Center" />
+
+            <Frame BackgroundColor="LightBlue"
+                   Padding="20"
+                   CornerRadius="10">
+                <StackLayout Spacing="10">
+                    <Label Text="✅ Windows 10/11 destekli" FontSize="14" />
+                    <Label Text="✅ ACR122U ve uyumlu USB okuyucular" FontSize="14" />
+                    <Label Text="✅ AES şifre çözme" FontSize="14" />
+                    <Label Text="✅ Otomatik kart algılama" FontSize="14" />
+                    <Label Text="✅ Okuma geçmişi" FontSize="14" />
+                </StackLayout>
+            </Frame>
+
+            <Button
+                x:Name="StartBtn"
+                Text="NFC Okuyucuyu Başlat"
+                FontSize="18"
+                BackgroundColor="Green"
+                TextColor="White"
+                Clicked="OnStartClicked"
+                HorizontalOptions="Fill" />
+
+            <StackLayout Spacing="5">
+                <Label Text="Sistem Gereksinimleri:" FontAttributes="Bold" FontSize="14" />
+                <Label Text="• USB NFC okuyucu (ACR122U önerilir)" FontSize="12" />
+                <Label Text="• Windows Smart Card Service aktif" FontSize="12" />
+                <Label Text="• PCSC sürücüleri yüklü" FontSize="12" />
+            </StackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="MauiNfcReader.Views.NfcReaderPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MauiNfcReader.ViewModels"
+             xmlns:models="clr-namespace:MauiNfcReader.Models"
+             Title="NFC Kart Okuyucu"
+             x:DataType="vm:NfcReaderViewModel">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="16">
+            <!-- Başlık ve durum çubuğu -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="USB NFC Okuyucu"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       HorizontalOptions="Center"
+                       TextColor="{AppThemeBinding Light=#1F2937, Dark=#E5E7EB}" />
+
+                <Frame HasShadow="True" CornerRadius="12"
+                       BackgroundColor="{AppThemeBinding Light=#EEF2FF, Dark=#111827}"
+                       Padding="12">
+                    <Label Text="{Binding StatusMessage}"
+                           FontSize="14"
+                           HorizontalOptions="Center"
+                           TextColor="{AppThemeBinding Light=#1F2937, Dark=#E5E7EB}" />
+                </Frame>
+            </VerticalStackLayout>
+
+            <!-- Okuyucu seçimi (sadece Windows) -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}"
+                   IsVisible="{Binding IsWindows}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Okuyucu Seçimi" FontAttributes="Bold" FontSize="16" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <Picker Grid.Column="0"
+                                ItemsSource="{Binding AvailableReaders}"
+                                SelectedItem="{Binding SelectedReader}"
+                                Title="Okuyucu seçin..."
+                                IsEnabled="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}" />
+                        <Button Grid.Column="1" Text="Yenile" Command="{Binding RefreshReadersCommand}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Button Grid.Column="0" Text="Bağlan"
+                                Command="{Binding ConnectCommand}"
+                                IsEnabled="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}"
+                                BackgroundColor="#10B981" TextColor="White" />
+                        <Button Grid.Column="1" Text="Bağlantıyı Kes"
+                                Command="{Binding DisconnectCommand}"
+                                IsEnabled="{Binding IsConnected}"
+                                BackgroundColor="#EF4444" TextColor="White" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Kart Okuma -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   IsVisible="{Binding IsConnected}"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Kart Okuma" FontAttributes="Bold" FontSize="16" />
+                    <Button Text="Manuel Kart Oku"
+                            Command="{Binding ReadCardCommand}"
+                            IsEnabled="{Binding IsReading, Converter={StaticResource InvertedBoolConverter}}"
+                            BackgroundColor="#3B82F6" TextColor="White" />
+                    <ActivityIndicator IsRunning="{Binding IsReading}" IsVisible="{Binding IsReading}" Color="#3B82F6" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- ANDROID: Ham Veri (Salt-Okunur) + Üye Sorgula -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}"
+                   IsVisible="{Binding IsAndroid}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Ham Veri (Raw)" FontAttributes="Bold" FontSize="16" />
+                    <Editor Text="{Binding LastReadCard.RawData, Converter={StaticResource ByteArrayToStringConverter}}"
+                            IsReadOnly="True"
+                            HeightRequest="120"
+                            Placeholder="Kartı okuttuktan sonra ham veri burada görünecek" />
+                    <Label Text="Ham veri hex:" FontAttributes="Bold" />
+                    <ScrollView Orientation="Both">
+                        <Label Text="{Binding LastReadCard.RawData, Converter={StaticResource ByteArrayToHexConverter}}" FontFamily="Consolas" FontSize="12" />
+                    </ScrollView>
+                    <Button Text="Üyeyi Sorgula" Command="{Binding VerifyQrCommand}"
+                            IsEnabled="{Binding LastReadCard, Converter={StaticResource IsNotNullConverter}}"
+                            BackgroundColor="#10B981" TextColor="White" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- WINDOWS: Basit Writer örneği -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}"
+                   IsVisible="{Binding IsWindows}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="NFC Writer" FontAttributes="Bold" FontSize="16" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Button Grid.Column="0" Text="Kart'a Örnek Metin Yaz" Command="{Binding WriteSampleTextCommand}" />
+                        <Button Grid.Column="1" Text="Üye Seç ve Karta Yaz" Command="{Binding SelectMemberAndWriteCommand}" BackgroundColor="#10B981" TextColor="White" />
+                    </Grid>
+                    <Label Text="NTAG215'e NDEF Text yazımı yapılır." FontSize="12" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- NFC aktivasyonu ve Üye sorgulama -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Üye Doğrulama" FontAttributes="Bold" FontSize="16" />
+                    <Button Text="NFC'yi Aktifleştir" Command="{Binding ActivateNfcCommand}"
+                            BackgroundColor="#3B82F6" TextColor="White" />
+                    <Label Text="NFC uyumluluğunda bir sorun var. Lütfen cihaz ayarlarını kontrol edin."
+                           TextColor="#EF4444"
+                           IsVisible="{Binding IsConnected, Converter={StaticResource InvertedBoolConverter}}" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Doğrulama (internet varsa otomatik online; yoksa offline) -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Doğrulama" FontAttributes="Bold" FontSize="16" />
+                    <Button Text="Kartı Doğrula" Command="{Binding VerifyQrCommand}"
+                            IsEnabled="{Binding LastReadCard, Converter={StaticResource IsNotNullConverter}}" />
+                    <Frame Padding="10" CornerRadius="8"
+                           IsVisible="{Binding LastVerification, Converter={StaticResource IsNotNullConverter}}">
+                        <VerticalStackLayout Spacing="4">
+                            <Label Text="Doğrulama Sonucu" FontAttributes="Bold" />
+                            <Label Text="{Binding LastVerificationMode, StringFormat='Mod: {0}'}" />
+                            <Label Text="{Binding LastVerification.Valid, StringFormat='Geçerli: {0}'}" />
+                            <Label Text="{Binding LastVerification.Error, StringFormat='Hata: {0}'}" IsVisible="{Binding LastVerification.Error, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+                            <Label Text="{Binding LastVerification.Name, StringFormat='İsim: {0}'}" />
+                            <Label Text="{Binding LastVerification.MembershipId, StringFormat='Üyelik: {0}'}" />
+                            <Label Text="{Binding LastVerification.Status, StringFormat='Durum: {0}'}" />
+                        </VerticalStackLayout>
+                    </Frame>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Son Okunan Kart -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   IsVisible="{Binding LastReadCard, Converter={StaticResource IsNotNullConverter}}"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="Son Okunan Kart" FontAttributes="Bold" FontSize="16" />
+                    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" ColumnSpacing="8" RowSpacing="4">
+                        <Label Grid.Row="0" Grid.Column="0" Text="UID" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding LastReadCard.UidHex}" FontFamily="Consolas" />
+                        <Label Grid.Row="1" Grid.Column="0" Text="Tür" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding LastReadCard.CardType}" />
+                        <Label Grid.Row="2" Grid.Column="0" Text="Zaman" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding LastReadCard.ReadAt, StringFormat='{0:dd.MM.yyyy HH:mm:ss}'}" />
+                        <Label Grid.Row="3" Grid.Column="0" Text="Okuyucu" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding LastReadCard.ReaderName}" />
+                        <Label Grid.Row="4" Grid.Column="0" Text="Durum" FontAttributes="Bold" />
+                        <Label Grid.Row="4" Grid.Column="1" Text="{Binding LastReadCard.IsSuccess, StringFormat='{0}'}" TextColor="{Binding LastReadCard.IsSuccess, Converter={StaticResource BoolToColorConverter}}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Okuma Geçmişi -->
+            <Frame HasShadow="True" CornerRadius="12" Padding="14"
+                   BackgroundColor="{AppThemeBinding Light=White, Dark=#0B1220}">
+                <VerticalStackLayout Spacing="8">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Text="Okuma Geçmişi" FontAttributes="Bold" FontSize="16" />
+                        <Button Grid.Column="1" Text="Temizle" Command="{Binding ClearHistoryCommand}" />
+                    </Grid>
+                    <CollectionView ItemsSource="{Binding ReadHistory}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:NfcCardData">
+                                <Frame Margin="0,6" Padding="10" CornerRadius="10" HasShadow="False"
+                                       BackgroundColor="{AppThemeBinding Light=#F9FAFB, Dark=#111827}">
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <Label Text="UID" FontAttributes="Bold"/>
+                                        <Label Grid.Column="1" Text="{Binding UidHex}" FontFamily="Consolas" FontSize="12" />
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

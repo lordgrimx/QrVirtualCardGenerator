@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<toolkit:Popup x:Class="MauiNfcReader.Views.MemberSearchPopup"
+               xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               xmlns:models="clr-namespace:MauiNfcReader.Models"
+               Size="400,500">
+    <VerticalStackLayout Spacing="10" Padding="12">
+        <Label Text="Üye Ara" FontAttributes="Bold" FontSize="18" />
+        <SearchBar x:Name="SearchBar" Placeholder="İsim, üyelik no..." SearchButtonPressed="OnSearch" />
+        <CollectionView x:Name="MembersList" SelectionMode="Single" SelectionChanged="OnSelected">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:MemberInfo">
+                    <Frame Padding="8" Margin="0,6" CornerRadius="6" HasShadow="False" BackgroundColor="{AppThemeBinding Light=#F3F4F6, Dark=#111827}">
+                        <VerticalStackLayout>
+                            <Label Text="{Binding Name}" FontAttributes="Bold" />
+                            <Label Text="{Binding MembershipId, StringFormat='Üyelik: {0}'}" FontSize="12" />
+                            <Label Text="{Binding Status, StringFormat='Durum: {0}'}" FontSize="12" />
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+        <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button Grid.Column="0" Text="Kapat" Clicked="OnClose" />
+            <Button Grid.Column="1" Text="Seç" Clicked="OnConfirm" BackgroundColor="#3B82F6" TextColor="White" />
+        </Grid>
+    </VerticalStackLayout>
+</toolkit:Popup>
+
+
