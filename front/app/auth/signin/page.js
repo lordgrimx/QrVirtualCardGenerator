@@ -117,16 +117,10 @@ export default function SignIn() {
             </button>
           </form>
 
-          {/* Sign Up Link */}
+          {/* Admin Only System - No Registration */}
           <div className="mt-8 text-center">
             <p className="text-gray-600 text-sm">
-              Henüz hesabınız yok mu?{' '}
-              <Link 
-                href="/auth/signup" 
-                className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
-              >
-                Kayıt olun
-              </Link>
+              Sadece yönetici girişi
             </p>
           </div>
 

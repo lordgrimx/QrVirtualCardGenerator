@@ -20,8 +20,21 @@ export default function AdminPage() {
     status: 'active'
   });
 
-  const [activeMenu, setActiveMenu] = useState('addMember');
+  // Business form data
+  const [businessFormData, setBusinessFormData] = useState({
+    name: '',
+    description: '',
+    website: '',
+    phone: '',
+    email: '',
+    address: '',
+    business_type: '',
+    logo_url: ''
+  });
+
+  const [activeMenu, setActiveMenu] = useState('businessRegistration'); // Start with business registration
   const [members, setMembers] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -166,6 +179,76 @@ export default function AdminPage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Business form handlers
+  const handleBusinessInputChange = (e) => {
+    const { name, value } = e.target;
+    setBusinessFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBusinessSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`${getApiUrl()}/api/businesses?owner_id=${session.user.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(businessFormData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('✅ İşletme başarıyla kaydedildi!');
+        // Reset form
+        setBusinessFormData({
+          name: '',
+          description: '',
+          website: '',
+          phone: '',
+          email: '',
+          address: '',
+          business_type: '',
+          logo_url: ''
+        });
+        // Refresh businesses list if needed
+        fetchBusinesses();
+      } else {
+        alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      alert('API bağlantı hatası. Backend server\'ın çalıştığından emin olun.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch businesses
+  const fetchBusinesses = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${getApiUrl()}/api/businesses`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setBusinesses(data.businesses || []);
+      } else {
+        console.error('Failed to fetch businesses');
+      }
+    } catch (error) {
+      console.error('Error fetching businesses:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -396,7 +479,7 @@ export default function AdminPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
                   
                   {/* Business Registration Form */}
-                  <div className="space-y-6">
+                  <form onSubmit={handleBusinessSubmit} className="space-y-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-6">Yeni İşletme Kaydet</h3>
                     
                     <div className="space-y-4">
@@ -406,6 +489,9 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="text"
+                          name="name"
+                          value={businessFormData.name}
+                          onChange={handleBusinessInputChange}
                           placeholder="İşletme adını girin"
                           className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                           required
@@ -416,7 +502,12 @@ export default function AdminPage() {
                         <label className="block text-sm font-semibold text-gray-700 mb-2">
                           İşletme Türü
                         </label>
-                        <select className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200">
+                        <select 
+                          name="business_type"
+                          value={businessFormData.business_type}
+                          onChange={handleBusinessInputChange}
+                          className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                        >
                           <option value="">Seçiniz</option>
                           <option value="restaurant">Restoran</option>
                           <option value="retail">Perakende</option>
@@ -434,6 +525,9 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="email"
+                          name="email"
+                          value={businessFormData.email}
+                          onChange={handleBusinessInputChange}
                           placeholder="info@isletme.com"
                           className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                         />
@@ -445,6 +539,9 @@ export default function AdminPage() {
                         </label>
                         <input
                           type="tel"
+                          name="phone"
+                          value={businessFormData.phone}
+                          onChange={handleBusinessInputChange}
                           placeholder="+90 5XX XXX XXXX"
                           className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                         />
@@ -455,17 +552,24 @@ export default function AdminPage() {
                           Adres
                         </label>
                         <textarea
+                          name="address"
+                          value={businessFormData.address}
+                          onChange={handleBusinessInputChange}
                           rows={3}
                           placeholder="İşletme adresini girin"
                           className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
                         />
                       </div>
 
-                      <button className="w-full py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-                        İşletme Kaydet
+                      <button 
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Kaydediliyor...' : 'İşletme Kaydet'}
                       </button>
                     </div>
-                  </div>
+                  </form>
 
                   {/* Event Management */}
                   <div className="space-y-6">

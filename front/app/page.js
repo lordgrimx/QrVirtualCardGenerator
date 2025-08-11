@@ -69,15 +69,9 @@ export default function HomePage() {
                 <div className="flex items-center gap-4">
                   <Link
                     href="/auth/signin"
-                    className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    Giriş
-                  </Link>
-                  <Link
-                    href="/auth/signup"
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Kayıt Ol
+                    Yönetici Girişi
                   </Link>
                 </div>
               )}
@@ -102,18 +96,12 @@ export default function HomePage() {
               </p>
               
               {!session && (
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <Link
-                    href="/auth/signup"
-                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
-                  >
-                    Ücretsiz Başla
-                  </Link>
+                <div className="flex justify-center">
                   <Link
                     href="/auth/signin"
-                    className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl text-lg font-semibold hover:border-blue-500 hover:text-blue-600 transition-all duration-300"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
                   >
-                    Giriş Yap
+                    Yönetici Girişi
                   </Link>
                 </div>
               )}
@@ -190,10 +178,10 @@ export default function HomePage() {
             </p>
             {!session && (
               <Link
-                href="/auth/signup"
+                href="/auth/signin"
                 className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
               >
-                Ücretsiz Deneme Başlat
+                Yönetici Girişi
               </Link>
             )}
           </div>

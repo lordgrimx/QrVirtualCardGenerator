@@ -241,51 +241,7 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
         print(f"Login error: {e}")
         raise HTTPException(status_code=500, detail="Giriş sırasında hata oluştu")
 
-@app.post("/api/auth/register", response_model=LoginResponse)
-async def register(user_data: UserRegister, db: Session = Depends(get_db)):
-    """User registration endpoint"""
-    try:
-        # Check if user already exists
-        existing_user = db.query(DBUser).filter(DBUser.email == user_data.email).first()
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Bu email ile zaten kayıtlı bir kullanıcı var")
-        
-        # Create new user
-        new_user = DBUser(
-            name=user_data.name,
-            email=user_data.email,
-            password_hash=hash_password(user_data.password),
-            role="user",  # Default role
-            is_active=True,
-            email_verified=datetime.utcnow()  # Auto-verify for now
-        )
-        
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        
-        # Create user response
-        user_response = UserResponse(
-            id=new_user.id,
-            name=new_user.name,
-            email=new_user.email,
-            role=new_user.role,
-            is_active=new_user.is_active,
-            created_at=new_user.created_at
-        )
-        
-        return LoginResponse(
-            user=user_response,
-            message="Kayıt başarılı",
-            success=True
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Registration error: {e}")
-        db.rollback()
-        raise HTTPException(status_code=500, detail="Kayıt sırasında hata oluştu")
+# Registration endpoint removed - Admin only system
 
 @app.get("/api/auth/me")
 async def get_current_user(user_id: int, db: Session = Depends(get_db)):
