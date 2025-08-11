@@ -14,6 +14,11 @@ public interface IBackendApiService
     /// Üye arama (search query boş ise ilk sayfa)
     /// </summary>
     Task<(bool ok, List<MemberInfo> members, string? error)> SearchMembersAsync(string query, CancellationToken ct = default);
+
+    /// <summary>
+    /// NFC şifrelenmiş veriyi backend'de çöz ve doğrula
+    /// </summary>
+    Task<(bool ok, NfcDecryptResult? result, string? error)> DecryptNfcAsync(string encryptedData, string? deviceInfo = null, CancellationToken ct = default);
 }
 
 

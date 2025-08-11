@@ -508,7 +508,109 @@ async def download_certificate():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sertifika okunamadı: {str(e)}")
 
-## NFC işlemleri artık MAUI uygulaması tarafından yapılacak. Backend bu amaçla NFC endpointlerini içermemektedir.
+# NFC Decryption API for MAUI
+class NfcDecryptRequest(BaseModel):
+    encryptedData: str
+    deviceInfo: Optional[str] = None
+
+@app.post("/api/nfc/decrypt")
+async def decrypt_nfc_data(request: NfcDecryptRequest):
+    """
+    Şifrelenmiş NFC verisini çözüp doğrula
+    MAUI uygulaması için backend doğrulama endpoint'i
+    """
+    try:
+        encrypted_data = request.encryptedData.strip()
+        
+        # İlk olarak çift şifrelemeyi çöz
+        decrypted_json = secure_qr._decrypt_nfc_data(encrypted_data)
+        
+        if not decrypted_json:
+            raise HTTPException(status_code=400, detail="Veri çözülemedi - geçersiz şifreleme")
+        
+        # JSON parse et
+        try:
+            nfc_data = json.loads(decrypted_json)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="Geçersiz JSON formatı")
+        
+        # Gerekli alanları kontrol et
+        required_fields = ['v', 'mid', 'name', 'exp', 'sig']
+        for field in required_fields:
+            if field not in nfc_data:
+                raise HTTPException(status_code=400, detail=f"Eksik alan: {field}")
+        
+        # Version kontrolü
+        if nfc_data['v'] != 1:
+            raise HTTPException(status_code=400, detail="Desteklenmeyen veri versiyonu")
+        
+        # Expiration date kontrolü
+        exp_date_str = nfc_data['exp']
+        try:
+            exp_date = datetime.strptime(exp_date_str, '%Y%m%d')
+            if exp_date < datetime.utcnow():
+                return {
+                    "success": False,
+                    "error": "EXPIRED",
+                    "message": "NFC kartının süresi dolmuş",
+                    "expiration_date": exp_date.strftime('%Y-%m-%d'),
+                    "current_date": datetime.utcnow().strftime('%Y-%m-%d')
+                }
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Geçersiz expiration date formatı")
+        
+        # İmza doğrulaması (ECDSA P-256)
+        signature_valid = secure_qr._verify_nfc_signature(nfc_data)
+        
+        if not signature_valid:
+            return {
+                "success": False,
+                "error": "INVALID_SIGNATURE",
+                "message": "Dijital imza doğrulanamadı - sahte kart olabilir"
+            }
+        
+        # Üye bilgilerini database'den getir
+        membership_id = nfc_data['mid']
+        db = next(get_db())
+        member = db.query(DBMember).filter(DBMember.membership_id == membership_id).first()
+        
+        member_info = {
+            "membershipId": membership_id,
+            "name": nfc_data['name'],
+            "expirationDate": exp_date.strftime('%Y-%m-%d'),
+            "signatureValid": True,
+            "fromDatabase": False
+        }
+        
+        # Database'de üye varsa tam bilgileri ekle
+        if member:
+            member_info.update({
+                "fullName": member.full_name,
+                "email": member.email,
+                "phoneNumber": member.phone_number,
+                "role": member.role,
+                "status": member.status,
+                "membershipType": member.membership_type,
+                "joinDate": member.created_at.strftime('%Y-%m-%d'),
+                "fromDatabase": True
+            })
+        
+        return {
+            "success": True,
+            "valid": True,
+            "member": member_info,
+            "decryptedData": nfc_data,
+            "verificationTime": datetime.utcnow().isoformat(),
+            "deviceInfo": request.deviceInfo or "Unknown"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"NFC decrypt error: {e}")
+        raise HTTPException(status_code=500, detail=f"Sunucu hatası: {str(e)}")
+
+## NFC işlemleri artık MAUI uygulaması tarafından yapılacak. Backend bu amaçla ek NFC endpointlerini içermemektedir.
 
 
 

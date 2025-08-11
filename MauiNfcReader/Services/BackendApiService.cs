@@ -213,6 +213,53 @@ public class BackendApiService : IBackendApiService
         }
     }
 
+    public async Task<(bool ok, NfcDecryptResult? result, string? error)> DecryptNfcAsync(string encryptedData, string? deviceInfo = null, CancellationToken ct = default)
+    {
+        try
+        {
+            var client = CreateClient();
+            var url = $"{_baseUrl}/api/nfc/decrypt";
+            var payload = new { encryptedData, deviceInfo };
+            
+            var resp = await client.PostAsJsonAsync(url, payload, ct);
+            if (!resp.IsSuccessStatusCode)
+                return (false, null, $"HTTP {(int)resp.StatusCode}");
+
+            var json = await resp.Content.ReadFromJsonAsync<NfcDecryptResponse>(cancellationToken: ct);
+            if (json?.success == true)
+            {
+                var result = new NfcDecryptResult
+                {
+                    Valid = json.valid,
+                    Error = json.error,
+                    Member = json.member != null ? new MemberDetails
+                    {
+                        MembershipId = json.member.membershipId,
+                        Name = json.member.name,
+                        FullName = json.member.fullName,
+                        Email = json.member.email,
+                        PhoneNumber = json.member.phoneNumber,
+                        Role = json.member.role,
+                        Status = json.member.status,
+                        MembershipType = json.member.membershipType,
+                        ExpirationDate = json.member.expirationDate,
+                        JoinDate = json.member.joinDate,
+                        FromDatabase = json.member.fromDatabase
+                    } : null,
+                    VerificationTime = json.verificationTime
+                };
+                return (true, result, null);
+            }
+
+            return (false, null, json?.error ?? json?.message ?? "NFC şifre çözme başarısız");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "NFC şifre çözme hatası");
+            return (false, null, ex.Message);
+        }
+    }
+
     internal sealed class MemberSearchResponse
     {
         public bool success { get; set; }
@@ -263,6 +310,54 @@ public class BackendApiService : IBackendApiService
             public QrVerifyResponse.MemberData? member_data { get; set; }
         }
     }
+
+    private sealed class NfcDecryptResponse
+    {
+        public bool success { get; set; }
+        public bool valid { get; set; }
+        public string? error { get; set; }
+        public string? message { get; set; }
+        public NfcMemberDto? member { get; set; }
+        public string? verificationTime { get; set; }
+
+        public sealed class NfcMemberDto
+        {
+            public string? membershipId { get; set; }
+            public string? name { get; set; }
+            public string? fullName { get; set; }
+            public string? email { get; set; }
+            public string? phoneNumber { get; set; }
+            public string? role { get; set; }
+            public string? status { get; set; }
+            public string? membershipType { get; set; }
+            public string? expirationDate { get; set; }
+            public string? joinDate { get; set; }
+            public bool fromDatabase { get; set; }
+        }
+    }
+}
+
+public class NfcDecryptResult
+{
+    public bool Valid { get; set; }
+    public string? Error { get; set; }
+    public MemberDetails? Member { get; set; }
+    public string? VerificationTime { get; set; }
+}
+
+public class MemberDetails
+{
+    public string? MembershipId { get; set; }
+    public string? Name { get; set; }
+    public string? FullName { get; set; }
+    public string? Email { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? Role { get; set; }
+    public string? Status { get; set; }
+    public string? MembershipType { get; set; }
+    public string? ExpirationDate { get; set; }
+    public string? JoinDate { get; set; }
+    public bool FromDatabase { get; set; }
 }
 
 

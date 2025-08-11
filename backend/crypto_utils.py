@@ -313,6 +313,41 @@ class SecureQRManager:
         
         return bytes(decrypted_bytes).decode('utf-8')
     
+    def _verify_nfc_signature(self, nfc_data: Dict[str, Any]) -> bool:
+        """
+        NFC compact verisinin ECDSA imzasını doğrula
+        """
+        try:
+            if self.ec_public_key is None:
+                return False
+            
+            # İmzayı ayır
+            signature_b64 = nfc_data.get('sig', '')
+            if not signature_b64:
+                return False
+            
+            # İmzalanan veriyi yeniden oluştur
+            verify_data = nfc_data.copy()
+            del verify_data['sig']  # İmzayı çıkar
+            
+            payload = json.dumps(verify_data, separators=(',', ':'))
+            
+            # Base64 decode (padding ekle gerekirse)
+            padding = '=' * (4 - len(signature_b64) % 4) % 4
+            signature_bytes = base64.urlsafe_b64decode(signature_b64 + padding)
+            
+            # ECDSA doğrulama
+            self.ec_public_key.verify(
+                signature_bytes,
+                payload.encode('utf-8'),
+                ec.ECDSA(hashes.SHA256())
+            )
+            return True
+            
+        except (InvalidSignature, Exception) as e:
+            print(f"NFC signature verification failed: {e}")
+            return False
+    
     def create_fake_readable_qr(self) -> str:
         """
         Normal QR okuyucular için sahte/anlamsız veri
