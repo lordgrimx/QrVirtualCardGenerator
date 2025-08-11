@@ -343,7 +343,8 @@ class SecureQRManager:
             print(f"🔍 Original signature: {signature_b64}")
             
             # Base64 decode (padding ekle gerekirse)
-            padding = '=' * (4 - len(signature_b64) % 4) % 4
+            padding_count = (4 - len(signature_b64) % 4) % 4
+            padding = '=' * padding_count
             padded_signature = signature_b64 + padding
             print(f"🔍 Padded signature: {padded_signature}")
             
