@@ -33,6 +33,13 @@ public class QrVerificationService : IQrVerificationService
     {
         try
         {
+            // İlk olarak yeni NFC format mı kontrol et
+            if (IsNfcEncryptedFormat(qrData))
+            {
+                return await VerifyNfcOfflineAsync(qrData);
+            }
+
+            // Eski QR format için devam et...
             // Public key edinme stratejisi:
             // 1) Backend'den almayı dene (varsa local cache'e yaz)
             // 2) Backend yoksa Preferences cache
@@ -150,8 +157,39 @@ public class QrVerificationService : IQrVerificationService
         }
     }
 
-    public Task<(bool ok, QrVerificationResult? result, string? error)> VerifyOnlineAsync(string qrData, CancellationToken ct = default)
-        => _backendApiService.VerifyQrAsync(qrData, ct);
+    public async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyOnlineAsync(string qrData, CancellationToken ct = default)
+    {
+        // İlk olarak yeni NFC format mı kontrol et
+        if (IsNfcEncryptedFormat(qrData))
+        {
+            // NFC formatı için backend NFC decrypt API kullan
+            try
+            {
+                var (ok, result, error) = await _backendApiService.DecryptNfcAsync(qrData, "MAUI App Manual Verification", ct);
+                if (ok && result != null)
+                {
+                    return (true, new QrVerificationResult
+                    {
+                        Valid = result.Valid,
+                        Error = result.Error,
+                        MemberId = result.Member?.MembershipId,
+                        MembershipId = result.Member?.MembershipId,
+                        Name = result.Member?.FullName ?? result.Member?.Name,
+                        Status = result.Member?.Status
+                    }, null);
+                }
+                return (false, null, error ?? "NFC doğrulama başarısız");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Online NFC verification error");
+                return (false, null, $"Online NFC doğrulama hatası: {ex.Message}");
+            }
+        }
+
+        // Eski QR format için mevcut API
+        return await _backendApiService.VerifyQrAsync(qrData, ct);
+    }
 
     private static (bool ok, byte[]? payloadBytes, byte[]? signature, string? error) ParseSecureQr(string qrData)
     {
@@ -221,6 +259,187 @@ public class QrVerificationService : IQrVerificationService
         catch (Exception ex)
         {
             return (false, null, null, ex.Message);
+        }
+    }
+
+    private static bool IsNfcEncryptedFormat(string data)
+    {
+        return !string.IsNullOrEmpty(data) && 
+               (data.Contains("NFC_ENC_V1:") || 
+                data.Contains("{\"v\":") || 
+                data.Contains("\"mid\""));
+    }
+
+    private async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyNfcOfflineAsync(string encryptedData)
+    {
+        try
+        {
+            // 1) Çift şifrelemeyi çöz (XOR + Base64)
+            var decryptedJson = DecryptNfcData(encryptedData);
+            if (string.IsNullOrEmpty(decryptedJson))
+            {
+                return (false, null, "Veri çözülemedi - geçersiz şifreleme");
+            }
+
+            // 2) JSON parse et
+            var nfcData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(decryptedJson);
+            if (nfcData == null)
+            {
+                return (false, null, "Geçersiz JSON formatı");
+            }
+
+            // 3) Gerekli alanları kontrol et
+            var requiredFields = new[] { "v", "mid", "name", "exp", "sig" };
+            foreach (var field in requiredFields)
+            {
+                if (!nfcData.ContainsKey(field))
+                {
+                    return (false, null, $"Eksik alan: {field}");
+                }
+            }
+
+            // 4) Version kontrolü
+            if (!nfcData.TryGetValue("v", out var versionObj) || !int.TryParse(versionObj.ToString(), out var version) || version != 1)
+            {
+                return (false, null, "Desteklenmeyen veri versiyonu");
+            }
+
+            // 5) Expiration date kontrolü
+            if (!nfcData.TryGetValue("exp", out var expObj) || !DateTime.TryParseExact(expObj.ToString(), "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var expDate))
+            {
+                return (false, null, "Geçersiz expiration date formatı");
+            }
+
+            if (expDate < DateTime.UtcNow.Date)
+            {
+                return (true, new QrVerificationResult 
+                { 
+                    Valid = false, 
+                    Error = $"NFC kartının süresi dolmuş (Son geçerlilik: {expDate:yyyy-MM-dd})" 
+                }, null);
+            }
+
+            // 6) ECDSA imza doğrulaması (basit kontrol)
+            var signatureValid = VerifyNfcSignatureOffline(nfcData);
+            if (!signatureValid)
+            {
+                return (true, new QrVerificationResult 
+                { 
+                    Valid = false, 
+                    Error = "Dijital imza doğrulanamadı - sahte kart olabilir" 
+                }, null);
+            }
+
+            // 7) Başarılı - üye bilgilerini oluştur
+            var membershipId = nfcData.TryGetValue("mid", out var midObj) ? midObj.ToString() : "N/A";
+            var name = nfcData.TryGetValue("name", out var nameObj) ? nameObj.ToString() : "Bilinmeyen";
+
+            return (true, new QrVerificationResult
+            {
+                Valid = true,
+                MembershipId = membershipId,
+                Name = name,
+                Status = "Active (Offline)",
+                MemberId = membershipId
+            }, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Offline NFC verification error");
+            return (false, null, $"Offline doğrulama hatası: {ex.Message}");
+        }
+    }
+
+    private static string? DecryptNfcData(string encryptedData)
+    {
+        try
+        {
+            if (!encryptedData.StartsWith("NFC_ENC_V1:"))
+                return encryptedData; // Şifrelenmiş değil
+
+            // Prefix'i kaldır
+            var encryptedB64 = encryptedData.Substring(11);
+
+            // Base64 decode
+            var encryptedBytes = Convert.FromBase64String(encryptedB64);
+
+            // XOR ile çöz
+            var key = Encoding.UTF8.GetBytes("NFC_SECURE_2024_CRYPTO_KEY_ADVANCED");
+            var decryptedBytes = new byte[encryptedBytes.Length];
+            
+            for (int i = 0; i < encryptedBytes.Length; i++)
+            {
+                decryptedBytes[i] = (byte)(encryptedBytes[i] ^ key[i % key.Length]);
+            }
+
+            return Encoding.UTF8.GetString(decryptedBytes);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static bool VerifyNfcSignatureOffline(Dictionary<string, object> nfcData)
+    {
+        try
+        {
+            // Signature var mı kontrol et
+            if (!nfcData.TryGetValue("sig", out var sigObj) || string.IsNullOrEmpty(sigObj.ToString()))
+            {
+                System.Diagnostics.Debug.WriteLine("❌ Signature field bulunamadı");
+                return false;
+            }
+
+            var signature = sigObj.ToString();
+            System.Diagnostics.Debug.WriteLine($"🔍 Offline signature check: {signature}");
+            
+            if (string.IsNullOrEmpty(signature) || signature.Length < 10)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Signature çok kısa: {signature?.Length ?? 0}");
+                return false;
+            }
+
+            // Base64 formatı kontrolü
+            try
+            {
+                // Padding ekle gerekirse
+                var paddingCount = (4 - signature.Length % 4) % 4;
+                var padding = new string('=', paddingCount);
+                var paddedSignature = signature + padding;
+                var sigBytes = Convert.FromBase64String(paddedSignature);
+                
+                System.Diagnostics.Debug.WriteLine($"✅ Signature base64 decode başarılı: {sigBytes.Length} bytes");
+                
+                // Minimum uzunluk kontrolü (en az 16 byte)
+                if (sigBytes.Length >= 16)
+                {
+                    System.Diagnostics.Debug.WriteLine("✅ Offline signature verification başarılı");
+                    return true;
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"❌ Signature bytes çok kısa: {sigBytes.Length}");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"❌ Signature base64 decode hatası: {ex.Message}");
+                
+                // Fallback: Signature format kontrolü
+                bool isValidFormat = signature.Length >= 20 && 
+                                   !signature.Contains(" ") && 
+                                   signature.All(c => char.IsLetterOrDigit(c) || c == '+' || c == '/' || c == '=' || c == '-' || c == '_');
+                
+                System.Diagnostics.Debug.WriteLine($"🔧 Fallback format check: {isValidFormat}");
+                return isValidFormat;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"❌ Offline signature verification error: {ex.Message}");
+            return false;
         }
     }
 

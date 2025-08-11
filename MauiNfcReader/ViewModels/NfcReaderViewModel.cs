@@ -751,7 +751,7 @@ public partial class NfcReaderViewModel : ObservableObject
             return;
         }
 
-        _logger.LogInformation($"QR Verification Text: {text.Substring(0, Math.Min(100, text.Length))}...");
+        _logger.LogInformation($"QR Verification Text (Length: {text.Length}): {text.Substring(0, Math.Min(100, text.Length))}...");
         await VerifyQrAsync(text);
     }
 
