@@ -1,4 +1,5 @@
 import './globals.css';
+import { Providers } from './providers';
 
 export const metadata = {
   title: "Community Connect - QR Virtual Card",
@@ -9,7 +10,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="tr">
       <body>
-        {children}
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

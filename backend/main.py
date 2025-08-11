@@ -13,7 +13,16 @@ from dotenv import load_dotenv
 import ssl
 
 # Import database components
-from database import get_db, init_db, Member as DBMember
+from database import (
+    get_db, init_db, 
+    Member as DBMember, 
+    User as DBUser, 
+    Business as DBBusiness, 
+    BusinessEvent as DBBusinessEvent, 
+    BusinessContract as DBBusinessContract,
+    hash_password, 
+    verify_password
+)
 
 # Import crypto utilities
 from crypto_utils import (
@@ -87,6 +96,83 @@ class MemberUpdate(BaseModel):
     role: Optional[str] = None
     status: Optional[str] = None
 
+# Authentication Models
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+    role: str
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class LoginResponse(BaseModel):
+    user: UserResponse
+    message: str
+    success: bool = True
+
+# Business Models
+class BusinessCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    website: Optional[str] = None
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    address: Optional[str] = None
+    business_type: Optional[str] = None
+    logo_url: Optional[str] = None
+
+class BusinessEventCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    event_type: str  # discount, campaign, free_shipping, etc.
+    discount_percentage: Optional[float] = None
+    discount_amount: Optional[float] = None
+    min_purchase_amount: Optional[float] = None
+    max_discount_amount: Optional[float] = None
+    terms_conditions: Optional[str] = None
+    start_date: str  # ISO format
+    end_date: str    # ISO format
+
+class BusinessContractCreate(BaseModel):
+    contract_title: str
+    contract_amount: float
+    currency: str = "TRY"
+    contract_type: str  # monthly, yearly, one_time, etc.
+    commission_percentage: Optional[float] = None
+    payment_terms: Optional[str] = None
+    start_date: str  # ISO format
+    end_date: Optional[str] = None  # ISO format, optional
+    notes: Optional[str] = None
+
+class BusinessResponse(BaseModel):
+    id: int
+    name: str
+    description: Optional[str]
+    website: Optional[str]
+    phone: Optional[str]
+    email: Optional[str]
+    address: Optional[str]
+    business_type: Optional[str]
+    logo_url: Optional[str]
+    is_active: bool
+    owner_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class MemberResponse(BaseModel):
     id: int
     fullName: str
@@ -113,6 +199,211 @@ class MemberResponse(BaseModel):
 @app.get("/api/test")
 async def test_endpoint():
     return {"data": "Test verisi", "success": True}
+
+# Authentication Endpoints
+
+@app.post("/api/auth/login", response_model=LoginResponse)
+async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    """User login endpoint"""
+    try:
+        # Find user by email
+        user = db.query(DBUser).filter(DBUser.email == credentials.email).first()
+        
+        if not user:
+            raise HTTPException(status_code=401, detail="Geçersiz email veya şifre")
+        
+        if not user.is_active:
+            raise HTTPException(status_code=401, detail="Hesap deaktif edilmiş")
+        
+        # Verify password
+        if not verify_password(credentials.password, user.password_hash):
+            raise HTTPException(status_code=401, detail="Geçersiz email veya şifre")
+        
+        # Create user response
+        user_response = UserResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            is_active=user.is_active,
+            created_at=user.created_at
+        )
+        
+        return LoginResponse(
+            user=user_response,
+            message="Giriş başarılı",
+            success=True
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Login error: {e}")
+        raise HTTPException(status_code=500, detail="Giriş sırasında hata oluştu")
+
+@app.post("/api/auth/register", response_model=LoginResponse)
+async def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    """User registration endpoint"""
+    try:
+        # Check if user already exists
+        existing_user = db.query(DBUser).filter(DBUser.email == user_data.email).first()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Bu email ile zaten kayıtlı bir kullanıcı var")
+        
+        # Create new user
+        new_user = DBUser(
+            name=user_data.name,
+            email=user_data.email,
+            password_hash=hash_password(user_data.password),
+            role="user",  # Default role
+            is_active=True,
+            email_verified=datetime.utcnow()  # Auto-verify for now
+        )
+        
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        # Create user response
+        user_response = UserResponse(
+            id=new_user.id,
+            name=new_user.name,
+            email=new_user.email,
+            role=new_user.role,
+            is_active=new_user.is_active,
+            created_at=new_user.created_at
+        )
+        
+        return LoginResponse(
+            user=user_response,
+            message="Kayıt başarılı",
+            success=True
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Registration error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Kayıt sırasında hata oluştu")
+
+@app.get("/api/auth/me")
+async def get_current_user(user_id: int, db: Session = Depends(get_db)):
+    """Get current user information - requires user_id for now"""
+    try:
+        user = db.query(DBUser).filter(DBUser.id == user_id, DBUser.is_active == True).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+        
+        user_response = UserResponse(
+            id=user.id,
+            name=user.name,
+            email=user.email,
+            role=user.role,
+            is_active=user.is_active,
+            created_at=user.created_at
+        )
+        
+        return {
+            "user": user_response,
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get user error: {e}")
+        raise HTTPException(status_code=500, detail="Kullanıcı bilgileri alınırken hata oluştu")
+
+# Business Management Endpoints
+
+@app.post("/api/businesses", response_model=BusinessResponse)
+async def create_business(business: BusinessCreate, owner_id: int, db: Session = Depends(get_db)):
+    """Create a new business - requires owner_id"""
+    try:
+        # Verify owner exists and is active
+        owner = db.query(DBUser).filter(DBUser.id == owner_id, DBUser.is_active == True).first()
+        if not owner:
+            raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+        
+        # Create new business
+        new_business = DBBusiness(
+            name=business.name,
+            description=business.description,
+            website=business.website,
+            phone=business.phone,
+            email=business.email,
+            address=business.address,
+            business_type=business.business_type,
+            logo_url=business.logo_url,
+            owner_id=owner_id,
+            is_active=True
+        )
+        
+        db.add(new_business)
+        db.commit()
+        db.refresh(new_business)
+        
+        return BusinessResponse(
+            id=new_business.id,
+            name=new_business.name,
+            description=new_business.description,
+            website=new_business.website,
+            phone=new_business.phone,
+            email=new_business.email,
+            address=new_business.address,
+            business_type=new_business.business_type,
+            logo_url=new_business.logo_url,
+            is_active=new_business.is_active,
+            owner_id=new_business.owner_id,
+            created_at=new_business.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Create business error: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="İşletme oluşturulurken hata oluştu")
+
+@app.get("/api/businesses")
+async def get_businesses(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """Get all businesses or businesses by owner"""
+    try:
+        query = db.query(DBBusiness).filter(DBBusiness.is_active == True)
+        
+        if owner_id:
+            query = query.filter(DBBusiness.owner_id == owner_id)
+        
+        businesses = query.all()
+        
+        business_list = []
+        for business in businesses:
+            business_list.append(BusinessResponse(
+                id=business.id,
+                name=business.name,
+                description=business.description,
+                website=business.website,
+                phone=business.phone,
+                email=business.email,
+                address=business.address,
+                business_type=business.business_type,
+                logo_url=business.logo_url,
+                is_active=business.is_active,
+                owner_id=business.owner_id,
+                created_at=business.created_at
+            ))
+        
+        return {
+            "businesses": business_list,
+            "count": len(business_list),
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"Get businesses error: {e}")
+        raise HTTPException(status_code=500, detail="İşletmeler alınırken hata oluştu")
 
 def generate_membership_id(db: Session):
     """Otomatik membership ID oluştur"""

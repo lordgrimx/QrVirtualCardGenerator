@@ -1,875 +1,219 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useEffect } from 'react';
 
-export default function AdminPage() {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    phoneNumber: '',
-    email: '',
-    address: '',
-    dateOfBirth: '',
-    emergencyContact: '',
-    membershipType: '',
-    role: '',
-    status: 'active'
-  });
+export default function HomePage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  const [activeMenu, setActiveMenu] = useState('addMember');
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  // QR/NFC arayüzleri MAUI uygulamasına taşındı
-
-  // Bugünün tarihini al (YYYY-MM-DD formatında)
-  const today = new Date().toISOString().split('T')[0];
-
-  // Dinamik API URL tespiti (mobil erişim için)
-  const getApiUrl = () => {
-    if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  useEffect(() => {
+    // Redirect admin users to admin panel
+    if (session?.user?.role === 'admin') {
+      router.push('/admin');
     }
-    // Production Vercel → Render backend
-    const envUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (envUrl) return envUrl;
-    // Local dev
-    return 'http://localhost:8000';
-  };
+  }, [session, router]);
 
-  // Fetch all members from database
-  const fetchMembers = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${getApiUrl()}/api/members`);
-      const data = await response.json();
-      
-      if (data.success) {
-        setMembers(data.members || []);
-      } else {
-        console.error('Failed to fetch members');
-      }
-    } catch (error) {
-      console.error('Error fetching members:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Open edit modal
-  const openEditModal = (member) => {
-    setEditingMember(member);
-    setEditFormData({
-      fullName: member.fullName,
-      phoneNumber: member.phoneNumber,
-      email: member.email,
-      address: member.address,
-      dateOfBirth: member.dateOfBirth,
-      emergencyContact: member.emergencyContact,
-      membershipType: member.membershipType,
-      role: member.role,
-      status: member.status
-    });
-    setEditModalOpen(true);
-  };
-
-  // Close edit modal
-  const closeEditModal = () => {
-    setEditModalOpen(false);
-    setEditingMember(null);
-    setEditFormData({});
-  };
-
-  // Handle edit form input change
-  const handleEditInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Update member
-  const updateMember = async (e) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      
-      const response = await fetch(`${getApiUrl()}/api/members/${editingMember.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(editFormData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        alert('Üye bilgileri başarıyla güncellendi!');
-        closeEditModal();
-        fetchMembers(); // Refresh member list
-      } else {
-        throw new Error(data.detail || 'Update failed');
-      }
-    } catch (error) {
-      console.error('Error updating member:', error);
-      alert('Güncelleme sırasında hata oluştu: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // QR/NFC fonksiyonları kaldırıldı
-
-  // QR doğrulama arayüzü kaldırıldı; işlemler MAUI uygulamasında yapılır
-
-  // iOS ve cihaz tespiti
-  const isIOS = () => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  };
-
-  const isAndroid = () => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined') return false;
-    return /Android/.test(navigator.userAgent);
-  };
-
-  // NFC fonksiyonları kaldırıldı
-
-  // QR doğrulayıcıyı temizle
-  const clearQrVerifier = () => {
-    setQrInput('');
-    setQrResult(null);
-    setNfcStatus('');
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      const response = await fetch(`${getApiUrl()}/api/members`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        alert(`✅ Üye başarıyla kaydedildi!\n\n📄 Membership ID: ${result.membershipId}\n💳 Card Number: ${result.cardNumber}\n\nBu bilgiler otomatik olarak oluşturulmuştur.`);
-        // Reset form
-        setFormData({
-          fullName: '',
-          phoneNumber: '',
-          email: '',
-          address: '',
-          dateOfBirth: '',
-          emergencyContact: '',
-          membershipType: '',
-          role: '',
-          status: 'active'
-        });
-        // Refresh members list if we're on that tab
-        if (activeMenu === 'showMembers') {
-          fetchMembers();
-        }
-      } else {
-        alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);
-      }
-    } catch (error) {
-      console.error('API Error:', error);
-      alert('API bağlantı hatası. Backend server\'ın çalıştığından emin olun.');
-    }
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/' });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
-      {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-20' : 'w-80'} bg-white/80 backdrop-blur-sm border-r border-gray-200/50 ${sidebarCollapsed ? 'p-3' : 'p-6'} shadow-xl transition-all duration-300 ease-in-out`}>
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      {/* Header */}
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
                 <div className="w-4 h-4 bg-white rounded-sm"></div>
               </div>
-              {!sidebarCollapsed && (
-                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent whitespace-nowrap">
-                  Virtual ID Admin
-                </h1>
-              )}
-            </div>
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-8 h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center justify-center transition-colors"
-              title={sidebarCollapsed ? "Sidebar'ı Aç" : "Sidebar'ı Kapat"}
-            >
-              <svg className={`w-5 h-5 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        
-        <nav className="space-y-2">
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'dashboard' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => setActiveMenu('dashboard')}
-            title={sidebarCollapsed ? "Dashboard" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'dashboard' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Dashboard</span>}
-          </div>
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'addMember' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => setActiveMenu('addMember')}
-            title={sidebarCollapsed ? "Add New Member" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'addMember' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Add New Member</span>}
-          </div>
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'showMembers' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => {
-              setActiveMenu('showMembers');
-              fetchMembers();
-            }}
-            title={sidebarCollapsed ? "Show all Members" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'showMembers' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Show all Members</span>}
-          </div>
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'qrVerifier' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => setActiveMenu('qrVerifier')}
-            title={sidebarCollapsed ? "QR Doğrulayıcı" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'qrVerifier' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zM13 3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4a1 1 0 011-1h3zM11 14a1 1 0 011-1h1a1 1 0 011 1v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1zM16 10a1 1 0 011-1h1a1 1 0 011 1v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-4zM9 15a1 1 0 011-1h1a1 1 0 011 1v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">QR Doğrulayıcı</span>}
-          </div>
-          
-          {/* NFC Reader/Writer linkleri kaldırıldı */}
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'settings' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => setActiveMenu('settings')}
-            title={sidebarCollapsed ? "Settings" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'settings' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Settings</span>}
-          </div>
-        </nav>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 p-8 overflow-hidden">
-        <div className="h-full flex flex-col max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                {activeMenu === 'dashboard' && (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                  </svg>
-                )}
-                {activeMenu === 'addMember' && (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-                  </svg>
-                )}
-                {activeMenu === 'showMembers' && (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-                  </svg>
-                )}
-                {activeMenu === 'qrVerifier' && (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zM13 3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4a1 1 0 011-1h3zM11 14a1 1 0 011-1h1a1 1 0 011 1v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1zM16 10a1 1 0 011-1h1a1 1 0 011 1v4a1 1 0 01-1 1h-1a1 1 0 01-1-1v-4zM9 15a1 1 0 011-1h1a1 1 0 011 1v1a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1z" clipRule="evenodd" />
-                  </svg>
-                )}
-                {activeMenu === 'settings' && (
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-600 bg-clip-text text-transparent">
-                {activeMenu === 'addMember' ? 'Add New Member' : 
-                 activeMenu === 'showMembers' ? 'All Members' : 
-                 activeMenu === 'dashboard' ? 'Dashboard' : 
-                 activeMenu === 'qrVerifier' ? 'QR Doğrulayıcı' :
-                 'Settings'}
+              <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                QR Virtual Card
               </h1>
             </div>
-            <p className="text-gray-600 ml-14">
-              {activeMenu === 'addMember' ? 'Create a new membership card with auto-generated ID and card number' : 
-               activeMenu === 'showMembers' ? 'View and manage all registered members' : 
-               activeMenu === 'dashboard' ? 'Overview of system statistics' : 
-               activeMenu === 'qrVerifier' ? 'Güvenli QR kodlarını doğrulayın ve üye bilgilerini görüntüleyin' :
-               'System configuration and preferences'}
-            </p>
-          </div>
 
-          {/* Add Member Form */}
-          {activeMenu === 'addMember' && (
-            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 flex flex-col shadow-xl border border-white/20">
-                <div className="grid grid-cols-4 gap-6 flex-1">
-                  {/* Full Name */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Full Name (Ad Soyad)
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Enter full name"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Email Address (E-posta)
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="Enter email address"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
-                    />
-                  </div>
-
-                  {/* Phone Number */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Phone Number (Telefon)
-                    </label>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={formData.phoneNumber}
-                      onChange={handleInputChange}
-                      placeholder="+90 5XX XXX XXXX"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
-                    />
-                  </div>
-
-                  {/* Date of Birth */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Date of Birth (Doğum Tarihi)
-                    </label>
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      onChange={handleInputChange}
-                      max={today}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
-                    />
-                  </div>
-
-                  {/* Membership Type */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Membership Type (Üyelik Tipi)
-                    </label>
-                    <select
-                      name="membershipType"
-                      value={formData.membershipType}
-                      onChange={handleInputChange}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
+            {/* Navigation */}
+            <nav className="flex items-center gap-6">
+              {session ? (
+                <div className="flex items-center gap-4">
+                  <span className="text-gray-700">
+                    Hoş geldiniz, {session.user.name}
+                  </span>
+                  {session.user.role === 'admin' ? (
+                    <Link
+                      href="/admin"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      <option value="">Select membership type</option>
-                      <option value="standard">Standard</option>
-                      <option value="premium">Premium</option>
-                      <option value="vip">VIP</option>
-                      <option value="corporate">Corporate</option>
-                    </select>
-                  </div>
-
-                  {/* Role */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Role (Rol)
-                    </label>
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
+                      Admin Panel
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/dashboard"
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                      <option value="">Select role</option>
-                      <option value="member">Member</option>
-                      <option value="volunteer">Volunteer</option>
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-
-                  {/* Status */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Status (Durum)
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleInputChange}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                      <option value="active">Active</option>
-                      <option value="pending">Pending</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                  </div>
-
-                  {/* Emergency Contact */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Emergency Contact
-                    </label>
-                    <input
-                      type="tel"
-                      name="emergencyContact"
-                      value={formData.emergencyContact}
-                      onChange={handleInputChange}
-                      placeholder="+90 5XX XXX XXXX"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
-                    />
-                  </div>
-
-                  {/* Address - Full Width */}
-                  <div className="col-span-4 space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Address (Adres)
-                    </label>
-                    <textarea
-                      name="address"
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder="Enter full address"
-                      rows={3}
-                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex justify-end mt-8">
+                      Dashboard
+                    </Link>
+                  )}
                   <button
-                    type="submit"
-                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 flex items-center gap-3"
+                    onClick={handleLogout}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
                   >
-                    <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-sm"></div>
-                    </div>
-                    Create Member Card
+                    Çıkış
                   </button>
                 </div>
-              </div>
-            </form>
-          )}
-
-          {/* Show Members Content */}
-          {activeMenu === 'showMembers' && (
-            <div className="flex-1 flex flex-col">
-              {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading members...</p>
-                  </div>
-                </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto">
-                  {members.length === 0 ? (
-                    <div className="col-span-full flex items-center justify-center py-12">
-                      <div className="text-center">
-                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <div className="w-8 h-8 bg-gray-400 rounded-lg"></div>
-                        </div>
-                        <p className="text-gray-600 text-lg">No members found</p>
-                        <p className="text-gray-400 text-sm">Add your first member to get started</p>
-                      </div>
-                    </div>
-                  ) : (
-                    members.map((member) => (
-                      <div
-                        key={member.id}
-                        className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 relative group"
-                      >
-                        {/* Edit Icon */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(member);
-                          }}
-                          className="absolute top-4 right-4 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 z-10"
-                          title="Üyeyi Düzenle"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
+                <div className="flex items-center gap-4">
+                  <Link
+                    href="/auth/signin"
+                    className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    Giriş
+                  </Link>
+                  <Link
+                    href="/auth/signup"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Kayıt Ol
+                  </Link>
+                </div>
+              )}
+            </nav>
+          </div>
+        </div>
+      </header>
 
-                        {/* Card Content - Clickable */}
-                        <div
-                          className="cursor-pointer"
-                          onClick={() => window.open(`/member/${member.id}`, '_blank')}
-                        >
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
-                              <span className="text-white font-bold text-lg">
-                                {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                              </span>
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-gray-900">{member.fullName}</h3>
-                              <p className="text-sm text-gray-600">{member.membershipId}</p>
-                            </div>
-                          </div>
-                        
-                          <div className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Email:</span>
-                              <span className="text-sm text-gray-900 font-medium">{member.email}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Role:</span>
-                              <span className="text-sm text-gray-900 font-medium capitalize">{member.role}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Status:</span>
-                              <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${
-                                  member.status === 'active' ? 'bg-green-500' : 
-                                  member.status === 'pending' ? 'bg-yellow-500' : 
-                                  member.status === 'suspended' ? 'bg-red-500' : 'bg-gray-500'
-                                }`}></div>
-                                <span className="text-sm text-gray-900 font-medium capitalize">{member.status}</span>
-                              </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm text-gray-600">Member Since:</span>
-                              <span className="text-sm text-gray-900 font-medium">
-                                {new Date(member.createdAt).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-4 pt-4 border-t border-gray-200">
-                            <p className="text-xs text-blue-600 text-center font-medium">Click to view details</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
+      {/* Main Content */}
+      <main className="relative">
+        {/* Hero Section */}
+        <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-600 bg-clip-text text-transparent mb-6">
+                QR Virtual Card
+              </h1>
+              <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                İşletmeniz için modern, güvenli ve pratik QR kart sistemi. 
+                Müşterilerinizi dijital kartlar ile tanıyın, 
+                kampanyalarınızı yönetin ve işletmenizi büyütün.
+              </p>
+              
+              {!session && (
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link
+                    href="/auth/signup"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+                  >
+                    Ücretsiz Başla
+                  </Link>
+                  <Link
+                    href="/auth/signin"
+                    className="px-8 py-4 border-2 border-gray-300 text-gray-700 rounded-xl text-lg font-semibold hover:border-blue-500 hover:text-blue-600 transition-all duration-300"
+                  >
+                    Giriş Yap
+                  </Link>
                 </div>
               )}
             </div>
-          )}
-
-          {/* Dashboard Content */}
-          {activeMenu === 'dashboard' && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <div className="w-8 h-8 bg-white rounded-lg"></div>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Dashboard</h3>
-                <p className="text-gray-600">Coming soon...</p>
-              </div>
-            </div>
-          )}
-
-          {/* QR doğrulayıcı arayüzü kaldırıldı */}
-
-          {/* Settings Content */}
-          {activeMenu === 'settings' && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <div className="w-8 h-8 bg-white rounded-lg"></div>
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Settings</h3>
-                <p className="text-gray-600">Coming soon...</p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Edit Member Modal */}
-      {editModalOpen && (
-        <div className="fixed inset-0 bg-white/10 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Üye Bilgilerini Düzenle</h3>
-              <button
-                onClick={closeEditModal}
-                className="w-8 h-8 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center transition-all duration-200 text-black hover:text-red-600"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={updateMember} className="space-y-4">
-              {/* Full Name & Phone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Tam Adı *
-                  </label>
-                  <input
-                    type="text"
-                    name="fullName"
-                    value={editFormData.fullName || ''}
-                    onChange={handleEditInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Telefon Numarası *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={editFormData.phoneNumber || ''}
-                    onChange={handleEditInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  E-posta *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editFormData.email || ''}
-                  onChange={handleEditInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                  required
-                />
-              </div>
-
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Adres *
-                </label>
-                <textarea
-                  name="address"
-                  value={editFormData.address || ''}
-                  onChange={handleEditInputChange}
-                  rows="3"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 bg-white"
-                  required
-                />
-              </div>
-
-              {/* Date of Birth & Emergency Contact */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Doğum Tarihi *
-                  </label>
-                  <input
-                    type="date"
-                    name="dateOfBirth"
-                    value={editFormData.dateOfBirth || ''}
-                    onChange={handleEditInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Acil Durum İletişim *
-                  </label>
-                  <input
-                    type="tel"
-                    name="emergencyContact"
-                    value={editFormData.emergencyContact || ''}
-                    onChange={handleEditInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Membership Type & Role */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Üyelik Türü *
-                  </label>
-                  <select
-                    name="membershipType"
-                    value={editFormData.membershipType || ''}
-                    onChange={handleEditInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                    required
-                  >
-                    <option value="">Seçiniz</option>
-                    <option value="individual">Individual</option>
-                    <option value="family">Family</option>
-                    <option value="student">Student</option>
-                    <option value="senior">Senior</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Rol *
-                  </label>
-                  <select
-                    name="role"
-                    value={editFormData.role || ''}
-                    onChange={handleEditInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                    required
-                  >
-                    <option value="">Seçiniz</option>
-                    <option value="volunteer">Volunteer</option>
-                    <option value="member">Member</option>
-                    <option value="organizer">Organizer</option>
-                    <option value="coordinator">Coordinator</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Durum *
-                </label>
-                <select
-                  name="status"
-                  value={editFormData.status || ''}
-                  onChange={handleEditInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                  required
-                >
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={closeEditModal}
-                  className="px-6 py-3 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold transition-colors"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {loading ? 'Güncelleniyor...' : 'Güncelle'}
-                </button>
-              </div>
-            </form>
           </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white/50">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Neden QR Virtual Card?
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                İşletmeniz için ihtiyacınız olan tüm özellikler tek platformda
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Feature 1 */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Güvenli QR Kodlar</h3>
+                <p className="text-gray-600">
+                  Dijital imza ve şifreleme ile korunan QR kodlar. 
+                  Sahte kartlara karşı tam güvenlik.
+                </p>
+              </div>
+
+              {/* Feature 2 */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Kampanya Yönetimi</h3>
+                <p className="text-gray-600">
+                  İndirimler, promosyonlar ve özel tekliflerinizi 
+                  kolayca oluşturun ve yönetin.
+                </p>
+              </div>
+
+              {/* Feature 3 */}
+              <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300">
+                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Analitik & Raporlar</h3>
+                <p className="text-gray-600">
+                  Müşteri davranışlarını analiz edin, 
+                  satış trendlerinizi takip edin.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+              İşletmenizi Dijitalleştirin
+            </h2>
+            <p className="text-xl text-gray-600 mb-8">
+              Hemen başlayın ve modern müşteri deneyimi sunmaya başlayın
+            </p>
+            {!session && (
+              <Link
+                href="/auth/signup"
+                className="inline-block px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-lg font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+              >
+                Ücretsiz Deneme Başlat
+              </Link>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white/80 backdrop-blur-sm border-t border-gray-200/50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="w-6 h-6 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-3 h-3 bg-white rounded-sm"></div>
+            </div>
+            <span className="text-lg font-bold text-gray-900">QR Virtual Card</span>
+          </div>
+          <p className="text-gray-600">
+            © 2024 QR Virtual Card. Tüm hakları saklıdır.
+          </p>
         </div>
-      )}
+      </footer>
     </div>
   );
-} 
+}
