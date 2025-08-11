@@ -22,6 +22,8 @@ class SecureQRManager:
     def __init__(self):
         self.private_key = None
         self.public_key = None
+        self.ec_private_key = None
+        self.ec_public_key = None
 
         self.load_or_generate_keys()
     
@@ -29,12 +31,14 @@ class SecureQRManager:
         """Private/Public key çifti yükle veya oluştur"""
         private_key_path = "crypto_keys/private_key.pem"
         public_key_path = "crypto_keys/public_key.pem"
+        ec_private_key_path = "crypto_keys/nfc_private_key.pem"
+        ec_public_key_path = "crypto_keys/nfc_public_key.pem"
 
         
         # Keys klasörü oluştur
         os.makedirs("crypto_keys", exist_ok=True)
         
-        # RSA keys (QR code için)
+        # RSA keys (Standart QR için)
         if os.path.exists(private_key_path) and os.path.exists(public_key_path):
             # Mevcut keysleri yükle
             with open(private_key_path, "rb") as f:
@@ -61,6 +65,29 @@ class SecureQRManager:
             
             with open(public_key_path, "wb") as f:
                 f.write(self.public_key.public_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo
+                ))
+
+        # ECDSA keys (NFC kompakt veri için)
+        if os.path.exists(ec_private_key_path) and os.path.exists(ec_public_key_path):
+            with open(ec_private_key_path, "rb") as f:
+                self.ec_private_key = serialization.load_pem_private_key(
+                    f.read(), password=None
+                )
+            with open(ec_public_key_path, "rb") as f:
+                self.ec_public_key = serialization.load_pem_public_key(f.read())
+        else:
+            self.ec_private_key = ec.generate_private_key(ec.SECP256R1())
+            self.ec_public_key = self.ec_private_key.public_key()
+            with open(ec_private_key_path, "wb") as f:
+                f.write(self.ec_private_key.private_bytes(
+                    encoding=serialization.Encoding.PEM,
+                    format=serialization.PrivateFormat.PKCS8,
+                    encryption_algorithm=serialization.NoEncryption()
+                ))
+            with open(ec_public_key_path, "wb") as f:
+                f.write(self.ec_public_key.public_bytes(
                     encoding=serialization.Encoding.PEM,
                     format=serialization.PublicFormat.SubjectPublicKeyInfo
                 ))
@@ -174,6 +201,44 @@ class SecureQRManager:
         )
         fingerprint = hashlib.sha256(public_key_bytes).hexdigest()[:16]
         return fingerprint
+
+    # NFC kompakt veri oluşturma (NTAG215 uygun, kısa, imzalı)
+    def create_compact_nfc_payload(self, member_data: Dict[str, Any]) -> str:
+        """
+        NFC kompakt veri formatı (pipe-separated):
+        v|mid|name|exp|iat|nonce|sig
+
+        - v: şema versiyonu (1)
+        - mid: membership_id
+        - name: kısaltılmış tam isim (40 char)
+        - exp: ISO tarih (YYYYMMDD)
+        - iat: UNIX epoch (s)
+        - nonce: 8 byte hex (replay azaltma)
+        - sig: ECDSA P-256 ile imza (base64url, padding yok)
+        """
+        if self.ec_private_key is None:
+            raise Exception("ECDSA private key mevcut değil")
+
+        version = "1"
+        mid = str(member_data.get("membershipId") or member_data.get("membership_id") or "")
+        name = str(member_data.get("fullName") or member_data.get("name") or "")
+        name = name.strip()
+        if len(name) > 40:
+            name = name[:40]
+        # 1 yıl geçerlilik
+        exp_date = (datetime.utcnow() + timedelta(days=365)).strftime('%Y%m%d')
+        iat = str(int(datetime.utcnow().timestamp()))
+        nonce = secrets.token_hex(8)
+
+        parts = [version, mid, name, exp_date, iat, nonce]
+        payload = "|".join(parts)
+
+        signature = self.ec_private_key.sign(
+            payload.encode('utf-8'),
+            ec.ECDSA(hashes.SHA256())
+        )
+        sig_b64 = base64.urlsafe_b64encode(signature).decode('ascii').rstrip('=')
+        return payload + "|" + sig_b64
     
     def create_fake_readable_qr(self) -> str:
         """

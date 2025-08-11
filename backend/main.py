@@ -21,6 +21,7 @@ from crypto_utils import (
     verify_member_qr, 
     get_public_key_pem
 )
+from crypto_utils import secure_qr
 
 # Import NFC service
 
@@ -102,6 +103,7 @@ class MemberResponse(BaseModel):
     createdAt: datetime
     updatedAt: datetime
     secureQrCode: Optional[str] = None  # Standart QR kod
+    nfcQrCode: Optional[str] = None     # NFC kompakt veri
 
     success: bool = True
 
@@ -186,13 +188,16 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
             "updatedAt": db_member.updated_at
         }
         
-        # Güvenli QR kod oluştur (hem standart hem NFC)
+        # Güvenli QR kod oluştur (standart) ve NFC kompakt veri üret
         try:
             secure_qr_data = generate_secure_member_qr(response_data)
             response_data["secureQrCode"] = secure_qr_data
+            # NFC kompakt (NTAG215 uyumlu) payload
+            response_data["nfcQrCode"] = secure_qr.create_compact_nfc_payload(response_data)
         except Exception as e:
             print(f"QR kod oluşturma hatası: {e}")
             response_data["secureQrCode"] = None
+            response_data["nfcQrCode"] = None
         
         return MemberResponse(**response_data)
     
@@ -223,7 +228,9 @@ async def get_all_members(db: Session = Depends(get_db)):
             "role": member.role,
             "status": member.status,
             "createdAt": member.created_at,
-            "updatedAt": member.updated_at
+            "updatedAt": member.updated_at,
+            "secureQrCode": None,
+            "nfcQrCode": None
         }
         member_list.append(member_data)
     
@@ -278,10 +285,12 @@ async def get_member(member_id: int, db: Session = Depends(get_db)):
     try:
         secure_qr_data = generate_secure_member_qr(member_data)
         member_data["secureQrCode"] = secure_qr_data
+        member_data["nfcQrCode"] = secure_qr.create_compact_nfc_payload(member_data)
         print(f"✅ Standart QR kod oluşturuldu - Member ID: {member.id}, Data length: {len(secure_qr_data)}")
     except Exception as e:
         print(f"❌ Standart QR kod oluşturma hatası: {e}")
         member_data["secureQrCode"] = None
+        member_data["nfcQrCode"] = None
     
     return {
         "member": member_data,
