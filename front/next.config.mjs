@@ -2,9 +2,9 @@
 const nextConfig = {
   env: {
     // Mobil erişim için dinamik API URL
-    NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production' 
-      ? 'https://your-domain.com' 
-      : 'https://192.168.1.104:8000'  // Network IP kullan
+    NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production'
+      ? 'https://qrvirtualcardgenerator.onrender.com'
+      : 'http://localhost:8000'
   },
   // HTTPS development server
   async headers() {

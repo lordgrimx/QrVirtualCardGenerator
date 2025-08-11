@@ -17,32 +17,9 @@ export default function MemberPage() {
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
   const [nfcWriteStatus, setNfcWriteStatus] = useState('');
 
-  // NFC yazma fonksiyonu
-  const writeToNFC = async (qrData) => {
-    if (!('NDEFReader' in window)) {
-      setNfcWriteStatus('❌ NFC API desteklenmiyor (Android Chrome gerekli)');
-      return;
-    }
-
-    try {
-      setNfcWriteStatus('📡 NFC kartını telefona yaklaştırın...');
-      
-      const ndef = new NDEFReader();
-      await ndef.write({
-        records: [{
-          recordType: "text",
-          data: qrData
-        }]
-      });
-      
-      setNfcWriteStatus('✅ NFC kartına başarıyla yazıldı!');
-      setTimeout(() => setNfcWriteStatus(''), 3000);
-      
-    } catch (error) {
-      console.error('NFC yazma hatası:', error);
-      setNfcWriteStatus(`❌ Yazma hatası: ${error.message}`);
-      setTimeout(() => setNfcWriteStatus(''), 5000);
-    }
+  // NFC yazma işlemleri MAUI uygulaması üzerinden yapılır
+  const writeToNFC = async () => {
+    alert('NFC yazma işlemi MAUI uygulamasına taşındı. Lütfen MAUI uygulamasını kullanın.');
   };
 
   // Varsayılan kullanıcı bilgileri (DB'de veri yoksa)

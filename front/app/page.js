@@ -24,32 +24,21 @@ export default function AdminPage() {
   const [editFormData, setEditFormData] = useState({});
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  // QR Doğrulayıcı için state'ler
-  const [qrInput, setQrInput] = useState('');
-  const [qrVerifying, setQrVerifying] = useState(false);
-  const [qrResult, setQrResult] = useState(null);
-  const [nfcReading, setNfcReading] = useState(false);
-  const [nfcStatus, setNfcStatus] = useState('');
+  // QR/NFC arayüzleri MAUI uygulamasına taşındı
 
   // Bugünün tarihini al (YYYY-MM-DD formatında)
   const today = new Date().toISOString().split('T')[0];
 
   // Dinamik API URL tespiti (mobil erişim için)
   const getApiUrl = () => {
-    // Browser'da çalışıp çalışmadığını kontrol et
     if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://localhost:8000';
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     }
-    
-    const hostname = window.location.hostname;
-    
-    // Localhost ise localhost backend kullan
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'https://localhost:8000';
-    }
-    
-    // Network IP ise aynı IP'de backend'i kullan
-    return `https://${hostname}:8000`;
+    // Production Vercel → Render backend
+    const envUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envUrl) return envUrl;
+    // Local dev
+    return 'http://localhost:8000';
   };
 
   // Fetch all members from database
@@ -136,71 +125,9 @@ export default function AdminPage() {
     }
   };
 
-  // QR tip detection
-  const detectQRType = (qrData) => {
-    // NFC compact QR: base64-urlsafe, yaklaşık 100-120 karakter, padding yok
-    // Standard QR: JSON benzeri veya daha uzun base64
-    
-    if (qrData.length < 200 && 
-        qrData.match(/^[A-Za-z0-9_-]+$/) && 
-        !qrData.includes('{')) {
-      return 'nfc';  // URL-safe base64, compact
-    } else {
-      return 'standard';  // JSON veya normal format
-    }
-  };
+  // QR/NFC fonksiyonları kaldırıldı
 
-  // QR Doğrulama fonksiyonu - Otomatik tip detection
-  const verifyQrCode = async () => {
-    if (!qrInput.trim()) {
-      alert('Lütfen QR kod verisini girin!');
-      return;
-    }
-
-    try {
-      setQrVerifying(true);
-      setQrResult(null);
-
-      const qrType = detectQRType(qrInput.trim());
-      const endpoint = qrType === 'nfc' ? '/api/qr/verify-nfc' : '/api/qr/verify';
-
-      console.log(`🔍 QR tip algılandı: ${qrType}, endpoint: ${endpoint}`);
-
-      const response = await fetch(`${getApiUrl()}${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ qr_code: qrInput.trim() }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setQrResult({
-          ...data,
-          success: true,
-          is_valid: data.valid, // Backend'den gelen 'valid' field'ını 'is_valid' olarak eşle
-          qr_type: qrType,      // QR tipini ekle
-          algorithm: qrType === 'nfc' ? 'ECDSA P-256' : 'RSA-PSS SHA256'
-        });
-      } else {
-        setQrResult({
-          success: false,
-          error: data.detail || 'Doğrulama hatası',
-          qr_type: qrType
-        });
-      }
-    } catch (error) {
-      console.error('QR Doğrulama hatası:', error);
-      setQrResult({
-        success: false,
-        error: 'Bağlantı hatası: Backend server çalışmıyor olabilir'
-      });
-    } finally {
-      setQrVerifying(false);
-    }
-  };
+  // QR doğrulama arayüzü kaldırıldı; işlemler MAUI uygulamasında yapılır
 
   // iOS ve cihaz tespiti
   const isIOS = () => {
@@ -214,58 +141,7 @@ export default function AdminPage() {
     return /Android/.test(navigator.userAgent);
   };
 
-  // NFC okuma fonksiyonu
-  const readFromNFC = async () => {
-    if (isIOS()) {
-      setNfcStatus('📱 iOS: Kamera ile QR kod tarayın ve metni kopyalayın');
-      // iOS için kamera QR tarayıcısını açma yönergesi
-      alert('iOS\'te NFC Web API desteklenmiyor.\n\n✅ Çözüm:\n1. Kamera uygulamasını açın\n2. QR kodu tarayın\n3. Çıkan metni kopyalayın\n4. Yukarıdaki alana yapıştırın');
-      return;
-    }
-
-    if (!isAndroid()) {
-      setNfcStatus('❌ NFC yalnızca Android Chrome\'da çalışır');
-      return;
-    }
-
-    if (typeof window === 'undefined' || !('NDEFReader' in window)) {
-      setNfcStatus('❌ NFC API desteklenmiyor (Android Chrome gerekli)');
-      return;
-    }
-
-    try {
-      setNfcReading(true);
-      setNfcStatus('📡 NFC kartını telefona yaklaştırın...');
-      
-      const ndef = new NDEFReader();
-      await ndef.scan();
-      
-      ndef.addEventListener("reading", ({ message }) => {
-        for (const record of message.records) {
-          if (record.recordType === "text") {
-            const textDecoder = new TextDecoder();
-            const qrData = textDecoder.decode(record.data);
-            
-            setQrInput(qrData);
-            setNfcStatus('✅ NFC kartından okundu!');
-            setNfcReading(false);
-            
-            // Otomatik doğrulama
-            setTimeout(() => {
-              verifyQrCode();
-            }, 500);
-            
-            return;
-          }
-        }
-      });
-      
-    } catch (error) {
-      console.error('NFC okuma hatası:', error);
-      setNfcStatus(`❌ Okuma hatası: ${error.message}`);
-      setNfcReading(false);
-    }
-  };
+  // NFC fonksiyonları kaldırıldı
 
   // QR doğrulayıcıyı temizle
   const clearQrVerifier = () => {
@@ -431,33 +307,7 @@ export default function AdminPage() {
             {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">QR Doğrulayıcı</span>}
           </div>
           
-          {/* NFC Reader Link */}
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900`}
-            onClick={() => window.open('/nfc-reader', '_blank')}
-            title={sidebarCollapsed ? "NFC Reader" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-r from-green-500 to-emerald-500`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">📖 NFC Reader</span>}
-          </div>
-
-          {/* NFC Writer Link */}
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900`}
-            onClick={() => window.open('/nfc-writer', '_blank')}
-            title={sidebarCollapsed ? "NFC Writer" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">📝 NFC Writer</span>}
-          </div>
+          {/* NFC Reader/Writer linkleri kaldırıldı */}
           
           <div 
             className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
@@ -817,246 +667,7 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* QR Doğrulayıcı Content */}
-          {activeMenu === 'qrVerifier' && (
-            <div className="flex-1 flex flex-col">
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 shadow-xl border border-white/20">
-                <div className="max-w-2xl mx-auto">
-                  {/* QR Giriş Formu */}
-                  <div className="mb-8">
-                    <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                      <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg flex items-center justify-center">
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M3 4a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 13a1 1 0 011-1h3a1 1 0 011 1v3a1 1 0 01-1 1H4a1 1 0 01-1-1v-3zM13 3a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1V4a1 1 0 011-1h3z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      QR Kod Doğrulama
-                    </h3>
-                    <p className="text-gray-600 mb-6">Güvenli üyelik QR kodunu buraya yapıştırın veya yazın</p>
-                    
-                    <div className="space-y-4">
-                      <textarea
-                        value={qrInput}
-                        onChange={(e) => setQrInput(e.target.value)}
-                        placeholder="QR kod verisini buraya yapıştırın... (örn: eyJ0eXBlIjoibWVtYmVyc2hpcF9jYXJkIiw...)"
-                        rows={6}
-                        className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none font-mono"
-                      />
-                      
-                      <div className="flex gap-3">
-                        <button
-                          onClick={verifyQrCode}
-                          disabled={qrVerifying || !qrInput.trim()}
-                          className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-                        >
-                          {qrVerifying ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Doğrulanıyor...
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              QR Kod Doğrula
-                            </>
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={readFromNFC}
-                          disabled={nfcReading}
-                          className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-                          title={isIOS() ? 'iOS: Kamera ile QR tarayın' : isAndroid() && (typeof window !== 'undefined' && 'NDEFReader' in window) ? 'NFC kartından oku' : 'NFC API desteklenmiyor'}
-                        >
-                          {nfcReading ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Okuma...
-                            </>
-                          ) : isIOS() ? (
-                            <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              📱 QR Tara
-                            </>
-                          ) : (
-                            <>
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12" />
-                              </svg>
-                              NFC Oku
-                            </>
-                          )}
-                        </button>
-                        
-                        <button
-                          onClick={clearQrVerifier}
-                          className="px-6 py-3 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold transition-colors"
-                        >
-                          Temizle
-                        </button>
-                      </div>
-                      
-                      {/* NFC Durum Mesajı */}
-                      {nfcStatus && (
-                        <div className={`mt-4 p-4 rounded-xl text-sm text-center font-medium ${
-                          nfcStatus.includes('✅') ? 'bg-green-100 text-green-800' :
-                          nfcStatus.includes('❌') ? 'bg-red-100 text-red-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {nfcStatus}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Doğrulama Sonuçları */}
-                  {qrResult && (
-                    <div className="mb-6">
-                      {qrResult.success && qrResult.is_valid ? (
-                        /* Başarılı Doğrulama */
-                        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-                          <div className="flex items-center gap-3 mb-4">
-                            <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <h4 className="text-lg font-bold text-green-800">
-                                ✅ Geçerli {qrResult.qr_type === 'nfc' ? 'NFC Kompakt' : 'Standart'} QR Kod!
-                              </h4>
-                              <p className="text-green-600">
-                                {qrResult.algorithm} ile doğrulandı
-                                {qrResult.data_source === 'hybrid_nfc_db' && ' • Hibrit Veri (NFC + DB)'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          {qrResult.member_data && (
-                                                         <div className="bg-white rounded-lg p-4 space-y-3">
-                               <h5 className="font-semibold text-gray-900 border-b border-gray-200 pb-2">Üye Bilgileri:</h5>
-                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                 <div><span className="font-medium text-gray-700">İsim:</span> <span className="text-gray-900 font-semibold">{qrResult.member_data.name}</span></div>
-                                 <div><span className="font-medium text-gray-700">Üyelik ID:</span> <span className="text-gray-900 font-semibold">{qrResult.member_data.membership_id}</span></div>
-                                 <div><span className="font-medium text-gray-700">Durum:</span> 
-                                   <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                                     qrResult.member_data.status === 'active' ? 'bg-green-100 text-green-800' :
-                                     qrResult.member_data.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                     'bg-red-100 text-red-800'
-                                   }`}>
-                                     {qrResult.member_data.status?.toUpperCase()}
-                                   </span>
-                                 </div>
-                                 <div><span className="font-medium text-gray-700">Organizasyon:</span> <span className="text-gray-900 font-semibold">{qrResult.member_data.organization}</span></div>
-                                 
-                                 {/* QR Format Bilgisi */}
-                                 <div><span className="font-medium text-gray-700">QR Format:</span> 
-                                   <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                                     qrResult.qr_type === 'nfc' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                                   }`}>
-                                     {qrResult.qr_type === 'nfc' ? 'NFC Kompakt' : 'Standart'}
-                                   </span>
-                                 </div>
-                                 <div><span className="font-medium text-gray-700">İmza Algorithm:</span> <span className="text-gray-900 font-semibold">{qrResult.algorithm}</span></div>
-                                 
-                                 {/* Veriliş Tarihi */}
-                                 <div><span className="font-medium text-gray-700">Veriliş:</span> <span className="text-gray-900 font-semibold">{new Date(qrResult.member_data.issued_at).toLocaleDateString('tr-TR')}</span></div>
-                                 
-                                 {/* Geçerlilik - Sadece standart QR'da var */}
-                                 {qrResult.member_data.expires_at && (
-                                   <div><span className="font-medium text-gray-700">Son Geçerlilik:</span> <span className="text-gray-900 font-semibold">{new Date(qrResult.member_data.expires_at).toLocaleDateString('tr-TR')}</span></div>
-                                 )}
-                                 
-                                 {/* NFC Nonce - Sadece NFC'de var */}
-                                 {qrResult.qr_type === 'nfc' && qrResult.member_data.nonce && (
-                                   <div><span className="font-medium text-gray-700">Nonce:</span> <span className="text-gray-900 font-mono text-xs">{qrResult.member_data.nonce}</span></div>
-                                 )}
-                                 
-                                 {/* İsim Doğrulaması - Sadece NFC'de var */}
-                                 {qrResult.qr_type === 'nfc' && qrResult.member_data.name_verified !== undefined && (
-                                   <div><span className="font-medium text-gray-700">İsim Doğrulaması:</span> 
-                                     <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
-                                       qrResult.member_data.name_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                     }`}>
-                                       {qrResult.member_data.name_verified ? '✅ Eşleşti' : '⚠️ Farklı'}
-                                     </span>
-                                   </div>
-                                 )}
-                                 
-                                 {/* DB İsim - Eğer eşleşmiyorsa göster */}
-                                 {qrResult.qr_type === 'nfc' && !qrResult.member_data.name_verified && qrResult.member_data.db_name && (
-                                   <div><span className="font-medium text-gray-700">DB İsmi:</span> <span className="text-gray-900 font-semibold">{qrResult.member_data.db_name}</span></div>
-                                 )}
-                                 
-                                 {/* Veri Kaynağı */}
-                                 {qrResult.data_source && (
-                                   <div><span className="font-medium text-gray-700">Veri Kaynağı:</span> <span className="text-gray-900 font-semibold">{qrResult.data_source === 'hybrid_nfc_db' ? 'NFC + Veritabanı' : 'QR İçeriği'}</span></div>
-                                 )}
-                               </div>
-                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        /* Başarısız Doğrulama */
-                        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </div>
-                            <div>
-                              <h4 className="text-red-800 font-semibold">
-                                ❌ Geçersiz {qrResult.qr_type === 'nfc' ? 'NFC Kompakt' : 'Standart'} QR Kod
-                              </h4>
-                              <p className="text-red-600">
-                                {qrResult.qr_type === 'nfc' ? 'ECDSA imza doğrulaması başarısız' : 'RSA imza doğrulaması başarısız'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="bg-white rounded-lg p-4">
-                            <p className="text-red-700 font-medium">Hata: {qrResult.error}</p>
-                            <p className="text-red-600 text-sm mt-2">
-                              {qrResult.qr_type === 'nfc' ? 
-                                'Bu NFC QR kod sahte, zamanı dolmuş veya bozulmuş olabilir.' :
-                                'Bu QR kod sahte, zamanı dolmuş veya bozulmuş olabilir.'
-                              }
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Bilgi Kutusu */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center mt-0.5">
-                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h5 className="font-semibold text-blue-800 mb-2">Nasıl Kullanılır?</h5>
-                        <ul className="text-sm text-blue-700 space-y-1">
-                          <li>• <strong>iOS:</strong> Kamera uygulamasıyla QR kod tarayın</li>
-                          <li>• <strong>Android:</strong> "NFC Oku" butonu ile veya kamera</li>
-                          <li>• Çıkan metni kopyalayıp yukarıdaki alana yapıştırın</li>
-                          <li>• "QR Kod Doğrula" butonuna tıklayın</li>
-                          <li>• Sistem üyeliğin geçerliliğini kontrol eder</li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* QR doğrulayıcı arayüzü kaldırıldı */}
 
           {/* Settings Content */}
           {activeMenu === 'settings' && (

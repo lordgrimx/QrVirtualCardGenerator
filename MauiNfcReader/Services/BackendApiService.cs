@@ -18,7 +18,62 @@ public class BackendApiService : IBackendApiService
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
-        _baseUrl = Preferences.Default.Get("BackendBaseUrl", "http://localhost:8000");
+        // 1) Derleme türüne göre Resources/Raw içindeki env dosyasını oku
+        string? baseUrlFromEnvFile = null;
+        try
+        {
+#if DEBUG
+            baseUrlFromEnvFile = TryReadEnvValue("env.development", "BACKEND_BASE_URL");
+#else
+            baseUrlFromEnvFile = TryReadEnvValue("env.production", "BACKEND_BASE_URL");
+#endif
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Env dosyası okunamadı");
+        }
+
+        if (!string.IsNullOrWhiteSpace(baseUrlFromEnvFile))
+        {
+            _baseUrl = baseUrlFromEnvFile!.TrimEnd('/');
+            Preferences.Default.Set("BackendBaseUrl", _baseUrl);
+        }
+        else
+        {
+            // 2) Ortam değişkeni
+            var envUrl = Environment.GetEnvironmentVariable("BACKEND_BASE_URL");
+            if (!string.IsNullOrWhiteSpace(envUrl))
+            {
+                _baseUrl = envUrl.TrimEnd('/');
+            }
+            else
+            {
+                // 3) Önceden kaydedilmiş tercih ya da son çare default
+                _baseUrl = Preferences.Default.Get("BackendBaseUrl", "https://qrvirtualcardgenerator.onrender.com");
+            }
+        }
+    }
+
+    private static string? TryReadEnvValue(string fileName, string key)
+    {
+        using var streamTask = FileSystem.OpenAppPackageFileAsync(fileName);
+        streamTask.Wait();
+        using var stream = streamTask.Result;
+        using var reader = new StreamReader(stream);
+        string? line;
+        while ((line = reader.ReadLine()) != null)
+        {
+            if (line.TrimStart().StartsWith('#')) continue;
+            var eqIndex = line.IndexOf('=');
+            if (eqIndex <= 0) continue;
+            var k = line.Substring(0, eqIndex).Trim();
+            var v = line.Substring(eqIndex + 1).Trim();
+            if (string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
+            {
+                return v;
+            }
+        }
+        return null;
     }
 
     private HttpClient CreateClient()

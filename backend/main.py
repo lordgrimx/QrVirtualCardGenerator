@@ -23,7 +23,6 @@ from crypto_utils import (
 )
 
 # Import NFC service
-from nfc_service import nfc_service
 
 # Load environment variables
 load_dotenv()
@@ -34,14 +33,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS middleware ekliyoruz
-# CORS Configuration from environment
-frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+# CORS middleware
+# Production için Vercel frontend domainini ve local geliştirme hostlarını izinli tut
+frontend_url = os.getenv("FRONTEND_URL", "https://qr-virtual-card-generator.vercel.app")
+allowed_origins = [
+    frontend_url,
+    "http://localhost:3000",
+    "https://localhost:3000",
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # GEÇİCİ: Tüm origin'lere izin ver (development için)
-    allow_credentials=False,  # Wildcard ile credentials kullanılamaz
+    allow_origins=allowed_origins,
+    allow_credentials=False,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -495,125 +499,7 @@ async def download_certificate():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sertifika okunamadı: {str(e)}")
 
-# NFC Reader Endpoints
-
-@app.get("/api/nfc/status")
-async def get_nfc_status():
-    """NFC okuyucu durumunu kontrol et"""
-    try:
-        status = nfc_service.get_reader_status()
-        return {
-            "success": True,
-            "nfc_status": status
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"NFC durum hatası: {str(e)}"
-        }
-
-@app.post("/api/nfc/read")
-async def read_nfc_card():
-    """NFC kartından veri oku"""
-    try:
-        result = nfc_service.read_nfc_card(timeout=10)
-        return {
-            "success": result.get("success", False),
-            "nfc_data": result
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"NFC okuma hatası: {str(e)}"
-        }
-
-@app.post("/api/nfc/write")
-async def write_nfc_card(nfc_data: dict):
-    """NFC kartına veri yaz"""
-    try:
-        data = nfc_data.get("data", "")
-        card_type = nfc_data.get("type", "text")
-        
-        if not data:
-            raise HTTPException(status_code=400, detail="Yazılacak veri gerekli")
-        
-        result = nfc_service.write_nfc_card(data, card_type)
-        return {
-            "success": result.get("success", False),
-            "write_result": result
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"NFC yazma hatası: {str(e)}"
-        }
-
-@app.post("/api/nfc/start-reading")
-async def start_nfc_reading():
-    """Sürekli NFC okuma modunu başlat"""
-    try:
-        result = await nfc_service.start_continuous_reading()
-        return {
-            "success": True,
-            "message": "Sürekli NFC okuma başlatıldı",
-            "result": result
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"NFC okuma başlatma hatası: {str(e)}"
-        }
-
-@app.post("/api/nfc/stop-reading")
-async def stop_nfc_reading():
-    """Sürekli NFC okuma modunu durdur"""
-    try:
-        result = nfc_service.stop_continuous_reading()
-        return {
-            "success": True,
-            "message": "NFC okuma durduruldu",
-            "result": result
-        }
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"NFC okuma durdurma hatası: {str(e)}"
-        }
-
-@app.post("/api/nfc/verify-and-read")
-async def nfc_verify_and_read():
-    """NFC kartından QR kod oku ve doğrula"""
-    try:
-        # NFC kartından veri oku
-        read_result = nfc_service.read_nfc_card(timeout=10)
-        
-        if not read_result.get("success"):
-            return {
-                "success": False,
-                "error": "NFC okuma başarısız",
-                "nfc_error": read_result.get("error")
-            }
-        
-        qr_data = read_result.get("data", "")
-        
-        # QR kodunu doğrula
-        is_valid, decoded_data, error_msg = verify_member_qr(qr_data)
-        
-        return {
-            "success": True,
-            "nfc_read": read_result,
-            "qr_verification": {
-                "valid": is_valid,
-                "member_data": decoded_data if is_valid else None,
-                "error": error_msg if not is_valid else None
-            }
-        }
-        
-    except Exception as e:
-        return {
-            "success": False,
-            "error": f"NFC okuma ve doğrulama hatası: {str(e)}"
-        }
+## NFC işlemleri artık MAUI uygulaması tarafından yapılacak. Backend bu amaçla NFC endpointlerini içermemektedir.
 
 
 
