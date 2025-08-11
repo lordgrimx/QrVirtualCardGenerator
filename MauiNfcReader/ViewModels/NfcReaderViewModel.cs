@@ -405,11 +405,26 @@ public partial class NfcReaderViewModel : ObservableObject
             var text = DecryptedContent;
             if (string.IsNullOrWhiteSpace(text) && cardData.RawData?.Length > 0)
             {
+                // 1) NDEF Text formatını dene
                 var ndefText = TryDecodeNdefText(cardData.RawData);
                 if (!string.IsNullOrWhiteSpace(ndefText))
+                {
                     text = ndefText;
+                }
                 else
-                    try { text = Encoding.UTF8.GetString(cardData.RawData); } catch { }
+                {
+                    // 2) Ham veri hex string mi kontrol et ve çevir
+                    var hexText = TryDecodeHexString(cardData.RawData);
+                    if (!string.IsNullOrWhiteSpace(hexText))
+                    {
+                        text = hexText;
+                    }
+                    else
+                    {
+                        // 3) Son çare olarak UTF8 decode
+                        try { text = Encoding.UTF8.GetString(cardData.RawData); } catch { }
+                    }
+                }
             }
 
             if (string.IsNullOrWhiteSpace(text))
@@ -703,10 +718,12 @@ public partial class NfcReaderViewModel : ObservableObject
     private async Task VerifyQrAsync()
     {
         var text = DecryptedContent;
-        // Android akışı: Decryption yoksa RawData -> NDEF Text decode dene, olmazsa UTF8
+        // Android akışı: Decryption yoksa RawData -> çeşitli formatları dene
         if (string.IsNullOrWhiteSpace(text) && LastReadCard?.RawData?.Length > 0)
         {
             var raw = LastReadCard.RawData;
+            
+            // 1) NDEF Text formatını dene
             var ndefText = TryDecodeNdefText(raw);
             if (!string.IsNullOrWhiteSpace(ndefText))
             {
@@ -714,7 +731,17 @@ public partial class NfcReaderViewModel : ObservableObject
             }
             else
             {
-                try { text = Encoding.UTF8.GetString(raw); } catch { }
+                // 2) Ham veri hex string mi kontrol et ve çevir
+                var hexText = TryDecodeHexString(raw);
+                if (!string.IsNullOrWhiteSpace(hexText))
+                {
+                    text = hexText;
+                }
+                else
+                {
+                    // 3) Son çare olarak UTF8 decode
+                    try { text = Encoding.UTF8.GetString(raw); } catch { }
+                }
             }
         }
 
@@ -724,6 +751,7 @@ public partial class NfcReaderViewModel : ObservableObject
             return;
         }
 
+        _logger.LogInformation($"QR Verification Text: {text.Substring(0, Math.Min(100, text.Length))}...");
         await VerifyQrAsync(text);
     }
 
@@ -921,4 +949,45 @@ public partial class NfcReaderViewModel : ObservableObject
         }
         catch { return null; }
     }
+
+    /// <summary>
+    /// Ham veriyi hex string olarak kontrol et ve text'e çevir
+    /// NFC kartından okunan veri hex formatında ise string'e çevirir
+    /// </summary>
+    private static string? TryDecodeHexString(byte[] rawData)
+    {
+        try
+        {
+            if (rawData == null || rawData.Length == 0) return null;
+
+            // 1) Ham veriyi string'e çevir (hex karakterler var mı diye)
+            var rawString = Encoding.UTF8.GetString(rawData).Trim();
+            
+            // 2) Hex string formatında mı kontrol et (sadece 0-9, A-F, a-f karakterleri)
+            if (rawString.Length > 10 && rawString.Length % 2 == 0 && IsHexString(rawString))
+            {
+                // 3) Hex string'i byte'lara çevir
+                var hexBytes = Convert.FromHexString(rawString);
+                
+                // 4) Byte'ları string'e çevir
+                var decodedText = Encoding.UTF8.GetString(hexBytes);
+                
+                // 5) Çıktı mantıklı mı kontrol et (NFC_ENC_V1 veya JSON içeriyor mu)
+                if (decodedText.Contains("NFC_ENC_V1") || 
+                    decodedText.Contains("{\"v\":") || 
+                    decodedText.Contains("\"mid\""))
+                {
+                    return decodedText;
+                }
+            }
+            
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+
 }
