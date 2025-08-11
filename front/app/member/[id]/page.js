@@ -652,8 +652,14 @@ export default function MemberPage() {
 
       {/* QR Kod Modal */}
       {qrModalOpen && (
-        <div className="fixed inset-0 bg-white/10 backdrop-blur-md flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative">
+        <div
+          className="fixed inset-0 bg-white/10 backdrop-blur-md flex items-center justify-center z-50 p-4"
+          onClick={() => setQrModalOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Kapat Butonu */}
             <button
               onClick={() => setQrModalOpen(false)}
@@ -742,6 +748,25 @@ export default function MemberPage() {
                 />
               </div>
             </div>
+
+            {/* NFC Compact ham içerik (debug/görünürlük) */}
+            {qrType === 'nfc' && (
+              <div className="mb-4">
+                <label className="block text-xs text-gray-500 mb-1">NFC Compact İçerik</label>
+                <textarea
+                  readOnly
+                  value={qrData}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono bg-gray-50"
+                />
+                <button
+                  className="mt-2 px-3 py-1 text-xs bg-gray-800 text-white rounded"
+                  onClick={() => navigator.clipboard.writeText(qrData)}
+                >
+                  Kopyala
+                </button>
+              </div>
+            )}
 
             {/* Üye Bilgileri */}
             <div className="text-center">
