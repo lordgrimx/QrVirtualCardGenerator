@@ -46,6 +46,20 @@ export default function AdminPage() {
     end_date: ''
   });
 
+  // Settings form data
+  const [settingsFormData, setSettingsFormData] = useState({
+    currentPassword: '',
+    newEmail: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  // Dashboard state
+  const [currentBusinessIndex, setCurrentBusinessIndex] = useState(0);
+  const [businessModalOpen, setBusinessModalOpen] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [businessEvents, setBusinessEvents] = useState([]);
+
   const [activeMenu, setActiveMenu] = useState('businessRegistration'); // Start with business registration
   const [members, setMembers] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -329,6 +343,136 @@ export default function AdminPage() {
     }
   };
 
+  // Settings form handlers
+  const handleSettingsInputChange = (e) => {
+    const { name, value } = e.target;
+    setSettingsFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSettingsSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+
+      // Validation
+      if (settingsFormData.newPassword !== settingsFormData.confirmPassword) {
+        alert('❌ Yeni şifreler eşleşmiyor!');
+        return;
+      }
+
+      if (settingsFormData.newPassword && settingsFormData.newPassword.length < 6) {
+        alert('❌ Şifre en az 6 karakter olmalıdır!');
+        return;
+      }
+
+      const updateData = {};
+      
+      if (settingsFormData.newEmail && settingsFormData.newEmail !== session.user.email) {
+        updateData.email = settingsFormData.newEmail;
+      }
+
+      if (settingsFormData.newPassword) {
+        updateData.currentPassword = settingsFormData.currentPassword;
+        updateData.newPassword = settingsFormData.newPassword;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        alert('❌ Güncellenecek bir değişiklik bulunamadı!');
+        return;
+      }
+      
+      const response = await fetch(`${getApiUrl()}/api/auth/update-profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('✅ Profil başarıyla güncellendi!');
+        // Reset form
+        setSettingsFormData({
+          currentPassword: '',
+          newEmail: '',
+          newPassword: '',
+          confirmPassword: ''
+        });
+
+        // If email was changed, user might need to re-login
+        if (updateData.email) {
+          alert('📧 Email adresi değiştirildi. Lütfen yeni email ile tekrar giriş yapın.');
+          signOut({ callbackUrl: '/auth/signin' });
+        }
+      } else {
+        alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);
+      }
+    } catch (error) {
+      console.error('Settings update error:', error);
+      alert('API bağlantı hatası. Backend server\'ın çalıştığından emin olun.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch business events
+  const fetchBusinessEvents = async (businessId = null) => {
+    try {
+      const url = businessId 
+        ? `${getApiUrl()}/api/business-events?business_id=${businessId}`
+        : `${getApiUrl()}/api/business-events`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      if (data.success) {
+        setBusinessEvents(data.events || []);
+        return data.events || [];
+      } else {
+        console.error('Failed to fetch business events');
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching business events:', error);
+      return [];
+    }
+  };
+
+  // Business modal handlers
+  const openBusinessModal = async (business) => {
+    setSelectedBusiness(business);
+    setLoading(true);
+    const events = await fetchBusinessEvents(business.id);
+    setBusinessEvents(events);
+    setLoading(false);
+    setBusinessModalOpen(true);
+  };
+
+  const closeBusinessModal = () => {
+    setBusinessModalOpen(false);
+    setSelectedBusiness(null);
+    setBusinessEvents([]);
+  };
+
+  // Navigation handlers for business cards
+  const nextBusiness = () => {
+    if (businesses.length > 0) {
+      setCurrentBusinessIndex((prev) => (prev + 1) % Math.ceil(businesses.length / 3));
+    }
+  };
+
+  const prevBusiness = () => {
+    if (businesses.length > 0) {
+      setCurrentBusinessIndex((prev) => prev === 0 ? Math.ceil(businesses.length / 3) - 1 : prev - 1);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -496,6 +640,22 @@ export default function AdminPage() {
               </svg>
             </div>
             {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Settings</span>}
+          </div>
+
+          {/* Logout Button */}
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <button 
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 text-red-600 hover:bg-red-50 hover:text-red-700 group`}
+              title={sidebarCollapsed ? "Çıkış Yap" : ""}
+            >
+              <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-red-100 group-hover:bg-red-200`}>
+                <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </div>
+              {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Çıkış Yap</span>}
+            </button>
           </div>
         </nav>
       </div>
@@ -1100,26 +1260,294 @@ export default function AdminPage() {
 
           {/* Dashboard Content */}
           {activeMenu === 'dashboard' && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <div className="w-8 h-8 bg-white rounded-lg"></div>
+            <div className="flex-1 p-8 space-y-8">
+              {/* Business Cards Section */}
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Kayıtlı İşletmeler</h2>
+                    <p className="text-gray-600">Sistemdeki işletmeleri görüntüleyin ve yönetin</p>
+                  </div>
+                  {businesses.length > 3 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={prevBusiness}
+                        className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      <span className="text-sm text-gray-600 mx-2">
+                        {currentBusinessIndex + 1} / {Math.ceil(businesses.length / 3)}
+                      </span>
+                      <button
+                        onClick={nextBusiness}
+                        className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Dashboard</h3>
-                <p className="text-gray-600">Coming soon...</p>
+
+                {businesses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-700 mb-2">Henüz İşletme Yok</h3>
+                    <p className="text-gray-500">İlk işletmenizi kaydetmek için "İşletme Kayıt" menüsünü kullanın</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {businesses.slice(currentBusinessIndex * 3, (currentBusinessIndex + 1) * 3).map((business, index) => (
+                      <div
+                        key={business.id}
+                        className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:border-blue-300"
+                        onClick={() => openBusinessModal(business)}
+                      >
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <span className="text-white font-bold text-lg">
+                              {business.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </span>
+                          </div>
+                          <div className="w-6 h-6 text-gray-400 group-hover:text-blue-600 transition-colors">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                          {business.name}
+                        </h3>
+                        
+                        {business.description && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                            {business.description}
+                          </p>
+                        )}
+
+                        <div className="space-y-2">
+                          {business.business_type && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
+                                <div className="w-2 h-2 bg-blue-600 rounded"></div>
+                              </div>
+                              <span className="text-sm text-gray-700 capitalize">{business.business_type}</span>
+                            </div>
+                          )}
+                          
+                          {business.phone && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center">
+                                <div className="w-2 h-2 bg-green-600 rounded"></div>
+                              </div>
+                              <span className="text-sm text-gray-700">{business.phone}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 bg-gray-100 rounded flex items-center justify-center">
+                              <div className="w-2 h-2 bg-gray-600 rounded"></div>
+                            </div>
+                            <span className="text-sm text-gray-700">
+                              {new Date(business.created_at).toLocaleDateString('tr-TR')}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-200">
+                          <p className="text-xs text-blue-600 text-center font-medium group-hover:text-blue-700">
+                            Detaylar için tıklayın
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Stats Section */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-blue-100 text-sm">Toplam İşletme</p>
+                      <p className="text-2xl font-bold">{businesses.length}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-green-100 text-sm">Toplam Üye</p>
+                      <p className="text-2xl font-bold">{members.length}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-purple-100 text-sm">Aktif Event</p>
+                      <p className="text-2xl font-bold">{businessEvents.length}</p>
+                    </div>
+                    <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
           {/* Settings Content */}
           {activeMenu === 'settings' && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                  <div className="w-8 h-8 bg-white rounded-lg"></div>
+            <div className="flex-1 p-8">
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">Admin Ayarları</h2>
+                      <p className="text-gray-600">Profil bilgilerinizi ve güvenlik ayarlarınızı yönetin</p>
+                    </div>
+                  </div>
+
+                  {/* Current Admin Info */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
+                    <h3 className="text-lg font-semibold text-blue-800 mb-4">Mevcut Admin Bilgileri</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-blue-700 mb-1">Ad Soyad:</span>
+                        <span className="text-blue-900 font-semibold">{session?.user?.name || 'Admin User'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-blue-700 mb-1">Email:</span>
+                        <span className="text-blue-900 font-semibold">{session?.user?.email || 'admin@qrvirtualcard.com'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-blue-700 mb-1">Rol:</span>
+                        <span className="text-blue-900 font-semibold capitalize">{session?.user?.role || 'Admin'}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-blue-700 mb-1">Son Giriş:</span>
+                        <span className="text-blue-900 font-semibold">{new Date().toLocaleDateString('tr-TR')}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Update Form */}
+                  <form onSubmit={handleSettingsSubmit} className="space-y-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-6">Profil Güncelleme</h3>
+
+                    {/* Email Update */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Email Adresi Değiştir</h4>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Yeni Email Adresi
+                        </label>
+                        <input
+                          type="email"
+                          name="newEmail"
+                          value={settingsFormData.newEmail}
+                          onChange={handleSettingsInputChange}
+                          placeholder={session?.user?.email || 'admin@qrvirtualcard.com'}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Email değiştirildikten sonra tekrar giriş yapmanız gerekecek</p>
+                      </div>
+                    </div>
+
+                    {/* Password Update */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Şifre Değiştir</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Mevcut Şifre *
+                          </label>
+                          <input
+                            type="password"
+                            name="currentPassword"
+                            value={settingsFormData.currentPassword}
+                            onChange={handleSettingsInputChange}
+                            placeholder="Mevcut şifrenizi girin"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                          />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Yeni Şifre *
+                            </label>
+                            <input
+                              type="password"
+                              name="newPassword"
+                              value={settingsFormData.newPassword}
+                              onChange={handleSettingsInputChange}
+                              placeholder="Yeni şifrenizi girin"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                              minLength={6}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                              Yeni Şifre Tekrar *
+                            </label>
+                            <input
+                              type="password"
+                              name="confirmPassword"
+                              value={settingsFormData.confirmPassword}
+                              onChange={handleSettingsInputChange}
+                              placeholder="Yeni şifrenizi tekrar girin"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                              minLength={6}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500">Şifre en az 6 karakter olmalıdır</p>
+                      </div>
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className="flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Güncelleniyor...' : 'Değişiklikleri Kaydet'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Settings</h3>
-                <p className="text-gray-600">Coming soon...</p>
               </div>
             </div>
           )}
@@ -1300,6 +1728,186 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Business Details Modal */}
+          {businessModalOpen && selectedBusiness && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+                {/* Modal Header */}
+                <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">
+                          {selectedBusiness.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                        </span>
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">{selectedBusiness.name}</h2>
+                        <p className="text-gray-600">{selectedBusiness.business_type}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={closeBusinessModal}
+                      className="w-10 h-10 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center transition-all duration-200 text-gray-600 hover:text-red-600"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Modal Content */}
+                <div className="p-6 space-y-8">
+                  {/* Business Information */}
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
+                    <h3 className="text-xl font-bold text-blue-900 mb-6 flex items-center gap-2">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      İşletme Bilgileri
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="text-sm font-semibold text-blue-700 mb-2">İşletme Adı</h4>
+                        <p className="text-blue-900 font-medium">{selectedBusiness.name}</p>
+                      </div>
+                      
+                      {selectedBusiness.description && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Açıklama</h4>
+                          <p className="text-blue-900">{selectedBusiness.description}</p>
+                        </div>
+                      )}
+                      
+                      {selectedBusiness.business_type && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-2">İşletme Türü</h4>
+                          <p className="text-blue-900 capitalize">{selectedBusiness.business_type}</p>
+                        </div>
+                      )}
+                      
+                      {selectedBusiness.phone && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Telefon</h4>
+                          <p className="text-blue-900">{selectedBusiness.phone}</p>
+                        </div>
+                      )}
+                      
+                      {selectedBusiness.email && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Email</h4>
+                          <p className="text-blue-900">{selectedBusiness.email}</p>
+                        </div>
+                      )}
+                      
+                      {selectedBusiness.website && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Website</h4>
+                          <a href={selectedBusiness.website} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:text-blue-800 underline">
+                            {selectedBusiness.website}
+                          </a>
+                        </div>
+                      )}
+                      
+                      {selectedBusiness.address && (
+                        <div className="md:col-span-2">
+                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Adres</h4>
+                          <p className="text-blue-900">{selectedBusiness.address}</p>
+                        </div>
+                      )}
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-blue-700 mb-2">Kayıt Tarihi</h4>
+                        <p className="text-blue-900">{new Date(selectedBusiness.created_at).toLocaleDateString('tr-TR')}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Business Events */}
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-xl font-bold text-purple-900 flex items-center gap-2">
+                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0V3m0 4v4m0-4H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2" />
+                        </svg>
+                        Event & Kampanyalar ({businessEvents.length})
+                      </h3>
+                      {loading && (
+                        <div className="w-6 h-6 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+                      )}
+                    </div>
+
+                    {businessEvents.length === 0 ? (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0V3m0 4v4m0-4H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2" />
+                          </svg>
+                        </div>
+                        <h4 className="text-lg font-semibold text-purple-700 mb-2">Henüz Event Yok</h4>
+                        <p className="text-purple-600">Bu işletme için henüz event/kampanya oluşturulmamış</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {businessEvents.map((event, index) => (
+                          <div key={event.id} className="bg-white border border-purple-200 rounded-xl p-4 hover:shadow-lg transition-shadow">
+                            <div className="flex items-start justify-between mb-3">
+                              <h4 className="font-bold text-gray-900">{event.title}</h4>
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                event.event_type === 'discount' ? 'bg-red-100 text-red-800' :
+                                event.event_type === 'campaign' ? 'bg-blue-100 text-blue-800' :
+                                event.event_type === 'free_shipping' ? 'bg-green-100 text-green-800' :
+                                event.event_type === 'loyalty' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {event.event_type === 'discount' ? 'İndirim' :
+                                 event.event_type === 'campaign' ? 'Kampanya' :
+                                 event.event_type === 'free_shipping' ? 'Ücretsiz Kargo' :
+                                 event.event_type === 'loyalty' ? 'Sadakat' : event.event_type}
+                              </span>
+                            </div>
+                            
+                            {event.description && (
+                              <p className="text-sm text-gray-600 mb-3">{event.description}</p>
+                            )}
+                            
+                            <div className="space-y-2 text-sm">
+                              {event.discount_percentage && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">İndirim:</span>
+                                  <span className="font-semibold text-red-600">%{event.discount_percentage}</span>
+                                </div>
+                              )}
+                              
+                              {event.min_purchase_amount && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-600">Min. Tutar:</span>
+                                  <span className="font-semibold">₺{event.min_purchase_amount}</span>
+                                </div>
+                              )}
+                              
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Başlangıç:</span>
+                                <span className="font-semibold">{new Date(event.start_date).toLocaleDateString('tr-TR')}</span>
+                              </div>
+                              
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Bitiş:</span>
+                                <span className="font-semibold">{new Date(event.end_date).toLocaleDateString('tr-TR')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}

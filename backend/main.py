@@ -122,6 +122,11 @@ class LoginResponse(BaseModel):
     message: str
     success: bool = True
 
+class UpdateProfileRequest(BaseModel):
+    email: Optional[str] = None
+    currentPassword: Optional[str] = None
+    newPassword: Optional[str] = None
+
 # Business Models
 class BusinessCreate(BaseModel):
     name: str
@@ -291,6 +296,64 @@ async def get_current_user(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         print(f"Get user error: {e}")
         raise HTTPException(status_code=500, detail="Kullanıcı bilgileri alınırken hata oluştu")
+
+@app.put("/api/auth/update-profile")
+async def update_profile(update_data: UpdateProfileRequest, db: Session = Depends(get_db)):
+    """Update admin profile (email and/or password)"""
+    try:
+        # Admin kullanıcısını bul (hardcoded email ile)
+        admin_email = "admin@qrvirtualcard.com"
+        user = db.query(DBUser).filter(DBUser.email == admin_email).first()
+        
+        if not user:
+            raise HTTPException(status_code=404, detail="Admin kullanıcı bulunamadı")
+        
+        # Email güncelleme
+        if update_data.email and update_data.email != user.email:
+            # Email çakışma kontrolü
+            existing_user = db.query(DBUser).filter(DBUser.email == update_data.email).first()
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Bu email adresi zaten kullanılıyor")
+            
+            user.email = update_data.email
+        
+        # Şifre güncelleme
+        if update_data.newPassword:
+            if not update_data.currentPassword:
+                raise HTTPException(status_code=400, detail="Mevcut şifre gerekli")
+            
+            # Mevcut şifre doğrulama
+            if not verify_password(update_data.currentPassword, user.password_hash):
+                raise HTTPException(status_code=400, detail="Mevcut şifre yanlış")
+            
+            if len(update_data.newPassword) < 6:
+                raise HTTPException(status_code=400, detail="Şifre en az 6 karakter olmalıdır")
+            
+            # Şifreyi güncelle
+            user.password_hash = hash_password(update_data.newPassword)
+        
+        user.updated_at = datetime.utcnow()
+        db.commit()
+        db.refresh(user)
+        
+        return {
+            "message": "Profil başarıyla güncellendi",
+            "success": True,
+            "user": UserResponse(
+                id=user.id,
+                name=user.name,
+                email=user.email,
+                role=user.role,
+                is_active=user.is_active,
+                created_at=user.created_at
+            )
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Update profile error: {e}")
+        raise HTTPException(status_code=500, detail="Profil güncellenirken hata oluştu")
 
 # Business Management Endpoints
 
