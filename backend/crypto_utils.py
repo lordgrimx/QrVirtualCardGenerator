@@ -262,7 +262,56 @@ class SecureQRManager:
         final_data = compact_data.copy()
         final_data["sig"] = sig_compact
         
-        return json.dumps(final_data, separators=(',', ':'))
+        nfc_json = json.dumps(final_data, separators=(',', ':'))
+        
+        # Ek şifreleme uygula (NFC verisini bir kez daha güvenli hale getir)
+        encrypted_nfc = self._encrypt_nfc_data(nfc_json)
+        return encrypted_nfc
+    
+    def _encrypt_nfc_data(self, data: str) -> str:
+        """
+        NFC compact verisini ek olarak şifrele
+        Basit ama etkili XOR + Base64 şifreleme
+        """
+        # Şifreleme anahtarı (secret key)
+        key = b"NFC_SECURE_2024_CRYPTO_KEY_ADVANCED"
+        
+        # Veriyi bytes'a çevir
+        data_bytes = data.encode('utf-8')
+        
+        # XOR şifreleme uygula
+        encrypted_bytes = bytearray()
+        for i, byte in enumerate(data_bytes):
+            key_byte = key[i % len(key)]
+            encrypted_bytes.append(byte ^ key_byte)
+        
+        # Base64 ile encode et
+        encrypted_b64 = base64.b64encode(bytes(encrypted_bytes)).decode('ascii')
+        
+        # Prefix ekle (şifrelenmiş olduğunu belirtmek için)
+        return f"NFC_ENC_V1:{encrypted_b64}"
+    
+    def _decrypt_nfc_data(self, encrypted_data: str) -> str:
+        """
+        Şifrelenmiş NFC verisini çöz
+        """
+        if not encrypted_data.startswith("NFC_ENC_V1:"):
+            return encrypted_data  # Şifrelenmiş değil
+        
+        # Prefix'i kaldır
+        encrypted_b64 = encrypted_data[11:]  # "NFC_ENC_V1:" uzunluğu
+        
+        # Base64 decode
+        encrypted_bytes = base64.b64decode(encrypted_b64)
+        
+        # XOR ile çöz
+        key = b"NFC_SECURE_2024_CRYPTO_KEY_ADVANCED"
+        decrypted_bytes = bytearray()
+        for i, byte in enumerate(encrypted_bytes):
+            key_byte = key[i % len(key)]
+            decrypted_bytes.append(byte ^ key_byte)
+        
+        return bytes(decrypted_bytes).decode('utf-8')
     
     def create_fake_readable_qr(self) -> str:
         """

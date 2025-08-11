@@ -16,7 +16,6 @@ export default function MemberPage() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
   const [nfcWriteStatus, setNfcWriteStatus] = useState('');
-  const [showNfcContent, setShowNfcContent] = useState(false);
 
   // NFC yazma işlemleri MAUI uygulaması üzerinden yapılır
   const writeToNFC = async () => {
@@ -750,25 +749,15 @@ export default function MemberPage() {
               </div>
             </div>
 
-            {/* NFC Compact ham içerik (şifrelenmiş görünüm) */}
+            {/* NFC Compact şifrelenmiş içerik */}
             {qrType === 'nfc' && (
               <div className="mb-4">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="text-xs text-gray-500">NFC Compact İçerik (Şifrelenmiş)</label>
-                  <button
-                    onClick={() => setShowNfcContent(!showNfcContent)}
-                    className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded transition-colors"
-                  >
-                    {showNfcContent ? '🔒 Gizle' : '👁️ Göster'}
-                  </button>
-                </div>
+                <label className="block text-xs text-gray-500 mb-2">NFC Compact İçerik (Çift Şifrelenmiş)</label>
                 <textarea
                   readOnly
-                  value={showNfcContent ? qrData : '•'.repeat(Math.min(qrData.length, 120)) + '\n' + '🔐 Güvenlik nedeniyle şifrelenmiş olarak gösteriliyor...\n' + '👆 Yukarıdaki "Göster" butonuna tıklayarak ham içeriği görüntüleyebilirsiniz.'}
-                  rows={showNfcContent ? 3 : 4}
-                  className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono resize-none ${
-                    showNfcContent ? 'bg-gray-50' : 'bg-purple-50 text-purple-800'
-                  }`}
+                  value={qrData}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono resize-none bg-purple-50 text-purple-900"
                 />
                 <div className="flex gap-2 mt-2">
                   <button
@@ -777,12 +766,13 @@ export default function MemberPage() {
                   >
                     📋 Kopyala
                   </button>
-                  {showNfcContent && (
-                    <span className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded">
-                      ✅ Ham içerik gösteriliyor
-                    </span>
-                  )}
+                  <span className="px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded">
+                    🔐 Çift şifreleme aktif
+                  </span>
                 </div>
+                <p className="text-xs text-purple-600 mt-2">
+                  * Bu veri NFC optimizasyonu için JSON formatında hazırlanmış ve ek güvenlik için şifrelenmiştir.
+                </p>
               </div>
             )}
 
