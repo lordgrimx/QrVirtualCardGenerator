@@ -205,40 +205,64 @@ class SecureQRManager:
     # NFC kompakt veri oluşturma (NTAG215 uygun, kısa, imzalı)
     def create_compact_nfc_payload(self, member_data: Dict[str, Any]) -> str:
         """
-        NFC kompakt veri formatı (pipe-separated):
-        v|mid|name|exp|iat|nonce|sig
+        NFC kompakt veri formatı (JSON-like, daha okunabilir):
+        {"v":1,"mid":"CC-2024-001","name":"John Doe","exp":"20251215","sig":"..."}
 
         - v: şema versiyonu (1)
-        - mid: membership_id
-        - name: kısaltılmış tam isim (40 char)
+        - mid: membership_id (kısaltılmış)
+        - name: kısaltılmış tam isim (25 char)
         - exp: ISO tarih (YYYYMMDD)
-        - iat: UNIX epoch (s)
-        - nonce: 8 byte hex (replay azaltma)
-        - sig: ECDSA P-256 ile imza (base64url, padding yok)
+        - sig: ECDSA P-256 ile imza (base64url, kısa)
         """
         if self.ec_private_key is None:
             raise Exception("ECDSA private key mevcut değil")
 
-        version = "1"
+        # Kompakt veri hazırlığı
         mid = str(member_data.get("membershipId") or member_data.get("membership_id") or "")
+        # Membership ID'yi kısalt (CC-2024-001 formatında)
+        if len(mid) > 12:
+            mid = mid[:12]
+        
         name = str(member_data.get("fullName") or member_data.get("name") or "")
         name = name.strip()
-        if len(name) > 40:
-            name = name[:40]
+        if len(name) > 25:
+            # İsmi daha akıllıca kısalt
+            name_parts = name.split()
+            if len(name_parts) > 1:
+                name = f"{name_parts[0]} {name_parts[-1]}"
+                if len(name) > 25:
+                    name = name[:25]
+            else:
+                name = name[:25]
+        
         # 1 yıl geçerlilik
         exp_date = (datetime.utcnow() + timedelta(days=365)).strftime('%Y%m%d')
-        iat = str(int(datetime.utcnow().timestamp()))
-        nonce = secrets.token_hex(8)
-
-        parts = [version, mid, name, exp_date, iat, nonce]
-        payload = "|".join(parts)
-
+        
+        # Kompakt JSON-like payload
+        compact_data = {
+            "v": 1,
+            "mid": mid,
+            "name": name,
+            "exp": exp_date
+        }
+        
+        # JSON string'i oluştur (minimal spacing)
+        payload = json.dumps(compact_data, separators=(',', ':'))
+        
+        # İmza oluştur
         signature = self.ec_private_key.sign(
             payload.encode('utf-8'),
             ec.ECDSA(hashes.SHA256())
         )
-        sig_b64 = base64.urlsafe_b64encode(signature).decode('ascii').rstrip('=')
-        return payload + "|" + sig_b64
+        
+        # Kompakt imza (sadece ilk 32 byte)
+        sig_compact = base64.urlsafe_b64encode(signature[:32]).decode('ascii').rstrip('=')
+        
+        # Final payload: JSON + signature
+        final_data = compact_data.copy()
+        final_data["sig"] = sig_compact
+        
+        return json.dumps(final_data, separators=(',', ':'))
     
     def create_fake_readable_qr(self) -> str:
         """

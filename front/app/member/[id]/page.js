@@ -16,6 +16,7 @@ export default function MemberPage() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
   const [nfcWriteStatus, setNfcWriteStatus] = useState('');
+  const [showNfcContent, setShowNfcContent] = useState(false);
 
   // NFC yazma işlemleri MAUI uygulaması üzerinden yapılır
   const writeToNFC = async () => {
@@ -657,7 +658,7 @@ export default function MemberPage() {
           onClick={() => setQrModalOpen(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative"
+            className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[95vh] overflow-y-auto p-8 relative"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Kapat Butonu */}
@@ -749,22 +750,39 @@ export default function MemberPage() {
               </div>
             </div>
 
-            {/* NFC Compact ham içerik (debug/görünürlük) */}
+            {/* NFC Compact ham içerik (şifrelenmiş görünüm) */}
             {qrType === 'nfc' && (
               <div className="mb-4">
-                <label className="block text-xs text-gray-500 mb-1">NFC Compact İçerik</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs text-gray-500">NFC Compact İçerik (Şifrelenmiş)</label>
+                  <button
+                    onClick={() => setShowNfcContent(!showNfcContent)}
+                    className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded transition-colors"
+                  >
+                    {showNfcContent ? '🔒 Gizle' : '👁️ Göster'}
+                  </button>
+                </div>
                 <textarea
                   readOnly
-                  value={qrData}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono bg-gray-50"
+                  value={showNfcContent ? qrData : '•'.repeat(Math.min(qrData.length, 120)) + '\n' + '🔐 Güvenlik nedeniyle şifrelenmiş olarak gösteriliyor...\n' + '👆 Yukarıdaki "Göster" butonuna tıklayarak ham içeriği görüntüleyebilirsiniz.'}
+                  rows={showNfcContent ? 3 : 4}
+                  className={`w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono resize-none ${
+                    showNfcContent ? 'bg-gray-50' : 'bg-purple-50 text-purple-800'
+                  }`}
                 />
-                <button
-                  className="mt-2 px-3 py-1 text-xs bg-gray-800 text-white rounded"
-                  onClick={() => navigator.clipboard.writeText(qrData)}
-                >
-                  Kopyala
-                </button>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    className="px-3 py-1 text-xs bg-gray-800 text-white rounded hover:bg-gray-900 transition-colors"
+                    onClick={() => navigator.clipboard.writeText(qrData)}
+                  >
+                    📋 Kopyala
+                  </button>
+                  {showNfcContent && (
+                    <span className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded">
+                      ✅ Ham içerik gösteriliyor
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
