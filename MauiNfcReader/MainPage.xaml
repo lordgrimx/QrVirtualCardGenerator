@@ -36,6 +36,23 @@
                 </StackLayout>
             </Frame>
 
+            <!-- Backend bağlantı durumu -->
+            <Frame BackgroundColor="#EEF2FF" Padding="16" CornerRadius="12">
+                <VerticalStackLayout Spacing="8">
+                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                        <BoxView x:Name="BackendStatusDot" WidthRequest="12" HeightRequest="12" CornerRadius="6" Color="#9CA3AF" />
+                        <Label x:Name="BackendStatusText" Text="Backend bağlantısı kontrol ediliyor..." FontSize="14" TextColor="#111827" />
+                    </HorizontalStackLayout>
+                    <Button x:Name="RetryBackendBtn"
+                            Text="Yeniden Dene"
+                            Clicked="OnRetryBackendClicked"
+                            BackgroundColor="#1F2937" TextColor="White"
+                            HorizontalOptions="Start"
+                            FontSize="14"
+                            Padding="12,6" />
+                </VerticalStackLayout>
+            </Frame>
+
             <Button
                 x:Name="StartBtn"
                 Text="NFC Okuyucuyu Başlat"
