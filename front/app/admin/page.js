@@ -32,6 +32,20 @@ export default function AdminPage() {
     logo_url: ''
   });
 
+  // Event form data
+  const [eventFormData, setEventFormData] = useState({
+    title: '',
+    description: '',
+    event_type: '',
+    discount_percentage: '',
+    discount_amount: '',
+    min_purchase_amount: '',
+    max_discount_amount: '',
+    terms_conditions: '',
+    start_date: '',
+    end_date: ''
+  });
+
   const [activeMenu, setActiveMenu] = useState('businessRegistration'); // Start with business registration
   const [members, setMembers] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -246,6 +260,70 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error('Error fetching businesses:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Event form handlers
+  const handleEventInputChange = (e) => {
+    const { name, value } = e.target;
+    setEventFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEventSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+      setLoading(true);
+      
+      // İlk olarak bir business seçilmeli - demo için ilk business'i kullanacağız
+      if (businesses.length === 0) {
+        alert('Önce bir işletme kaydetmelisiniz!');
+        return;
+      }
+
+      const eventData = {
+        ...eventFormData,
+        business_id: businesses[0].id, // İlk business'i kullan
+        start_date: new Date(eventFormData.start_date).toISOString(),
+        end_date: new Date(eventFormData.end_date).toISOString()
+      };
+      
+      const response = await fetch(`${getApiUrl()}/api/business-events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert('✅ Event başarıyla oluşturuldu!');
+        // Reset form
+        setEventFormData({
+          title: '',
+          description: '',
+          event_type: '',
+          discount_percentage: '',
+          discount_amount: '',
+          min_purchase_amount: '',
+          max_discount_amount: '',
+          terms_conditions: '',
+          start_date: '',
+          end_date: ''
+        });
+      } else {
+        alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);
+      }
+    } catch (error) {
+      console.error('API Error:', error);
+      alert('API bağlantı hatası. Backend server\'ın çalıştığından emin olun.');
     } finally {
       setLoading(false);
     }
@@ -626,37 +704,119 @@ export default function AdminPage() {
                       </div>
                     </div>
 
-                    {/* Contract Information */}
-                    <div className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-6">
-                      <h4 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    {/* Event Creation Form */}
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-6">
+                      <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
-                        Anlaşma Bilgileri
+                        Yeni Event Oluştur
                       </h4>
                       
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Anlaşma Türü:</span>
-                          <span className="text-sm font-semibold text-gray-800">Aylık Abonelik</span>
+                      <form onSubmit={handleEventSubmit} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-semibold text-blue-700 mb-2">
+                            Event Başlığı *
+                          </label>
+                          <input
+                            type="text"
+                            name="title"
+                            value={eventFormData.title}
+                            onChange={handleEventInputChange}
+                            placeholder="Örn: %20 İndirim"
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          />
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Aylık Ücret:</span>
-                          <span className="text-sm font-semibold text-green-600">₺199</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Komisyon:</span>
-                          <span className="text-sm font-semibold text-gray-800">%2.5</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Durum:</span>
-                          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-semibold rounded-full">Aktif</span>
-                        </div>
-                      </div>
 
-                      <button className="w-full mt-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-semibold transition-colors">
-                        Anlaşma Detayları
-                      </button>
+                        <div>
+                          <label className="block text-sm font-semibold text-blue-700 mb-2">
+                            Event Türü *
+                          </label>
+                          <select 
+                            name="event_type"
+                            value={eventFormData.event_type}
+                            onChange={handleEventInputChange}
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          >
+                            <option value="">Seçiniz</option>
+                            <option value="discount">İndirim</option>
+                            <option value="campaign">Kampanya</option>
+                            <option value="free_shipping">Ücretsiz Kargo</option>
+                            <option value="loyalty">Sadakat</option>
+                          </select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                              İndirim %
+                            </label>
+                            <input
+                              type="number"
+                              name="discount_percentage"
+                              value={eventFormData.discount_percentage}
+                              onChange={handleEventInputChange}
+                              placeholder="20"
+                              min="0"
+                              max="100"
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                              Min. Tutar
+                            </label>
+                            <input
+                              type="number"
+                              name="min_purchase_amount"
+                              value={eventFormData.min_purchase_amount}
+                              onChange={handleEventInputChange}
+                              placeholder="100"
+                              min="0"
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                              Başlangıç
+                            </label>
+                            <input
+                              type="date"
+                              name="start_date"
+                              value={eventFormData.start_date}
+                              onChange={handleEventInputChange}
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                              Bitiş
+                            </label>
+                            <input
+                              type="date"
+                              name="end_date"
+                              value={eventFormData.end_date}
+                              onChange={handleEventInputChange}
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <button 
+                          type="submit"
+                          disabled={loading}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loading ? 'Oluşturuluyor...' : 'Event Oluştur'}
+                        </button>
+                      </form>
                     </div>
                   </div>
                 </div>
@@ -664,8 +824,485 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* Rest of the content (Add Member, Show Members, Dashboard, Settings) */}
-          {/* Same as the original page... */}
+          {/* Add Member Form */}
+          {activeMenu === 'addMember' && (
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 flex flex-col shadow-xl border border-white/20">
+                <div className="grid grid-cols-4 gap-6 flex-1">
+                  {/* Full Name */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Full Name (Ad Soyad)
+                    </label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={formData.fullName}
+                      onChange={handleInputChange}
+                      placeholder="Enter full name"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Email Address (E-posta)
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="Enter email address"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Phone Number (Telefon)
+                    </label>
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
+                      onChange={handleInputChange}
+                      placeholder="+90 5XX XXX XXXX"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Date of Birth */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Date of Birth (Doğum Tarihi)
+                    </label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={formData.dateOfBirth}
+                      onChange={handleInputChange}
+                      max={today}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Membership Type */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Membership Type (Üyelik Tipi)
+                    </label>
+                    <select
+                      name="membershipType"
+                      value={formData.membershipType}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    >
+                      <option value="">Select membership type</option>
+                      <option value="standard">Standard</option>
+                      <option value="premium">Premium</option>
+                      <option value="vip">VIP</option>
+                      <option value="corporate">Corporate</option>
+                    </select>
+                  </div>
+
+                  {/* Role */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Role (Rol)
+                    </label>
+                    <select
+                      name="role"
+                      value={formData.role}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    >
+                      <option value="">Select role</option>
+                      <option value="member">Member</option>
+                      <option value="volunteer">Volunteer</option>
+                      <option value="staff">Staff</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+
+                  {/* Status */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Status (Durum)
+                    </label>
+                    <select
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+
+                  {/* Emergency Contact */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Emergency Contact
+                    </label>
+                    <input
+                      type="tel"
+                      name="emergencyContact"
+                      value={formData.emergencyContact}
+                      onChange={handleInputChange}
+                      placeholder="+90 5XX XXX XXXX"
+                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      required
+                    />
+                  </div>
+
+                  {/* Address - Full Width */}
+                  <div className="col-span-4 space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Address (Adres)
+                    </label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder="Enter full address"
+                      rows={3}
+                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Submit Button */}
+                <div className="flex justify-end mt-8">
+                  <button
+                    type="submit"
+                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 flex items-center gap-3"
+                  >
+                    <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-white rounded-sm"></div>
+                    </div>
+                    Create Member Card
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {/* Show Members Content */}
+          {activeMenu === 'showMembers' && (
+            <div className="flex-1 flex flex-col">
+              {loading ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading members...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto">
+                  {members.length === 0 ? (
+                    <div className="col-span-full flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <div className="w-8 h-8 bg-gray-400 rounded-lg"></div>
+                        </div>
+                        <p className="text-gray-600 text-lg">No members found</p>
+                        <p className="text-gray-400 text-sm">Add your first member to get started</p>
+                      </div>
+                    </div>
+                  ) : (
+                    members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20 hover:shadow-2xl transition-all duration-300 relative group"
+                      >
+                        {/* Edit Icon */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(member);
+                          }}
+                          className="absolute top-4 right-4 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 z-10"
+                          title="Üyeyi Düzenle"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+
+                        {/* Card Content - Clickable */}
+                        <div
+                          className="cursor-pointer"
+                          onClick={() => window.open(`/member/${member.id}`, '_blank')}
+                        >
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                              <span className="text-white font-bold text-lg">
+                                {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                              </span>
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-gray-900">{member.fullName}</h3>
+                              <p className="text-sm text-gray-600">{member.membershipId}</p>
+                            </div>
+                          </div>
+                        
+                          <div className="space-y-2">
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Email:</span>
+                              <span className="text-sm text-gray-900 font-medium">{member.email}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Role:</span>
+                              <span className="text-sm text-gray-900 font-medium capitalize">{member.role}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Status:</span>
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${
+                                  member.status === 'active' ? 'bg-green-500' : 
+                                  member.status === 'pending' ? 'bg-yellow-500' : 
+                                  member.status === 'suspended' ? 'bg-red-500' : 'bg-gray-500'
+                                }`}></div>
+                                <span className="text-sm text-gray-900 font-medium capitalize">{member.status}</span>
+                              </div>
+                            </div>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm text-gray-600">Member Since:</span>
+                              <span className="text-sm text-gray-900 font-medium">
+                                {new Date(member.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-4 pt-4 border-t border-gray-200">
+                            <p className="text-xs text-blue-600 text-center font-medium">Click to view details</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Dashboard Content */}
+          {activeMenu === 'dashboard' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-8 h-8 bg-white rounded-lg"></div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Dashboard</h3>
+                <p className="text-gray-600">Coming soon...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Settings Content */}
+          {activeMenu === 'settings' && (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <div className="w-8 h-8 bg-white rounded-lg"></div>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Settings</h3>
+                <p className="text-gray-600">Coming soon...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Member Modal */}
+          {editModalOpen && (
+            <div className="fixed inset-0 bg-white/10 backdrop-blur-md flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-gray-900">Üye Bilgilerini Düzenle</h3>
+                  <button
+                    onClick={closeEditModal}
+                    className="w-8 h-8 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center transition-all duration-200 text-black hover:text-red-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                <form onSubmit={updateMember} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Tam Adı *
+                      </label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={editFormData.fullName || ''}
+                        onChange={handleEditInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Telefon Numarası *
+                      </label>
+                      <input
+                        type="tel"
+                        name="phoneNumber"
+                        value={editFormData.phoneNumber || ''}
+                        onChange={handleEditInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      E-posta *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editFormData.email || ''}
+                      onChange={handleEditInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Adres *
+                    </label>
+                    <textarea
+                      name="address"
+                      value={editFormData.address || ''}
+                      onChange={handleEditInputChange}
+                      rows="3"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 bg-white"
+                      required
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Doğum Tarihi *
+                      </label>
+                      <input
+                        type="date"
+                        name="dateOfBirth"
+                        value={editFormData.dateOfBirth || ''}
+                        onChange={handleEditInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Acil Durum İletişim *
+                      </label>
+                      <input
+                        type="tel"
+                        name="emergencyContact"
+                        value={editFormData.emergencyContact || ''}
+                        onChange={handleEditInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Üyelik Türü *
+                      </label>
+                      <select
+                        name="membershipType"
+                        value={editFormData.membershipType || ''}
+                        onChange={handleEditInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      >
+                        <option value="">Seçiniz</option>
+                        <option value="standard">Standard</option>
+                        <option value="premium">Premium</option>
+                        <option value="vip">VIP</option>
+                        <option value="corporate">Corporate</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Rol *
+                      </label>
+                      <select
+                        name="role"
+                        value={editFormData.role || ''}
+                        onChange={handleEditInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      >
+                        <option value="">Seçiniz</option>
+                        <option value="member">Member</option>
+                        <option value="volunteer">Volunteer</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Durum *
+                    </label>
+                    <select
+                      name="status"
+                      value={editFormData.status || ''}
+                      onChange={handleEditInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      required
+                    >
+                      <option value="active">Active</option>
+                      <option value="pending">Pending</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+
+                  <div className="flex justify-end gap-4 pt-4">
+                    <button
+                      type="button"
+                      onClick={closeEditModal}
+                      className="px-6 py-3 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-xl font-semibold transition-colors"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Güncelleniyor...' : 'Güncelle'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

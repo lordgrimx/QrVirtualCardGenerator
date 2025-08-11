@@ -144,6 +144,7 @@ class BusinessEventCreate(BaseModel):
     terms_conditions: Optional[str] = None
     start_date: str  # ISO format
     end_date: str    # ISO format
+    business_id: int
 
 class BusinessContractCreate(BaseModel):
     contract_title: str
@@ -168,6 +169,25 @@ class BusinessResponse(BaseModel):
     logo_url: Optional[str]
     is_active: bool
     owner_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class BusinessEventResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str]
+    event_type: str
+    discount_percentage: Optional[float]
+    discount_amount: Optional[float]
+    min_purchase_amount: Optional[float]
+    max_discount_amount: Optional[float]
+    terms_conditions: Optional[str]
+    start_date: datetime
+    end_date: datetime
+    is_active: bool
+    business_id: int
     created_at: datetime
 
     class Config:
@@ -360,6 +380,108 @@ async def get_businesses(owner_id: Optional[int] = None, db: Session = Depends(g
     except Exception as e:
         print(f"Get businesses error: {e}")
         raise HTTPException(status_code=500, detail="İşletmeler alınırken hata oluştu")
+
+# Business Events Endpoints
+@app.post("/api/business-events", response_model=BusinessEventResponse)
+async def create_business_event(event: BusinessEventCreate, db: Session = Depends(get_db)):
+    """Create a new business event"""
+    try:
+        # Verify business exists
+        business = db.query(DBBusiness).filter(
+            DBBusiness.id == event.business_id,
+            DBBusiness.is_active == True
+        ).first()
+        
+        if not business:
+            raise HTTPException(status_code=404, detail="İşletme bulunamadı")
+        
+        # Parse date strings to datetime
+        from datetime import datetime as dt
+        start_date = dt.fromisoformat(event.start_date.replace('Z', '+00:00'))
+        end_date = dt.fromisoformat(event.end_date.replace('Z', '+00:00'))
+        
+        # Create business event
+        db_event = DBBusinessEvent(
+            title=event.title,
+            description=event.description,
+            event_type=event.event_type,
+            discount_percentage=event.discount_percentage,
+            discount_amount=event.discount_amount,
+            min_purchase_amount=event.min_purchase_amount,
+            max_discount_amount=event.max_discount_amount,
+            terms_conditions=event.terms_conditions,
+            start_date=start_date,
+            end_date=end_date,
+            business_id=event.business_id,
+            is_active=True
+        )
+        
+        db.add(db_event)
+        db.commit()
+        db.refresh(db_event)
+        
+        return BusinessEventResponse(
+            id=db_event.id,
+            title=db_event.title,
+            description=db_event.description,
+            event_type=db_event.event_type,
+            discount_percentage=db_event.discount_percentage,
+            discount_amount=db_event.discount_amount,
+            min_purchase_amount=db_event.min_purchase_amount,
+            max_discount_amount=db_event.max_discount_amount,
+            terms_conditions=db_event.terms_conditions,
+            start_date=db_event.start_date,
+            end_date=db_event.end_date,
+            is_active=db_event.is_active,
+            business_id=db_event.business_id,
+            created_at=db_event.created_at
+        )
+        
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=f"Geçersiz tarih formatı: {str(ve)}")
+    except Exception as e:
+        print(f"Create business event error: {e}")
+        raise HTTPException(status_code=500, detail="Event oluşturulurken hata oluştu")
+
+@app.get("/api/business-events")
+async def get_business_events(business_id: Optional[int] = None, db: Session = Depends(get_db)):
+    """Get all business events or events by business"""
+    try:
+        query = db.query(DBBusinessEvent).filter(DBBusinessEvent.is_active == True)
+        
+        if business_id:
+            query = query.filter(DBBusinessEvent.business_id == business_id)
+        
+        events = query.all()
+        
+        event_list = []
+        for event in events:
+            event_list.append(BusinessEventResponse(
+                id=event.id,
+                title=event.title,
+                description=event.description,
+                event_type=event.event_type,
+                discount_percentage=event.discount_percentage,
+                discount_amount=event.discount_amount,
+                min_purchase_amount=event.min_purchase_amount,
+                max_discount_amount=event.max_discount_amount,
+                terms_conditions=event.terms_conditions,
+                start_date=event.start_date,
+                end_date=event.end_date,
+                is_active=event.is_active,
+                business_id=event.business_id,
+                created_at=event.created_at
+            ))
+        
+        return {
+            "events": event_list,
+            "count": len(event_list),
+            "success": True
+        }
+        
+    except Exception as e:
+        print(f"Get business events error: {e}")
+        raise HTTPException(status_code=500, detail="Eventler alınırken hata oluştu")
 
 def generate_membership_id(db: Session):
     """Otomatik membership ID oluştur"""
