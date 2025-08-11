@@ -381,6 +381,21 @@ public class WindowsNfcService : INfcService, IDisposable
                 }
                 catch { /* ignore */ }
                 _logger.LogInformation($"UID başarıyla okundu: {cardData.UidHex}");
+
+                // NDEF Text içeriğini okumayı dene (NTAG/Type2 varsayımı)
+                try
+                {
+                    var ndefText = TryReadNdefText(iso);
+                    if (ndefText != null && ndefText.Length > 0)
+                    {
+                        cardData.RawData = ndefText;
+                        _logger.LogInformation($"NDEF Text okundu (len={ndefText.Length})");
+                    }
+                }
+                catch (Exception nex)
+                {
+                    _logger.LogDebug(nex, "NDEF text okuma başarısız - yok sayılıyor");
+                }
             }
             else
             {
@@ -398,6 +413,65 @@ public class WindowsNfcService : INfcService, IDisposable
             _logger.LogError(ex, "PCSC kart okuma hatası");
             return cardData;
         }
+    }
+
+    private static byte[]? TryReadNdefText(IsoReader iso)
+    {
+        // Type 2 Tag: NDEF TLV 0x03, terminator 0xFE, data page 0x04'ten başlar
+        var buffer = new List<byte>(1024);
+        const int startPage = 0x04;
+        const int maxPages = 0x50; // güvenli sınır: ~80 sayfa
+        for (int p = startPage; p < maxPages; p++)
+        {
+            var page = ReadPage(iso, (byte)p);
+            if (page == null) break;
+            buffer.AddRange(page);
+            if (page[^1] == 0xFE) // terminator TLV sonu olabilir
+                break;
+        }
+
+        var data = buffer.ToArray();
+        if (data.Length < 8) return null;
+
+        // TLV parse: 0x03 (NDEF), sonra length (1 byte veya 0xFF + 2 byte)
+        int idx = 0;
+        // Skip potential NULL TLV (0x00)
+        while (idx < data.Length && data[idx] == 0x00) idx++;
+        if (idx >= data.Length || data[idx] != 0x03) return null; // NDEF TLV yok
+        idx++;
+        int ndefLen;
+        if (data[idx] == 0xFF)
+        {
+            if (idx + 2 >= data.Length) return null;
+            ndefLen = (data[idx + 1] << 8) | data[idx + 2];
+            idx += 3;
+        }
+        else
+        {
+            ndefLen = data[idx];
+            idx += 1;
+        }
+        if (ndefLen <= 0 || idx + ndefLen > data.Length) return null;
+        var ndef = data.Skip(idx).Take(ndefLen).ToArray();
+
+        // NDEF record parse (SR varsayımı): D1 01 <plen> 54 'T' [status][lang..][text..]
+        if (ndef.Length < 5) return null;
+        byte header = ndef[0];
+        bool sr = (header & 0x10) != 0; // SR bit
+        if (!sr) return null; // kısa kayıt bekleniyor
+        byte typeLen = ndef[1];
+        int payloadLen = ndef[2];
+        if (typeLen != 0x01) return null;
+        if (ndef.Length < 3 + 1 + payloadLen) return null;
+        byte type = ndef[3];
+        if (type != 0x54) return null; // 'T'
+        int payloadStart = 4;
+        var payload = ndef.Skip(payloadStart).Take(payloadLen).ToArray();
+        if (payload.Length == 0) return null;
+        int langLen = payload[0] & 0x3F;
+        int textStart = 1 + langLen;
+        if (textStart > payload.Length) return null;
+        return payload.Skip(textStart).ToArray();
     }
 
     /// <summary>

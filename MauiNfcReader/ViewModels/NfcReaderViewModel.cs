@@ -386,7 +386,7 @@ public partial class NfcReaderViewModel : ObservableObject
                 await TryAutoDecryptAsync(cardData);
             }
 
-            // Backend-öncelikli doğrulama: önce online dene, başarısız olursa popup ile kullanıcıyı bilgilendir ve offline çöz
+            // Backend-öncelikli doğrulama: karttan okunan ham veriyi backend'e gönder ve doğrula
             await TryVerifyWithBackendThenOfflineAsync(cardData);
         }
         else
@@ -418,7 +418,7 @@ public partial class NfcReaderViewModel : ObservableObject
                 return;
             }
 
-            // 1) Önce backend ile dene (internet varsa)
+            // 1) Önce backend ile dene (internet varsa) - ham veriyi backend'e yolla ve çözüm/ doğrulama orada yapılsın
             var hasInternet = Connectivity.Current.NetworkAccess == NetworkAccess.Internet;
             if (hasInternet)
             {

@@ -8,6 +8,7 @@ public interface IBackendApiService
     Task<(bool ok, string? publicKeyPem, string? error)> GetPublicKeyAsync(CancellationToken ct = default);
     Task<(bool ok, QrVerificationResult? result, string? error)> VerifyQrAsync(string qrData, CancellationToken ct = default);
     Task<(bool ok, QrVerificationResult? result, string? error)> VerifyAndReadFromServerAsync(CancellationToken ct = default);
+    Task<(bool ok, QrVerificationResult? result, string? error)> VerifyCardRawAsync(string rawText, CancellationToken ct = default);
 
     /// <summary>
     /// Üye arama (search query boş ise ilk sayfa)

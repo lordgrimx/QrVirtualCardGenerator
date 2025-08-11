@@ -140,6 +140,12 @@ public class BackendApiService : IBackendApiService
         }
     }
 
+    public async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyCardRawAsync(string rawText, CancellationToken ct = default)
+    {
+        // Ham NDEF metnini backend'e gönder ve orada doğrulat
+        return await VerifyQrAsync(rawText, ct);
+    }
+
     public async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyAndReadFromServerAsync(CancellationToken ct = default)
     {
         try
