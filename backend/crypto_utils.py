@@ -337,33 +337,70 @@ class SecureQRManager:
         NFC compact verisinin ECDSA imzasını doğrula
         """
         try:
+            print(f"🔐 SIGNATURE VERIFICATION START")
+            
             if self.ec_public_key is None:
+                print(f"❌ EC public key is None")
                 return False
             
             # İmzayı ayır
             signature_b64 = nfc_data.get('sig', '')
             if not signature_b64:
+                print(f"❌ No signature field found")
                 return False
+                
+            print(f"🔐 Original signature: {signature_b64}")
+            print(f"🔐 Signature length: {len(signature_b64)} chars")
+            print(f"🔐 Signature hex: {signature_b64.encode('ascii').hex()}")
+            print(f"🔐 NFC data keys: {list(nfc_data.keys())}")
             
             # İmzalanan veriyi yeniden oluştur
             verify_data = nfc_data.copy()
             del verify_data['sig']  # İmzayı çıkar
             
             payload = json.dumps(verify_data, separators=(',', ':'))
+            print(f"🔐 Verification payload: {payload}")
+            print(f"🔐 Payload length: {len(payload)} chars")
+            print(f"🔐 Payload bytes hex: {payload.encode('utf-8').hex()}")
+            print(f"🔐 Verify data structure: {verify_data}")
             
             # Base64 decode (padding ekle gerekirse)
             padding_count = (4 - len(signature_b64) % 4) % 4
             padding = '=' * padding_count
             padded_signature = signature_b64 + padding
+            print(f"🔐 Padding added: {padding_count} chars")
+            print(f"🔐 Padded signature: {padded_signature}")
+            print(f"🔐 Padded length: {len(padded_signature)}")
             
             try:
                 signature_bytes = base64.urlsafe_b64decode(padded_signature)
-            except Exception:
+                print(f"🔐 Signature bytes length: {len(signature_bytes)}")
+                print(f"🔐 Full signature hex: {signature_bytes.hex()}")
+                print(f"🔐 First 32 bytes hex: {signature_bytes[:32].hex()}")
+                if len(signature_bytes) > 32:
+                    print(f"🔐 Last 32 bytes hex: {signature_bytes[-32:].hex()}")
+            except Exception as e:
+                print(f"❌ Base64 decode failed: {e}")
+                print(f"❌ Attempted to decode: {padded_signature}")
                 return False
             
             # ECDSA signature minimum length kontrolü
             if len(signature_bytes) < 32:
+                print(f"❌ Signature too short: {len(signature_bytes)} bytes")
                 return False
+            
+            # Public key bilgisini logla
+            from cryptography.hazmat.primitives import serialization
+            pubkey_pem = self.ec_public_key.public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo
+            ).decode('utf-8')
+            print(f"🔐 Using public key (PEM): {pubkey_pem[:100]}...")
+            
+            # Payload hash'ini de kontrol edelim
+            import hashlib
+            payload_hash = hashlib.sha256(payload.encode('utf-8')).hexdigest()
+            print(f"🔐 Payload SHA256: {payload_hash}")
             
             # ECDSA doğrulama
             try:
@@ -372,11 +409,23 @@ class SecureQRManager:
                     payload.encode('utf-8'),
                     ec.ECDSA(hashes.SHA256())
                 )
+                print(f"✅ ECDSA signature verification SUCCESS")
                 return True
-            except InvalidSignature:
+            except InvalidSignature as e:
+                print(f"❌ ECDSA signature verification FAILED: {e}")
+                print(f"❌ Failed with signature length: {len(signature_bytes)}")
+                print(f"❌ Failed with payload length: {len(payload)}")
+                
+                # Alternatif payload formatlarını dene
+                alt_payload1 = json.dumps(verify_data, sort_keys=True, separators=(',', ':'))
+                alt_payload2 = json.dumps(verify_data, sort_keys=False, separators=(', ', ': '))
+                print(f"🔄 Alternative payload 1 (sorted): {alt_payload1}")
+                print(f"🔄 Alternative payload 2 (spaced): {alt_payload2}")
+                
                 return False
             
-        except Exception:
+        except Exception as e:
+            print(f"❌ Signature verification exception: {e}")
             return False
     
     def create_fake_readable_qr(self) -> str:
