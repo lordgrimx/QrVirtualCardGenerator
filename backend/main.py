@@ -1226,7 +1226,9 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
         
         # İlk olarak çift şifrelemeyi çöz
         decrypted_json = secure_qr._decrypt_nfc_data(encrypted_data)
-        print(f"🔍 Decrypted result: {decrypted_json[:100] if decrypted_json else 'None'}")
+        print(f"🔍 Decrypted result length: {len(decrypted_json) if decrypted_json else 0}")
+        print(f"🔍 Full decrypted result: {decrypted_json}")
+        print(f"🔍 Decrypted preview: {decrypted_json[:100] if decrypted_json else 'None'}")
         
         if not decrypted_json:
             # Başarısız okuma kaydını log'la
