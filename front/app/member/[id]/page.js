@@ -235,107 +235,196 @@ export default function MemberPage() {
 
       downloadStatus('Kartların indirme işlemi başlıyor...');
 
-      // HTML2Canvas ayarları - OKLCH renk uyumluluğu için optimize edildi
+      // Ultra basit HTML2Canvas ayarları - OKLCH bypass için
       const canvasOptions = {
         backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
+        scale: 1, // Basit scale
+        useCORS: false,
+        allowTaint: false,
         logging: false,
         width: 418,
         height: 231,
+        // External CSS'i tamamen ignore et
         ignoreElements: function(element) {
-          // Problematik elementleri atla
-          return element.style && element.style.display === 'none';
-        },
-        onclone: function(clonedDoc, element) {
-          // Animasyonları devre dışı bırak
-          element.style.animation = 'none';
-          element.style.transition = 'none';
-          element.style.transform = 'none';
-          
-          // Tüm style sheet'leri kaldır ve inline styles ile değiştir
-          const sheets = clonedDoc.styleSheets;
-          for (let i = 0; i < sheets.length; i++) {
-            try {
-              if (sheets[i].href && sheets[i].href.includes('tailwind')) {
-                sheets[i].disabled = true;
-              }
-            } catch (e) {
-              // Cross-origin hatalarını ignore et
-            }
-          }
-          
-          // Computed style'dan inline style'a dönüştür
-          const applyComputedStyles = (el) => {
-            const computedStyle = window.getComputedStyle(el);
-            
-            // Critical properties that often use OKLCH
-            const importantProperties = [
-              'color', 'backgroundColor', 'borderColor', 'background',
-              'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'
-            ];
-            
-            importantProperties.forEach(prop => {
-              const value = computedStyle.getPropertyValue(prop);
-              if (value && value !== 'initial' && value !== 'inherit') {
-                // OKLCH/LCH renklerini RGB hex'e dönüştür
-                if (value.includes('oklch') || value.includes('lch')) {
-                  // Fallback RGB renkleri
-                  const colorMap = {
-                    'oklch(0.6 0.25 260)': '#2563eb', // blue-600
-                    'oklch(0.4 0.2 260)': '#1d4ed8', // blue-700  
-                    'oklch(0.7 0.3 310)': '#7c3aed', // purple-700
-                    'oklch(0.3 0 0)': '#1f2937', // gray-800
-                    'oklch(0.1 0 0)': '#111827', // gray-900
-                    'oklch(1 0 0)': '#ffffff', // white
-                    'oklch(0.7 0.15 160)': '#10b981', // green-500
-                  };
-                  
-                  // Basit mapping, karmaşık oklch değerleri için fallback
-                  if (colorMap[value]) {
-                    el.style.setProperty(prop, colorMap[value], 'important');
-                  } else if (value.includes('oklch')) {
-                    // Genel fallback stratejisi
-                    if (prop === 'color') {
-                      el.style.setProperty(prop, '#111827', 'important'); // Dark text
-                    } else if (prop === 'backgroundColor') {
-                      el.style.setProperty(prop, '#ffffff', 'important'); // White bg
-                    }
-                  }
-                } else {
-                  // Normal renkleri olduğu gibi uygula
-                  el.style.setProperty(prop, value, 'important');
-                }
-              }
-            });
-          };
-          
-          // Recursive olarak tüm elementleri işle
-          applyComputedStyles(element);
-          element.querySelectorAll('*').forEach(applyComputedStyles);
+          return element.tagName === 'STYLE' || element.tagName === 'LINK';
         }
       };
 
-      // Basit renk düzeltme fonksiyonu (HTML2Canvas onclone tarafından ana iş yapılıyor)
+      // Agresif OKLCH temizleme ve RGB dönüştürme fonksiyonu
       const preFixCardColors = (card) => {
         if (!card) return;
         
-        console.log('🎨 Kart renklerini hazırlıyor...');
+        console.log('🎨 OKLCH renklerini agresif şekilde RGB\'ye dönüştürüyor...');
         
         // Ana kartın transform durumunu normalize et
         card.style.transform = 'rotateY(0deg)';
         card.style.opacity = '1';
         card.style.position = 'relative';
         
-        // Z-index sorunlarını önle
-        card.querySelectorAll('*').forEach(el => {
-          if (el.style.zIndex) {
-            el.style.zIndex = 'auto';
-          }
-        });
+        // Tailwind CSS class'larından RGB renklerini mapple
+        const tailwindColorMap = {
+          // Backgrounds
+          'bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800': 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #6b21a8 100%)',
+          'bg-gradient-to-br from-gray-800 via-gray-900 to-black': 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)',
+          'bg-gradient-to-r from-blue-500 to-purple-500': 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
+          'bg-white': '#ffffff',
+          'bg-green-500': '#10b981',
+          
+          // Text colors
+          'text-white': '#ffffff',
+          'text-gray-900': '#111827',
+          'text-gray-800': '#1f2937',
+          'text-gray-700': '#374151',
+          'text-gray-600': '#4b5563',
+          'text-gray-500': '#6b7280',
+          'text-gray-400': '#9ca3af',
+          'text-blue-700': '#1d4ed8',
+          'text-blue-900': '#1e3a8a',
+          
+          // Border colors
+          'border-gray-700': '#374151',
+          'border-gray-200': '#e5e7eb',
+          'border-blue-200': '#bfdbfe'
+        };
         
-        console.log('✅ Kart hazırlığı tamamlandı');
+        // Tüm elementleri recursive olarak işle
+        const forceRGBColors = (element) => {
+          // Ana kartın background'ını manuel olarak ayarla
+          if (element.classList.contains('card-front')) {
+            element.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)';
+            element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
+          } else if (element.classList.contains('card-back')) {
+            element.style.background = 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)';
+            element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
+          }
+          
+          // Class-based stil dönüştürmeleri
+          const classes = element.className.split(' ');
+          
+          // Background gradient kombinasyonları kontrol et
+          if (classes.includes('bg-gradient-to-br')) {
+            if (classes.includes('from-blue-600')) {
+              element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
+            } else if (classes.includes('from-gray-800')) {
+              element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
+            }
+          } else if (classes.includes('bg-gradient-to-r')) {
+            if (classes.includes('from-blue-500')) {
+              element.style.setProperty('background', 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)', 'important');
+            }
+          }
+          
+          // Tek renk background'ları
+          if (classes.includes('bg-white')) {
+            element.style.setProperty('background-color', '#ffffff', 'important');
+          } else if (classes.includes('bg-green-500')) {
+            element.style.setProperty('background-color', '#10b981', 'important');
+          }
+          
+          // Text renkleri
+          if (classes.includes('text-white')) {
+            element.style.setProperty('color', '#ffffff', 'important');
+          } else if (classes.includes('text-gray-900')) {
+            element.style.setProperty('color', '#111827', 'important');
+          } else if (classes.includes('text-gray-800')) {
+            element.style.setProperty('color', '#1f2937', 'important');
+          } else if (classes.includes('text-gray-700')) {
+            element.style.setProperty('color', '#374151', 'important');
+          } else if (classes.includes('text-gray-600')) {
+            element.style.setProperty('color', '#4b5563', 'important');
+          } else if (classes.includes('text-gray-500')) {
+            element.style.setProperty('color', '#6b7280', 'important');
+          } else if (classes.includes('text-gray-400')) {
+            element.style.setProperty('color', '#9ca3af', 'important');
+          } else if (classes.includes('text-blue-700')) {
+            element.style.setProperty('color', '#1d4ed8', 'important');
+          } else if (classes.includes('text-blue-900')) {
+            element.style.setProperty('color', '#1e3a8a', 'important');
+          }
+          
+          // Border renkleri
+          if (classes.includes('border-gray-700')) {
+            element.style.setProperty('border-color', '#374151', 'important');
+          } else if (classes.includes('border-gray-200')) {
+            element.style.setProperty('border-color', '#e5e7eb', 'important');
+          } else if (classes.includes('border-blue-200')) {
+            element.style.setProperty('border-color', '#bfdbfe', 'important');
+          }
+          
+          // Box shadow'ları basit RGB ile değiştir
+          if (classes.includes('shadow-lg')) {
+            element.style.setProperty('box-shadow', '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', 'important');
+          } else if (classes.includes('shadow-2xl')) {
+            element.style.setProperty('box-shadow', '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 'important');
+          } else if (classes.includes('shadow-xl')) {
+            element.style.setProperty('box-shadow', '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', 'important');
+          }
+          
+          // Z-index sorunlarını önle
+          if (element.style.zIndex) {
+            element.style.zIndex = 'auto';
+          }
+          
+          // Transform ve transition'ları temizle
+          element.style.setProperty('transform', 'none', 'important');
+          element.style.setProperty('transition', 'none', 'important');
+          element.style.setProperty('animation', 'none', 'important');
+        };
+        
+        // Ana element ve tüm alt elementleri işle
+        forceRGBColors(card);
+        card.querySelectorAll('*').forEach(forceRGBColors);
+        
+        console.log('✅ Agresif RGB dönüştürme tamamlandı');
+      };
+      
+      // Manuel canvas oluşturma fallback fonksiyonu
+      const createManualCanvas = async (element) => {
+        console.log('🎨 Manuel canvas oluşturuluyor...');
+        const canvas = document.createElement('canvas');
+        canvas.width = 836; // 418 * 2 for high res
+        canvas.height = 462; // 231 * 2 for high res
+        const ctx = canvas.getContext('2d');
+        
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Card background gradient
+        if (element.classList.contains('card-front')) {
+          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          gradient.addColorStop(0, '#2563eb');
+          gradient.addColorStop(0.5, '#1d4ed8');
+          gradient.addColorStop(1, '#6b21a8');
+          ctx.fillStyle = gradient;
+        } else {
+          const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+          gradient.addColorStop(0, '#1f2937');
+          gradient.addColorStop(0.5, '#111827');
+          gradient.addColorStop(1, '#000000');
+          ctx.fillStyle = gradient;
+        }
+        
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add rounded corners
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.beginPath();
+        ctx.roundRect(0, 0, canvas.width, canvas.height, 24);
+        ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+        
+        // Add text - basic fallback
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 48px Arial';
+        ctx.fillText('Member Card', 40, 100);
+        
+        if (userInfo?.name) {
+          ctx.font = '36px Arial';
+          ctx.fillText(userInfo.name, 40, 160);
+        }
+        
+        return canvas.toDataURL('image/png', 1.0);
       };
 
       // Önce front kartı yakala
@@ -354,26 +443,33 @@ export default function MemberPage() {
         // Renkleri önceden düzelt
         preFixCardColors(frontCard);
         
-        // HTML2Canvas ile kart yakalama - hata yakalama ile
-        let frontCanvas;
+        // HTML2Canvas ile kart yakalama - çoklu fallback sistemi
+        let frontDataUrl;
         try {
-          frontCanvas = await html2canvas(frontCard, canvasOptions);
+          console.log('🎯 HTML2Canvas deneniyor...');
+          const frontCanvas = await html2canvas(frontCard, canvasOptions);
+          frontDataUrl = frontCanvas.toDataURL('image/png', 1.0);
         } catch (error) {
-          console.warn('HTML2Canvas hatası, fallback options ile yeniden deniyor:', error);
-          // Fallback options - daha basit ayarlar
-          const fallbackOptions = {
-            backgroundColor: '#ffffff',
-            scale: 1,
-            useCORS: false,
-            allowTaint: false,
-            logging: false,
-            width: 418,
-            height: 231
-          };
-          frontCanvas = await html2canvas(frontCard, fallbackOptions);
+          console.warn('HTML2Canvas OKLCH hatası, dom-to-image ile deneniyor:', error);
+          try {
+            // Dom-to-image fallback
+            const domOptions = {
+              quality: 1.0,
+              bgcolor: '#ffffff',
+              width: 418,
+              height: 231,
+              style: {
+                transform: 'scale(1)',
+                transformOrigin: 'top left'
+              }
+            };
+            frontDataUrl = await domtoimage.toPng(frontCard, domOptions);
+          } catch (domError) {
+            console.warn('Dom-to-image da başarısız, manuel canvas deneniyor:', domError);
+            // Manuel canvas fallback
+            frontDataUrl = await createManualCanvas(frontCard);
+          }
         }
-        
-        const frontDataUrl = frontCanvas.toDataURL('image/png', 1.0);
         
         // Ön yüzü indir
         const frontLink = document.createElement('a');
@@ -402,26 +498,33 @@ export default function MemberPage() {
         // Arka yüz için renkleri düzelt
         preFixCardColors(backCard);
         
-        // HTML2Canvas ile arka kartı yakalama - hata yakalama ile
-        let backCanvas;
+        // HTML2Canvas ile arka kartı yakalama - çoklu fallback sistemi
+        let backDataUrl;
         try {
-          backCanvas = await html2canvas(backCard, canvasOptions);
+          console.log('🎯 Arka yüz HTML2Canvas deneniyor...');
+          const backCanvas = await html2canvas(backCard, canvasOptions);
+          backDataUrl = backCanvas.toDataURL('image/png', 1.0);
         } catch (error) {
-          console.warn('Arka yüz HTML2Canvas hatası, fallback options ile yeniden deniyor:', error);
-          // Fallback options - daha basit ayarlar
-          const fallbackOptions = {
-            backgroundColor: '#ffffff',
-            scale: 1,
-            useCORS: false,
-            allowTaint: false,
-            logging: false,
-            width: 418,
-            height: 231
-          };
-          backCanvas = await html2canvas(backCard, fallbackOptions);
+          console.warn('Arka yüz HTML2Canvas OKLCH hatası, dom-to-image ile deneniyor:', error);
+          try {
+            // Dom-to-image fallback
+            const domOptions = {
+              quality: 1.0,
+              bgcolor: '#ffffff',
+              width: 418,
+              height: 231,
+              style: {
+                transform: 'scale(1)',
+                transformOrigin: 'top left'
+              }
+            };
+            backDataUrl = await domtoimage.toPng(backCard, domOptions);
+          } catch (domError) {
+            console.warn('Arka yüz dom-to-image da başarısız, manuel canvas deneniyor:', domError);
+            // Manuel canvas fallback
+            backDataUrl = await createManualCanvas(backCard);
+          }
         }
-        
-        const backDataUrl = backCanvas.toDataURL('image/png', 1.0);
         
         // Arka yüzü indir
         const backLink = document.createElement('a');
