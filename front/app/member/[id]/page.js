@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { QRCodeCanvas } from 'qrcode.react';
 import domtoimage from 'dom-to-image-more';
+import html2canvas from 'html2canvas';
 
 export default function MemberPage() {
   const params = useParams();
@@ -16,6 +17,7 @@ export default function MemberPage() {
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
   const [nfcWriteStatus, setNfcWriteStatus] = useState('');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // NFC yazma işlemleri MAUI uygulaması üzerinden yapılır
   const writeToNFC = async () => {
@@ -204,53 +206,106 @@ export default function MemberPage() {
   const qrInfo = getQrInfo();
   console.log(`🔍 QR Kod Tipi: ${qrInfo.type} (${qrType})`);;
 
-  // Kart indirme fonksiyonu
+  // Geliştirilmiş kart indirme fonksiyonu
   const downloadCard = async () => {
+    if (isDownloading) return; // Tekrar tıklanmayı engelle
+    
     try {
-      // dom-to-image-more için ayarlar
-      const imageOptions = {
-        quality: 1.0,
-        scale: 2,
-        bgcolor: '#ffffff',
-        style: {
-          transform: 'scale(1)',
-          transformOrigin: 'top left'
+      setIsDownloading(true);
+      const originalTab = activeTab;
+      
+      // Loading state'i ekleyebiliriz
+      const downloadStatus = (message) => {
+        console.log(`📥 Download: ${message}`);
+      };
+
+      downloadStatus('Kartların indirme işlemi başlıyor...');
+
+      // HTML2Canvas ayarları - QR kodlar ve CSS transforms için optimize edildi
+      const canvasOptions = {
+        backgroundColor: '#ffffff',
+        scale: 2, // Yüksek kalite için
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        width: 418,
+        height: 231,
+        onclone: (clonedDoc, element) => {
+          // Klonlanan dokümanda animasyonları devre dışı bırak
+          element.style.animation = 'none';
+          element.style.transition = 'none';
+          element.style.transform = 'none';
         }
       };
 
-      // Önce front kartı indir
+      // Önce front kartı yakala
+      downloadStatus('Kartın ön yüzü yakalanıyor...');
+      setActiveTab('front');
+      
+      // DOM'un güncellenmesini bekle
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const frontCard = document.querySelector('.card-front');
       if (frontCard) {
-        const frontDataUrl = await domtoimage.toPng(frontCard, imageOptions);
+        // Kartın görünür olduğundan emin ol
+        frontCard.style.transform = 'rotateY(0deg)';
+        frontCard.style.opacity = '1';
         
+        const frontCanvas = await html2canvas(frontCard, canvasOptions);
+        const frontDataUrl = frontCanvas.toDataURL('image/png', 1.0);
+        
+        // Ön yüzü indir
         const frontLink = document.createElement('a');
         frontLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_front.png`;
         frontLink.href = frontDataUrl;
+        document.body.appendChild(frontLink);
         frontLink.click();
+        document.body.removeChild(frontLink);
+        
+        downloadStatus('Kartın ön yüzü başarıyla indirildi!');
       }
 
-      // Kartı arkaya çevir
+      // Şimdi back kartı yakala
+      downloadStatus('Kartın arka yüzü yakalanıyor...');
       setActiveTab('back');
       
-      // Animasyon tamamlanmasını bekle
-      setTimeout(async () => {
-        const backCard = document.querySelector('.card-back');
-        if (backCard) {
-          const backDataUrl = await domtoimage.toPng(backCard, imageOptions);
-          
-          const backLink = document.createElement('a');
-          backLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_back.png`;
-          backLink.href = backDataUrl;
-          backLink.click();
-        }
+      // DOM'un güncellenmesini ve animasyonun tamamlanmasını bekle
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const backCard = document.querySelector('.card-back');
+      if (backCard) {
+        // Kartın görünür olduğundan emin ol
+        backCard.style.transform = 'rotateY(0deg)';
+        backCard.style.opacity = '1';
         
-        // Kartı tekrar öne çevir
-        setActiveTab('front');
-      }, 800); // Animasyon süresi (700ms) + buffer
+        const backCanvas = await html2canvas(backCard, canvasOptions);
+        const backDataUrl = backCanvas.toDataURL('image/png', 1.0);
+        
+        // Arka yüzü indir
+        const backLink = document.createElement('a');
+        backLink.download = `${userInfo.name.replace(/\s+/g, '_')}_card_back.png`;
+        backLink.href = backDataUrl;
+        document.body.appendChild(backLink);
+        backLink.click();
+        document.body.removeChild(backLink);
+        
+        downloadStatus('Kartın arka yüzü başarıyla indirildi!');
+      }
+      
+      // Orijinal görünüme geri dön
+      setActiveTab(originalTab);
+      
+      // Success notification
+      alert('🎉 Kart başarıyla indirildi!\n\nHem ön yüz hem arka yüz PNG formatında download klasörünüze kaydedildi.');
       
     } catch (error) {
       console.error('Kart indirme hatası:', error);
-      alert('Kart indirme sırasında bir hata oluştu. Lütfen tekrar deneyin.');
+      alert(`❌ Kart indirme sırasında hata oluştu:\n\n${error.message}\n\nLütfen sayfayı yenileyin ve tekrar deneyin.`);
+      
+      // Hata durumunda orijinal tab'a geri dön
+      setActiveTab(activeTab);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -268,7 +323,6 @@ export default function MemberPage() {
           {/* Navigation */}
           <nav className="flex items-center gap-8">
             <a href="/" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
-            <a href="#" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Events</a>
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
               {userInfo.name.split(' ').map(n => n[0]).join('')}
             </div>
@@ -549,9 +603,26 @@ export default function MemberPage() {
           <div className="flex justify-center gap-4 mb-6">
             <button 
               onClick={downloadCard}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              disabled={isDownloading}
+              className={`px-8 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-lg flex items-center gap-2 ${
+                isDownloading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:shadow-xl transform hover:-translate-y-0.5'
+              }`}
             >
-              Download Card
+              {isDownloading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  📥 Download Card
+                </>
+              )}
             </button>
           </div>
 
