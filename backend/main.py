@@ -88,14 +88,18 @@ async def log_api_calls(request: Request, call_next):
         print(f"🚀 Method: {method}, IP: {ip_address}")
         print(f"🚀 User-Agent: {user_agent}")
     
-    # Request body'yi al (sadece POST/PUT için)
+    # Request body'yi al (sadece POST/PUT için) - NFC decrypt için kısalt
     request_payload = None
     if method in ["POST", "PUT", "PATCH"]:
         try:
-            body = await request.body()
-            if body:
-                request_payload = body.decode('utf-8')
-        except:
+            # NFC decrypt için body okumayı atla (performans için)
+            if endpoint == "/api/nfc/decrypt":
+                request_payload = "[NFC_DECRYPT_BODY_SKIPPED]"
+            else:
+                body = await request.body()
+                if body:
+                    request_payload = body.decode('utf-8')
+        except Exception:
             request_payload = None
     
     # Response'u işle
