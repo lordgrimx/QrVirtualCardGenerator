@@ -82,6 +82,12 @@ async def log_api_calls(request: Request, call_next):
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent", "")
     
+    # NFC decrypt endpoint için özel debug
+    if endpoint == "/api/nfc/decrypt":
+        print(f"🚀 NFC DECRYPT BAŞLADI - {datetime.now()}")
+        print(f"🚀 Method: {method}, IP: {ip_address}")
+        print(f"🚀 User-Agent: {user_agent}")
+    
     # Request body'yi al (sadece POST/PUT için)
     request_payload = None
     if method in ["POST", "PUT", "PATCH"]:
@@ -97,6 +103,12 @@ async def log_api_calls(request: Request, call_next):
     
     # Response süresini hesapla
     response_time_ms = (time.time() - start_time) * 1000
+    
+    # NFC decrypt endpoint için özel debug
+    if endpoint == "/api/nfc/decrypt":
+        print(f"🚀 NFC DECRYPT BİTTİ - {datetime.now()}")
+        print(f"🚀 Response time: {response_time_ms:.2f}ms")
+        print(f"🚀 Status code: {response.status_code}")
     
     # Response body'yi al (sadece hata durumlarında)
     response_payload = None
