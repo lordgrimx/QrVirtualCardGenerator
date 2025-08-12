@@ -6,7 +6,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 import uvicorn
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 import random
 import os
 from dotenv import load_dotenv
@@ -1516,6 +1516,157 @@ async def trigger_log_cleanup(retention_days: int = 30):
 
 
 
+
+# Offline Verification API
+class OfflineVerifyRequest(BaseModel):
+    encryptedData: str
+    deviceInfo: Optional[str] = None
+
+@app.post("/api/nfc/verify-offline")
+async def verify_offline_nfc(request: OfflineVerifyRequest, db: Session = Depends(get_db)):
+    """
+    Offline NFC doğrulama - internet bağlantısı olmadığında kullanılır
+    Embedded public key ile basit imza doğrulaması yapar
+    """
+    device_info = request.deviceInfo or "Offline Device"
+    
+    try:
+        encrypted_data = request.encryptedData.strip()
+        print(f"🔍 Offline verification - encrypted data length: {len(encrypted_data)}")
+        
+        # 1) Çift şifrelemeyi çöz (XOR + Base64)
+        decrypted_json = _decrypt_nfc_data_offline(encrypted_data)
+        if not decrypted_json:
+            return {
+                "success": False,
+                "error": "DECRYPTION_FAILED",
+                "message": "Veri çözülemedi - geçersiz şifreleme"
+            }
+        
+        # 2) JSON parse et
+        try:
+            nfc_data = json.loads(decrypted_json)
+        except json.JSONDecodeError:
+            return {
+                "success": False,
+                "error": "INVALID_JSON",
+                "message": "Geçersiz JSON formatı"
+            }
+        
+        # 3) Gerekli alanları kontrol et
+        required_fields = ['v', 'mid', 'name', 'exp', 'sig']
+        for field in required_fields:
+            if field not in nfc_data:
+                return {
+                    "success": False,
+                    "error": "MISSING_FIELD",
+                    "message": f"Eksik alan: {field}"
+                }
+        
+        # 4) Version kontrolü
+        if nfc_data['v'] != 1:
+            return {
+                "success": False,
+                "error": "UNSUPPORTED_VERSION",
+                "message": "Desteklenmeyen veri versiyonu"
+            }
+        
+        # 5) Expiration date kontrolü
+        exp_date_str = nfc_data['exp']
+        try:
+            exp_date = datetime.strptime(exp_date_str, '%Y%m%d')
+            if exp_date < datetime.utcnow():
+                return {
+                    "success": False,
+                    "error": "EXPIRED",
+                    "message": f"NFC kartının süresi dolmuş (Son geçerlilik: {exp_date.strftime('%Y-%m-%d')})"
+                }
+        except ValueError:
+            return {
+                "success": False,
+                "error": "INVALID_DATE",
+                "message": "Geçersiz expiration date formatı"
+            }
+        
+        # 6) Basit offline imza doğrulaması
+        signature_valid = _verify_nfc_signature_offline(nfc_data)
+        if not signature_valid:
+            return {
+                "success": False,
+                "error": "INVALID_SIGNATURE",
+                "message": "Dijital imza doğrulanamadı - sahte kart olabilir"
+            }
+        
+        # 7) Başarılı - offline doğrulama tamamlandı
+        membership_id = nfc_data['mid']
+        member_name = nfc_data['name']
+        
+        # Offline başarılı doğrulama kaydını log'la
+        log_nfc_reading(
+            db=db,
+            device_info=device_info,
+            read_success=True,
+            verification_type="offline",
+            member_id=membership_id,
+            reader_name="Offline Verification"
+        )
+        
+        return {
+            "success": True,
+            "valid": True,
+            "member": {
+                "membershipId": membership_id,
+                "name": member_name,
+                "status": "Active (Offline)",
+                "fromDatabase": False,
+                "role": "Member",
+                "expirationDate": exp_date.strftime('%Y-%m-%d')
+            },
+            "verificationTime": datetime.utcnow().isoformat(),
+            "verificationMode": "offline"
+        }
+        
+    except Exception as e:
+        print(f"❌ Offline verification error: {e}")
+        return {
+            "success": False,
+            "error": "VERIFICATION_ERROR",
+            "message": f"Offline doğrulama hatası: {str(e)}"
+        }
+
+def _decrypt_nfc_data_offline(encrypted_data: str) -> Optional[str]:
+    """
+    Offline NFC veri şifresini çöz (XOR + Base64)
+    MauiNfcReader'daki DecryptNfcData fonksiyonunun Python karşılığı
+    """
+    try:
+        if not encrypted_data.startswith("NFC_ENC_V1:"):
+            return encrypted_data  # Şifrelenmiş değil
+        
+        # Prefix'i kaldır
+        encrypted_b64 = encrypted_data[11:]
+        
+        # Base64 decode
+        import base64
+        encrypted_bytes = base64.b64decode(encrypted_b64)
+        
+        # XOR ile çöz
+        key = "NFC_SECURE_2024_CRYPTO_KEY_ADVANCED".encode('utf-8')
+        decrypted_bytes = bytearray()
+        
+        for i in range(len(encrypted_bytes)):
+            decrypted_bytes.append(encrypted_bytes[i] ^ key[i % len(key)])
+        
+        return decrypted_bytes.decode('utf-8')
+    except Exception as e:
+        print(f"❌ Offline decryption error: {e}")
+        return None
+
+def _verify_nfc_signature_offline(nfc_data: dict) -> bool:
+    """
+    Offline NFC imza doğrulaması - crypto_utils'daki fonksiyonu kullanır
+    """
+    return secure_qr.verify_nfc_signature_offline(nfc_data)
 
 
 if __name__ == "__main__":
