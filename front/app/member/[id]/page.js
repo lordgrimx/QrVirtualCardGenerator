@@ -235,7 +235,7 @@ export default function MemberPage() {
 
       downloadStatus('Kartların indirme işlemi başlıyor...');
 
-      // HTML2Canvas ayarları - QR kodlar ve CSS transforms için optimize edildi
+      // HTML2Canvas ayarları - QR kodlar, CSS transforms ve OKLCH renkler için optimize edildi
       const canvasOptions = {
         backgroundColor: '#ffffff',
         scale: 2, // Yüksek kalite için
@@ -249,7 +249,123 @@ export default function MemberPage() {
           element.style.animation = 'none';
           element.style.transition = 'none';
           element.style.transform = 'none';
+          
+          // OKLCH ve diğer modern CSS renk fonksiyonlarını RGB'ye dönüştür
+          const fixColors = (el) => {
+            const computedStyle = window.getComputedStyle(el);
+            
+            // Gradient background'ları düzelt
+            if (el.classList.contains('bg-gradient-to-br') || el.classList.contains('bg-gradient-to-r')) {
+              if (el.classList.contains('from-blue-600')) {
+                el.style.background = 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)';
+              } else if (el.classList.contains('from-gray-800')) {
+                el.style.background = 'linear-gradient(135deg, #1f2937 0%, #000000 100%)';
+              } else if (el.classList.contains('from-blue-500')) {
+                el.style.background = 'linear-gradient(to right, #3b82f6 0%, #8b5cf6 100%)';
+              }
+            }
+            
+            // Text ve border renklerini düzelt
+            const textColor = computedStyle.color;
+            const bgColor = computedStyle.backgroundColor;
+            const borderColor = computedStyle.borderColor;
+            
+            if (textColor.includes('oklch') || textColor.includes('lch')) {
+              if (el.classList.contains('text-white')) el.style.color = '#ffffff';
+              else if (el.classList.contains('text-gray-900')) el.style.color = '#111827';
+              else if (el.classList.contains('text-gray-400')) el.style.color = '#9ca3af';
+              else if (el.classList.contains('text-gray-500')) el.style.color = '#6b7280';
+            }
+            
+            if (bgColor.includes('oklch') || bgColor.includes('lch')) {
+              if (el.classList.contains('bg-green-500')) el.style.backgroundColor = '#10b981';
+              else if (el.classList.contains('bg-white')) el.style.backgroundColor = '#ffffff';
+            }
+            
+            if (borderColor.includes('oklch') || borderColor.includes('lch')) {
+              if (el.classList.contains('border-gray-700')) el.style.borderColor = '#374151';
+            }
+          };
+          
+          // Ana element ve tüm child elementleri işle
+          fixColors(element);
+          element.querySelectorAll('*').forEach(fixColors);
         }
+      };
+
+      // Gelişmiş renk düzeltme fonksiyonu
+      const preFixCardColors = (card) => {
+        if (!card) return;
+        
+        console.log('🎨 Renkleri RGB formatına dönüştürülüyor...');
+        
+        // Ana kartın renklerini düzelt
+        if (card.classList.contains('card-front')) {
+          card.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #7c3aed 100%)';
+        } else if (card.classList.contains('card-back')) {
+          card.style.background = 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)';
+        }
+        
+        // Tüm elementleri recursive olarak işle
+        const processElement = (el) => {
+          // Computed style'ı al
+          const computed = window.getComputedStyle(el);
+          
+          // Modern CSS color functions kontrol et
+          const hasModernColor = (color) => {
+            return color && (color.includes('oklch') || color.includes('lch') || color.includes('lab') || color.includes('color('));
+          };
+          
+          // Background renkleri
+          if (hasModernColor(computed.backgroundColor) || el.classList.contains('bg-gradient-to-r') || el.classList.contains('bg-gradient-to-br')) {
+            if (el.classList.contains('from-blue-600')) {
+              el.style.background = 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)';
+            } else if (el.classList.contains('from-blue-500')) {
+              el.style.background = 'linear-gradient(to right, #3b82f6 0%, #a855f7 100%)';
+            } else if (el.classList.contains('from-gray-800')) {
+              el.style.background = 'linear-gradient(135deg, #1f2937 0%, #000000 100%)';
+            } else if (el.classList.contains('bg-white')) {
+              el.style.backgroundColor = '#ffffff';
+            } else if (el.classList.contains('bg-green-500')) {
+              el.style.backgroundColor = '#10b981';
+            }
+          }
+          
+          // Text renkleri
+          if (hasModernColor(computed.color)) {
+            if (el.classList.contains('text-white')) el.style.color = '#ffffff';
+            else if (el.classList.contains('text-gray-900')) el.style.color = '#111827';
+            else if (el.classList.contains('text-gray-800')) el.style.color = '#1f2937';
+            else if (el.classList.contains('text-gray-700')) el.style.color = '#374151';
+            else if (el.classList.contains('text-gray-600')) el.style.color = '#4b5563';
+            else if (el.classList.contains('text-gray-500')) el.style.color = '#6b7280';
+            else if (el.classList.contains('text-gray-400')) el.style.color = '#9ca3af';
+            else if (el.classList.contains('text-blue-700')) el.style.color = '#1d4ed8';
+            else if (el.classList.contains('text-blue-900')) el.style.color = '#1e3a8a';
+          }
+          
+          // Border renkleri
+          if (hasModernColor(computed.borderColor)) {
+            if (el.classList.contains('border-gray-700')) el.style.borderColor = '#374151';
+            else if (el.classList.contains('border-gray-200')) el.style.borderColor = '#e5e7eb';
+            else if (el.classList.contains('border-blue-200')) el.style.borderColor = '#bfdbfe';
+          }
+          
+          // Box shadow'ları düzelt
+          if (computed.boxShadow && hasModernColor(computed.boxShadow)) {
+            if (el.classList.contains('shadow-lg')) {
+              el.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+            } else if (el.classList.contains('shadow-2xl')) {
+              el.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.25)';
+            }
+          }
+        };
+        
+        // Ana element ve tüm alt elementleri işle
+        processElement(card);
+        card.querySelectorAll('*').forEach(processElement);
+        
+        console.log('✅ Renk dönüştürme tamamlandı');
       };
 
       // Önce front kartı yakala
@@ -264,6 +380,9 @@ export default function MemberPage() {
         // Kartın görünür olduğundan emin ol
         frontCard.style.transform = 'rotateY(0deg)';
         frontCard.style.opacity = '1';
+        
+        // Renkleri önceden düzelt
+        preFixCardColors(frontCard);
         
         const frontCanvas = await html2canvas(frontCard, canvasOptions);
         const frontDataUrl = frontCanvas.toDataURL('image/png', 1.0);
@@ -291,6 +410,9 @@ export default function MemberPage() {
         // Kartın görünür olduğundan emin ol
         backCard.style.transform = 'rotateY(0deg)';
         backCard.style.opacity = '1';
+        
+        // Arka yüz için renkleri düzelt
+        preFixCardColors(backCard);
         
         const backCanvas = await html2canvas(backCard, canvasOptions);
         const backDataUrl = backCanvas.toDataURL('image/png', 1.0);
