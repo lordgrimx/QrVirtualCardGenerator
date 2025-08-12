@@ -23,7 +23,15 @@ if not DATABASE_URL:
     DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Create SQLAlchemy engine
-engine = create_engine(DATABASE_URL, echo=True)
+# Pool ayarları: küçük havuz, pre_ping ile bağlantı sağlığı kontrolü, recycle ile uzun bağlantıları yenile
+engine = create_engine(
+    DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300,
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Base class for models

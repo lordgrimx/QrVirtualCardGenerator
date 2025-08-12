@@ -10,6 +10,7 @@ from datetime import datetime
 import random
 import os
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor
 import ssl
 import time
 import asyncio
@@ -65,6 +66,8 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+log_executor = ThreadPoolExecutor(max_workers=2)
 
 # API Logging Middleware
 @app.middleware("http")
@@ -134,38 +137,42 @@ async def log_api_calls(request: Request, call_next):
         else:
             error_message = f"HTTP {response.status_code}"
     
-    # Log'u asenkron olarak kaydet (performans için)
-    asyncio.create_task(save_api_log(
-        endpoint=endpoint,
-        method=method,
-        status_code=response.status_code,
-        response_time_ms=response_time_ms,
-        ip_address=ip_address,
-        user_agent=user_agent,
-        request_payload=request_payload,
-        response_payload=response_payload,
-        error_message=error_message,
-        api_category=api_category
-    ))
+    # Log'u thread havuzunda kaydet (event loop'u bloklamadan)
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(
+        log_executor,
+        save_api_log_sync,
+        endpoint,
+        method,
+        response.status_code,
+        response_time_ms,
+        ip_address,
+        user_agent,
+        request_payload,
+        response_payload,
+        error_message,
+        api_category,
+    )
     
     return response
 
-async def save_api_log(endpoint: str, method: str, status_code: int, 
+def save_api_log_sync(endpoint: str, method: str, status_code: int,
                       response_time_ms: float, ip_address: str = None,
                       user_agent: str = None, request_payload: str = None,
                       response_payload: str = None, error_message: str = None,
                       api_category: str = "other", member_id: int = None,
                       device_info: str = None):
-    """API log'unu database'e kaydet"""
+    """API log'unu database'e kaydet (senkron)"""
+    db = None
     try:
         db = next(get_db())
-        
+
         # Request/response payload'ları çok uzunsa kısalt
         if request_payload and len(request_payload) > 10000:
             request_payload = request_payload[:10000] + "... [truncated]"
         if response_payload and len(response_payload) > 10000:
             response_payload = response_payload[:10000] + "... [truncated]"
-        
+
         api_log = DBApiCallLog(
             endpoint=endpoint,
             method=method,
@@ -178,16 +185,25 @@ async def save_api_log(endpoint: str, method: str, status_code: int,
             error_message=error_message,
             api_category=api_category,
             member_id=member_id,
-            device_info=device_info
+            device_info=device_info,
         )
-        
+
         db.add(api_log)
         db.commit()
-        
+
     except Exception as e:
         print(f"⚠️ API log kaydetme hatası: {e}")
+        if db is not None:
+            try:
+                db.rollback()
+            except Exception:
+                pass
     finally:
-        db.close()
+        if db is not None:
+            try:
+                db.close()
+            except Exception:
+                pass
 
 # Initialize database on startup
 @app.on_event("startup")
