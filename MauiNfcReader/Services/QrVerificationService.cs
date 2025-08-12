@@ -93,10 +93,10 @@ public class QrVerificationService : IQrVerificationService
 
             if (string.IsNullOrWhiteSpace(publicKeyPem))
             {
-                // Son bir kez backend'i dene (kısa timeout ile)
+                // Son bir kez backend'i dene (uzun timeout ile)
                 try
                 {
-                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                     var (ok2, pem2, _) = await _backendApiService.GetPublicKeyAsync(cts.Token);
                     if (ok2 && !string.IsNullOrWhiteSpace(pem2))
                     {

@@ -1269,7 +1269,6 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
         
         # Üye bilgilerini database'den getir
         membership_id = nfc_data['mid']
-        db = next(get_db())
         member = db.query(DBMember).filter(DBMember.membership_id == membership_id).first()
         
         member_info = {

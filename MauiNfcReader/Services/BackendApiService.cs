@@ -79,7 +79,7 @@ public class BackendApiService : IBackendApiService
     private HttpClient CreateClient()
     {
         var client = _httpClientFactory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(10);
+        client.Timeout = TimeSpan.FromSeconds(30); // Timeout'u 30 saniyeye çıkardık
         
         // User-Agent header ekle
         client.DefaultRequestHeaders.Add("User-Agent", "MauiNfcReader/1.0");

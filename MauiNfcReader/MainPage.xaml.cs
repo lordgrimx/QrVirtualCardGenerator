@@ -87,7 +87,7 @@ public partial class MainPage : ContentPage
 
             _logger?.LogInformation("Backend'e bağlantı deneniyor...");
             // Hafif bir uç nokta ile kontrol: public key endpoint hızlıdır
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10)); // Timeout'u artırdık
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30)); // Timeout'u 30 saniyeye çıkardık
             var (ok, publicKey, error) = await _backend.GetPublicKeyAsync(cts.Token);
             
             _logger?.LogInformation($"Backend yanıtı - OK: {ok}, Error: {error}, PublicKey Length: {publicKey?.Length ?? 0}");

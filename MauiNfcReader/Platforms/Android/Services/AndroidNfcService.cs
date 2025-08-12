@@ -121,7 +121,7 @@ public class AndroidNfcService : Java.Lang.Object, INfcService
     {
         _readTcs = new TaskCompletionSource<NfcCardData?>();
         // Kullanıcı karta dokundurduğunda OnNewIntent ile sonuç dönecek
-        return _readTcs.Task.TimeoutAfter(TimeSpan.FromSeconds(10)).ContinueWith(t =>
+        return _readTcs.Task.TimeoutAfter(TimeSpan.FromSeconds(30)).ContinueWith(t =>
         {
             if (t.Status == TaskStatus.RanToCompletion) return t.Result;
             return new NfcCardData { IsSuccess = false, ErrorMessage = "Timeout veya intent alınamadı", ReaderName = _connectedReaderName ?? "Android NFC" };
