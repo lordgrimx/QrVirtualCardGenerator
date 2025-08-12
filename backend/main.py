@@ -1081,7 +1081,7 @@ async def get_nfc_reading_history(
     """
     try:
         from datetime import date, timedelta
-        from sqlalchemy import func, and_
+        from sqlalchemy import func, and_, case
         
         # Son X günün tarih aralığını hesapla
         end_date = date.today()
@@ -1090,8 +1090,8 @@ async def get_nfc_reading_history(
         # Günlük okuma istatistiklerini getir
         query = db.query(
             func.date(DBNfcReadingHistory.created_at).label('date'),
-            func.sum(func.case([(DBNfcReadingHistory.read_success == True, 1)], else_=0)).label('successful'),
-            func.sum(func.case([(DBNfcReadingHistory.read_success == False, 1)], else_=0)).label('failed')
+            func.sum(case((DBNfcReadingHistory.read_success == True, 1), else_=0)).label('successful'),
+            func.sum(case((DBNfcReadingHistory.read_success == False, 1), else_=0)).label('failed')
         ).filter(
             func.date(DBNfcReadingHistory.created_at) >= start_date,
             func.date(DBNfcReadingHistory.created_at) <= end_date
