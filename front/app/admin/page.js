@@ -192,8 +192,14 @@ export default function AdminPage() {
     max_discount_amount: '',
     terms_conditions: '',
     start_date: '',
-    end_date: ''
+    end_date: '',
+    business_id: '',
+    business_name: ''
   });
+
+  // Business search state
+  const [businessSearchResults, setBusinessSearchResults] = useState([]);
+  const [showBusinessDropdown, setShowBusinessDropdown] = useState(false);
 
   // Settings form data
   const [settingsFormData, setSettingsFormData] = useState({
@@ -437,24 +443,79 @@ export default function AdminPage() {
     }));
   };
 
+  // Business search handler
+  const handleBusinessSearch = async (searchTerm) => {
+    if (searchTerm.length < 2) {
+      setBusinessSearchResults([]);
+      setShowBusinessDropdown(false);
+      return;
+    }
+
+    try {
+      // Mevcut businesses array'inde ara
+      const filteredBusinesses = businesses.filter(business =>
+        business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        business.business_type?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      
+      setBusinessSearchResults(filteredBusinesses);
+      setShowBusinessDropdown(true);
+    } catch (error) {
+      console.error('Business search error:', error);
+      setBusinessSearchResults([]);
+      setShowBusinessDropdown(false);
+    }
+  };
+
+  const handleBusinessNameChange = (e) => {
+    const value = e.target.value;
+    setEventFormData(prev => ({
+      ...prev,
+      business_name: value,
+      business_id: '' // Reset business_id when typing
+    }));
+    handleBusinessSearch(value);
+  };
+
+  const selectBusiness = (business) => {
+    setEventFormData(prev => ({
+      ...prev,
+      business_name: business.name,
+      business_id: business.id
+    }));
+    setShowBusinessDropdown(false);
+    setBusinessSearchResults([]);
+  };
+
+  // Click outside to close dropdown
+  const handleBusinessInputBlur = () => {
+    // Small delay to allow click on dropdown items
+    setTimeout(() => {
+      setShowBusinessDropdown(false);
+    }, 150);
+  };
+
   const handleEventSubmit = async (e) => {
     e.preventDefault();
     
     try {
       setLoading(true);
       
-      // İlk olarak bir business seçilmeli - demo için ilk business'i kullanacağız
-      if (businesses.length === 0) {
-        alert('Önce bir işletme kaydetmelisiniz!');
+      // İşletme seçilmeli
+      if (!eventFormData.business_id) {
+        alert('Lütfen bir işletme seçin!');
         return;
       }
 
       const eventData = {
         ...eventFormData,
-        business_id: businesses[0].id, // İlk business'i kullan
+        business_id: parseInt(eventFormData.business_id), // Seçilen business ID'yi kullan
         start_date: new Date(eventFormData.start_date).toISOString(),
         end_date: new Date(eventFormData.end_date).toISOString()
       };
+      
+      // Form data'sından gereksiz alanları kaldır
+      delete eventData.business_name;
       
       const response = await fetch(`${getApiUrl()}/api/business-events`, {
         method: 'POST',
@@ -479,8 +540,12 @@ export default function AdminPage() {
           max_discount_amount: '',
           terms_conditions: '',
           start_date: '',
-          end_date: ''
+          end_date: '',
+          business_id: '',
+          business_name: ''
         });
+        setBusinessSearchResults([]);
+        setShowBusinessDropdown(false);
       } else {
         alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);
       }
@@ -700,7 +765,9 @@ export default function AdminPage() {
             }`}
             onClick={() => {
               setActiveMenu('dashboard');
-              fetchBusinesses(); // Dashboard açıldığında işletmeleri yükle
+              if (businesses.length === 0) {
+                fetchBusinesses(); // Dashboard açıldığında işletmeleri yükle
+              }
             }}
             title={sidebarCollapsed ? "Dashboard" : ""}
           >
@@ -762,7 +829,12 @@ export default function AdminPage() {
                 ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
-            onClick={() => setActiveMenu('businessRegistration')}
+            onClick={() => {
+              setActiveMenu('businessRegistration');
+              if (businesses.length === 0) {
+                fetchBusinesses(); // İşletme listesi yoksa yükle
+              }
+            }}
             title={sidebarCollapsed ? "İşletme Kayıt" : ""}
           >
             <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
@@ -1028,6 +1100,39 @@ export default function AdminPage() {
                       <form onSubmit={handleEventSubmit} className="space-y-4">
                         <div>
                           <label className="block text-sm font-semibold text-blue-700 mb-2">
+                            İşletme Seçimi *
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              name="business_name"
+                              value={eventFormData.business_name}
+                              onChange={handleBusinessNameChange}
+                              onBlur={handleBusinessInputBlur}
+                              placeholder="İşletme adı yazın..."
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
+                              autoComplete="off"
+                              required
+                            />
+                            {showBusinessDropdown && businessSearchResults.length > 0 && (
+                              <div className="absolute top-full left-0 right-0 bg-white border border-blue-300 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                                {businessSearchResults.map((business) => (
+                                  <div
+                                    key={business.id}
+                                    onClick={() => selectBusiness(business)}
+                                    className="px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                                  >
+                                    <div className="font-medium text-gray-900">{business.name}</div>
+                                    <div className="text-xs text-gray-500">{business.business_type} • {business.email}</div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-semibold text-blue-700 mb-2">
                             Event Başlığı *
                           </label>
                           <input
@@ -1036,7 +1141,7 @@ export default function AdminPage() {
                             value={eventFormData.title}
                             onChange={handleEventInputChange}
                             placeholder="Örn: %20 İndirim"
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                             required
                           />
                         </div>
@@ -1049,7 +1154,7 @@ export default function AdminPage() {
                             name="event_type"
                             value={eventFormData.event_type}
                             onChange={handleEventInputChange}
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                             required
                           >
                             <option value="">Seçiniz</option>
@@ -1070,7 +1175,7 @@ export default function AdminPage() {
                             onChange={handleEventInputChange}
                             placeholder="Event açıklaması"
                             rows="2"
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none"
+                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black resize-none"
                           />
                         </div>
 
@@ -1091,7 +1196,7 @@ export default function AdminPage() {
                                   placeholder="20"
                                   min="0"
                                   max="100"
-                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white text-black"
                                 />
                               </div>
                               <div>
@@ -1105,7 +1210,7 @@ export default function AdminPage() {
                                   onChange={handleEventInputChange}
                                   placeholder="50"
                                   min="0"
-                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white text-black"
                                 />
                               </div>
                             </div>
@@ -1121,7 +1226,7 @@ export default function AdminPage() {
                                   onChange={handleEventInputChange}
                                   placeholder="100"
                                   min="0"
-                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white text-black"
                                 />
                               </div>
                               <div>
@@ -1135,7 +1240,7 @@ export default function AdminPage() {
                                   onChange={handleEventInputChange}
                                   placeholder="200"
                                   min="0"
-                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                                  className="w-full px-3 py-2 border border-red-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 bg-white text-black"
                                 />
                               </div>
                             </div>
@@ -1155,7 +1260,7 @@ export default function AdminPage() {
                                 onChange={handleEventInputChange}
                                 placeholder="Kampanya koşullarını detaylandırın (örn: 2 Al 1 Öde, Hediye ürün vb.)"
                                 rows="3"
-                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white resize-none"
+                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black resize-none"
                               />
                             </div>
                             <div>
@@ -1169,7 +1274,7 @@ export default function AdminPage() {
                                 onChange={handleEventInputChange}
                                 placeholder="150"
                                 min="0"
-                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                               />
                             </div>
                           </div>
@@ -1189,7 +1294,7 @@ export default function AdminPage() {
                                 onChange={handleEventInputChange}
                                 placeholder="200"
                                 min="0"
-                                className="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                                className="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-black"
                                 required
                               />
                             </div>
@@ -1203,7 +1308,7 @@ export default function AdminPage() {
                                 value={eventFormData.terms_conditions}
                                 onChange={handleEventInputChange}
                                 placeholder="Tüm Türkiye, sadece İstanbul vb."
-                                className="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white"
+                                className="w-full px-3 py-2 border border-green-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white text-black"
                               />
                             </div>
                           </div>
@@ -1225,7 +1330,7 @@ export default function AdminPage() {
                                   placeholder="5"
                                   min="0"
                                   max="50"
-                                  className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                                  className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-black"
                                 />
                               </div>
                               <div>
@@ -1239,7 +1344,7 @@ export default function AdminPage() {
                                   onChange={handleEventInputChange}
                                   placeholder="50"
                                   min="0"
-                                  className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+                                  className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-black"
                                 />
                               </div>
                             </div>
@@ -1253,7 +1358,7 @@ export default function AdminPage() {
                                 onChange={handleEventInputChange}
                                 placeholder="Puan kullanım koşulları (örn: 100 puan = 10₺, minimum 500 puan ile kullanılabilir)"
                                 rows="2"
-                                className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white resize-none"
+                                className="w-full px-3 py-2 border border-orange-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white text-black resize-none"
                               />
                             </div>
                           </div>
@@ -1269,7 +1374,7 @@ export default function AdminPage() {
                               name="start_date"
                               value={eventFormData.start_date}
                               onChange={handleEventInputChange}
-                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                               required
                             />
                           </div>
@@ -1282,7 +1387,7 @@ export default function AdminPage() {
                               name="end_date"
                               value={eventFormData.end_date}
                               onChange={handleEventInputChange}
-                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                              className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
                               required
                             />
                           </div>

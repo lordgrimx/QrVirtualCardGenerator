@@ -2,74 +2,159 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MauiNfcReader.MainPage"
-             Title="">
+             Title=""
+             BackgroundColor="White">
 
-    <ScrollView>
-        <VerticalStackLayout
-            Padding="30,0"
-            Spacing="25">
-            <Image
-                Source="dotnet_bot.png"
-                HeightRequest="150"
-                Aspect="AspectFit" />
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-            <Label
-                Text="NFC Kart Okuyucu"
-                FontSize="32"
-                FontAttributes="Bold"
-                HorizontalOptions="Center" />
+        <!-- Ana İçerik -->
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Spacing="0">
+                
+                <!-- Header -->
+                <Frame BackgroundColor="White" Padding="16,16,16,8" HasShadow="False">
+                    <Label Text="NFC App" 
+                           FontSize="18" 
+                           FontAttributes="Bold" 
+                           TextColor="#111418" 
+                           HorizontalOptions="Center" />
+                </Frame>
 
-            <Label
-                Text="Windows USB NFC Okuyucu ile&#10;şifrelenmiş kartları okuyun"
-                FontSize="18"
-                HorizontalOptions="Center" />
-
-            <Frame BackgroundColor="LightBlue"
-                   Padding="20"
-                   CornerRadius="10">
-                <StackLayout Spacing="10">
-                    <Label Text="✅ Windows 10/11 destekli" FontSize="14" />
-                    <Label Text="✅ ACR122U ve uyumlu USB okuyucular" FontSize="14" />
-                    <Label Text="✅ AES şifre çözme" FontSize="14" />
-                    <Label Text="✅ Otomatik kart algılama" FontSize="14" />
-                    <Label Text="✅ Okuma geçmişi" FontSize="14" />
-                </StackLayout>
-            </Frame>
-
-            <!-- Backend bağlantı durumu -->
-            <Frame BackgroundColor="#EEF2FF" Padding="16" CornerRadius="12">
-                <VerticalStackLayout Spacing="8">
-                    <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                        <BoxView x:Name="BackendStatusDot" WidthRequest="12" HeightRequest="12" CornerRadius="6" Color="#9CA3AF" />
-                        <Label x:Name="BackendStatusText" Text="Backend bağlantısı kontrol ediliyor..." FontSize="14" TextColor="#111827" />
+                <!-- Status Bölümü -->
+                <Frame BackgroundColor="White" Padding="16,0,16,12" HasShadow="False">
+                    <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+                        <Label x:Name="StatusLabel" 
+                               Text="Status: Connected" 
+                               FontSize="14" 
+                               TextColor="#60758A" />
+                        <Button x:Name="RecycleBtn"
+                                Text="🔄"
+                                FontSize="14"
+                                BackgroundColor="Transparent"
+                                TextColor="#60758A"
+                                Padding="8,4"
+                                CornerRadius="6"
+                                Clicked="OnRecycleBackendClicked"
+                                ToolTipProperties.Text="Backend'e yeniden bağlan" />
                     </HorizontalStackLayout>
-                    <Button x:Name="RetryBackendBtn"
-                            Text="Yeniden Dene"
-                            Clicked="OnRetryBackendClicked"
-                            BackgroundColor="#1F2937" TextColor="White"
-                            HorizontalOptions="Start"
-                            FontSize="14"
-                            Padding="12,6" />
-                </VerticalStackLayout>
-            </Frame>
+                </Frame>
 
-            <Button
-                x:Name="StartBtn"
-                Text="NFC Okuyucuyu Başlat"
-                FontSize="18"
-                BackgroundColor="Green"
-                TextColor="White"
-                Clicked="OnStartClicked"
-                HorizontalOptions="Fill" />
+                <!-- Connect Backend Butonu -->
+                <Frame BackgroundColor="White" Padding="16,12" HasShadow="False">
+                    <Button x:Name="ConnectBackendBtn"
+                            Text="Connect to Backend"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            BackgroundColor="#3D99F5"
+                            TextColor="White"
+                            HeightRequest="48"
+                            CornerRadius="12"
+                            Clicked="OnConnectBackendClicked"
+                            HorizontalOptions="Fill" />
+                </Frame>
 
-            <StackLayout Spacing="5">
-                <Label Text="Sistem Gereksinimleri:" FontAttributes="Bold" FontSize="14" />
-                <Label Text="• USB NFC okuyucu (ACR122U önerilir)" FontSize="12" />
-                <Label Text="• Windows Smart Card Service aktif" FontSize="12" />
-                <Label Text="• PCSC sürücüleri yüklü" FontSize="12" />
-            </StackLayout>
+                <!-- Start NFC Reader Butonu -->
+                <Frame BackgroundColor="White" Padding="16,12" HasShadow="False">
+                    <Button x:Name="StartNfcBtn"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            BackgroundColor="#F0F2F5"
+                            TextColor="#111418"
+                            HeightRequest="48"
+                            CornerRadius="12"
+                            Clicked="OnStartClicked"
+                            HorizontalOptions="Fill">
+                        <Button.ImageSource>
+                            <FontImageSource Glyph="📡" 
+                                           FontFamily="Segoe UI Emoji" 
+                                           Size="24" 
+                                           Color="#111418" />
+                        </Button.ImageSource>
+                        <Button.Text>Start NFC Reader</Button.Text>
+                    </Button>
+                </Frame>
 
-        </VerticalStackLayout>
-    </ScrollView>
+                <!-- Durum Bilgisi -->
+                <Frame BackgroundColor="#EEF2FF" Margin="16,12" Padding="16" CornerRadius="12" HasShadow="False">
+                    <VerticalStackLayout Spacing="8">
+                        <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                            <BoxView x:Name="BackendStatusDot" WidthRequest="12" HeightRequest="12" CornerRadius="6" Color="#9CA3AF" />
+                            <Label x:Name="BackendStatusText" Text="Backend bağlantısı kontrol ediliyor..." FontSize="14" TextColor="#111827" />
+                        </HorizontalStackLayout>
+                        
+                        <!-- Özellikler -->
+                        <StackLayout Spacing="4" Margin="0,8,0,0">
+                            <Label Text="✅ Windows 10/11 destekli" FontSize="12" TextColor="#60758A" />
+                            <Label Text="✅ ACR122U ve uyumlu USB okuyucular" FontSize="12" TextColor="#60758A" />
+                            <Label Text="✅ AES şifre çözme" FontSize="12" TextColor="#60758A" />
+                            <Label Text="✅ Otomatik kart algılama" FontSize="12" TextColor="#60758A" />
+                        </StackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <!-- Alt Navigasyon Barı -->
+        <Frame Grid.Row="1" 
+               BackgroundColor="White" 
+               HasShadow="True" 
+               Padding="16,8,16,12" 
+               CornerRadius="0">
+            <HorizontalStackLayout Spacing="0" HorizontalOptions="FillAndExpand">
+                
+                <!-- Home -->
+                <Button BackgroundColor="Transparent" 
+                        Text="🏠" 
+                        FontSize="24" 
+                        TextColor="#111418" 
+                        Padding="0" 
+                        HorizontalOptions="FillAndExpand"
+                        Clicked="OnHomeClicked" />
+                
+                <!-- Search -->
+                <Button BackgroundColor="Transparent" 
+                        Text="🔍" 
+                        FontSize="24" 
+                        TextColor="#60758A" 
+                        Padding="0" 
+                        HorizontalOptions="FillAndExpand"
+                        Clicked="OnSearchClicked" />
+                
+                <!-- Add -->
+                <Button BackgroundColor="Transparent" 
+                        Text="➕" 
+                        FontSize="24" 
+                        TextColor="#60758A" 
+                        Padding="0" 
+                        HorizontalOptions="FillAndExpand"
+                        Clicked="OnAddClicked" />
+                
+                <!-- Bookmark -->
+                <Button BackgroundColor="Transparent" 
+                        Text="🔖" 
+                        FontSize="24" 
+                        TextColor="#60758A" 
+                        Padding="0" 
+                        HorizontalOptions="FillAndExpand"
+                        Clicked="OnBookmarkClicked" />
+                
+                <!-- User -->
+                <Button BackgroundColor="Transparent" 
+                        Text="👤" 
+                        FontSize="24" 
+                        TextColor="#60758A" 
+                        Padding="0" 
+                        HorizontalOptions="FillAndExpand"
+                        Clicked="OnUserClicked" />
+                
+            </HorizontalStackLayout>
+        </Frame>
+
+    </Grid>
 
 </ContentPage>

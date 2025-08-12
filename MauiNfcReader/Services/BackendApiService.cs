@@ -80,6 +80,13 @@ public class BackendApiService : IBackendApiService
     {
         var client = _httpClientFactory.CreateClient();
         client.Timeout = TimeSpan.FromSeconds(10);
+        
+        // User-Agent header ekle
+        client.DefaultRequestHeaders.Add("User-Agent", "MauiNfcReader/1.0");
+        
+        // Accept header ekle  
+        client.DefaultRequestHeaders.Add("Accept", "application/json");
+        
         return client;
     }
 
@@ -89,20 +96,36 @@ public class BackendApiService : IBackendApiService
         {
             var client = CreateClient();
             var url = $"{_baseUrl}/api/qr/public-key";
+            
+            _logger.LogInformation($"Backend URL: {url}");
+            
             var resp = await client.GetAsync(url, ct);
+            _logger.LogInformation($"HTTP Status: {resp.StatusCode}");
+            
             if (!resp.IsSuccessStatusCode)
-                return (false, null, $"HTTP {(int)resp.StatusCode}");
+            {
+                var errorContent = await resp.Content.ReadAsStringAsync(ct);
+                _logger.LogError($"HTTP Error {(int)resp.StatusCode}: {errorContent}");
+                return (false, null, $"HTTP {(int)resp.StatusCode}: {errorContent}");
+            }
 
-            var json = await resp.Content.ReadFromJsonAsync<PublicKeyResponse>(cancellationToken: ct);
+            var jsonContent = await resp.Content.ReadAsStringAsync(ct);
+            _logger.LogInformation($"Raw JSON Response: {jsonContent}");
+            
+            // JSON'u yeniden parse etmek için stream'i başa alalım
+            using var jsonStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(jsonContent));
+            var json = await System.Text.Json.JsonSerializer.DeserializeAsync<PublicKeyResponse>(jsonStream, cancellationToken: ct);
+            _logger.LogInformation($"Parsed JSON - Success: {json?.success}, PublicKey: {(json?.public_key?.Length > 0 ? "Mevcut" : "Yok")}");
+            
             if (json?.success == true && !string.IsNullOrEmpty(json.public_key))
                 return (true, json.public_key, null);
 
-            return (false, null, "Geçersiz yanıt");
+            return (false, null, $"Geçersiz yanıt - Success: {json?.success}, PublicKey Empty: {string.IsNullOrEmpty(json?.public_key)}");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Public key alınamadı");
-            return (false, null, ex.Message);
+            _logger.LogError(ex, "Public key alınamadı - Detaylı hata");
+            return (false, null, $"Exception: {ex.Message} | Inner: {ex.InnerException?.Message}");
         }
     }
 
@@ -279,6 +302,10 @@ public class BackendApiService : IBackendApiService
     {
         public string? public_key { get; set; }
         public bool success { get; set; }
+        public string? algorithm { get; set; }
+        public string? key_format { get; set; }
+        public string? usage { get; set; }
+        public string? organization { get; set; }
     }
 
     private sealed class QrVerifyResponse
