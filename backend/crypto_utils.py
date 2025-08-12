@@ -301,23 +301,36 @@ class SecureQRManager:
         """
         Şifrelenmiş NFC verisini çöz
         """
-        if not encrypted_data.startswith("NFC_ENC_V1:"):
-            return encrypted_data  # Şifrelenmiş değil
-        
-        # Prefix'i kaldır
-        encrypted_b64 = encrypted_data[11:]  # "NFC_ENC_V1:" uzunluğu
-        
-        # Base64 decode
-        encrypted_bytes = base64.b64decode(encrypted_b64)
-        
-        # XOR ile çöz
-        key = b"NFC_SECURE_2024_CRYPTO_KEY_ADVANCED"
-        decrypted_bytes = bytearray()
-        for i, byte in enumerate(encrypted_bytes):
-            key_byte = key[i % len(key)]
-            decrypted_bytes.append(byte ^ key_byte)
-        
-        return bytes(decrypted_bytes).decode('utf-8')
+        try:
+            print(f"🔧 Decrypt input: {encrypted_data[:50]}...")
+            
+            if not encrypted_data.startswith("NFC_ENC_V1:"):
+                print("🔧 Not encrypted, returning as-is")
+                return encrypted_data  # Şifrelenmiş değil
+            
+            # Prefix'i kaldır
+            encrypted_b64 = encrypted_data[11:]  # "NFC_ENC_V1:" uzunluğu
+            print(f"🔧 Base64 data length: {len(encrypted_b64)}")
+            
+            # Base64 decode
+            encrypted_bytes = base64.b64decode(encrypted_b64)
+            print(f"🔧 Encrypted bytes length: {len(encrypted_bytes)}")
+            
+            # XOR ile çöz
+            key = b"NFC_SECURE_2024_CRYPTO_KEY_ADVANCED"
+            decrypted_bytes = bytearray()
+            for i, byte in enumerate(encrypted_bytes):
+                key_byte = key[i % len(key)]
+                decrypted_bytes.append(byte ^ key_byte)
+            
+            result = bytes(decrypted_bytes).decode('utf-8')
+            print(f"🔧 Decrypt result length: {len(result)}")
+            print(f"🔧 Decrypt preview: {result[:100]}...")
+            return result
+            
+        except Exception as e:
+            print(f"❌ Decrypt error: {e}")
+            return None
     
     def _verify_nfc_signature(self, nfc_data: Dict[str, Any]) -> bool:
         """

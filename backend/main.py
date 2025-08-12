@@ -1189,9 +1189,12 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
     
     try:
         encrypted_data = request.encryptedData.strip()
+        print(f"🔍 Received encrypted data length: {len(encrypted_data)}")
+        print(f"🔍 First 50 chars: {encrypted_data[:50]}")
         
         # İlk olarak çift şifrelemeyi çöz
         decrypted_json = secure_qr._decrypt_nfc_data(encrypted_data)
+        print(f"🔍 Decrypted result: {decrypted_json[:100] if decrypted_json else 'None'}")
         
         if not decrypted_json:
             # Başarısız okuma kaydını log'la
@@ -1203,6 +1206,7 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
                 verification_type="online",
                 reader_name="MAUI App"
             )
+            print("❌ Decryption failed - invalid encryption")
             raise HTTPException(status_code=400, detail="Veri çözülemedi - geçersiz şifreleme")
         
         # JSON parse et
