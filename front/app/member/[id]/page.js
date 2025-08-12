@@ -645,7 +645,7 @@ export default function MemberPage() {
           
           {/* Navigation */}
           <nav className="flex items-center gap-6">
-            <a href="/" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
+            <a href="/admin" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
             {session?.user && (
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-700">Welcome, {session.user.name}</span>

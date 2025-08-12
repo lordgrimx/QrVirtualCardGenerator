@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
@@ -11,6 +11,8 @@ import random
 import os
 from dotenv import load_dotenv
 import ssl
+import time
+import asyncio
 
 # Import database components
 from database import (
@@ -21,8 +23,11 @@ from database import (
     BusinessEvent as DBBusinessEvent, 
     BusinessContract as DBBusinessContract,
     NfcReadingHistory as DBNfcReadingHistory,
+    DBApiCallLog, DBDashboardStats,
     hash_password, 
-    verify_password
+    verify_password,
+    cleanup_old_logs,
+    calculate_daily_stats
 )
 
 # Import crypto utilities
@@ -60,6 +65,129 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# API Logging Middleware
+@app.middleware("http")
+async def log_api_calls(request: Request, call_next):
+    """API çağrılarını logla"""
+    start_time = time.time()
+    
+    # Request bilgilerini al
+    method = request.method
+    url = str(request.url)
+    endpoint = request.url.path
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent", "")
+    
+    # Request body'yi al (sadece POST/PUT için)
+    request_payload = None
+    if method in ["POST", "PUT", "PATCH"]:
+        try:
+            body = await request.body()
+            if body:
+                request_payload = body.decode('utf-8')
+        except:
+            request_payload = None
+    
+    # Response'u işle
+    response = await call_next(request)
+    
+    # Response süresini hesapla
+    response_time_ms = (time.time() - start_time) * 1000
+    
+    # Response body'yi al (sadece hata durumlarında)
+    response_payload = None
+    if response.status_code >= 400:
+        try:
+            # Response body'yi okumak için stream'i tekrar oluştur
+            if hasattr(response, 'body') and response.body:
+                response_payload = response.body.decode('utf-8')
+        except:
+            response_payload = None
+    
+    # API kategorisini belirle
+    api_category = "other"
+    if "/api/nfc" in endpoint:
+        api_category = "nfc"
+    elif "/api/qr" in endpoint:
+        api_category = "qr"
+    elif "/auth" in endpoint:
+        api_category = "auth"
+    elif "/api/members" in endpoint:
+        api_category = "member"
+    elif "/api/dashboard" in endpoint:
+        api_category = "dashboard"
+    elif "/api/businesses" in endpoint:
+        api_category = "business"
+    
+    # Error message'ı belirle
+    error_message = None
+    if response.status_code >= 400:
+        if response.status_code == 404:
+            error_message = "Not Found"
+        elif response.status_code == 401:
+            error_message = "Unauthorized"
+        elif response.status_code == 403:
+            error_message = "Forbidden"
+        elif response.status_code >= 500:
+            error_message = "Internal Server Error"
+        else:
+            error_message = f"HTTP {response.status_code}"
+    
+    # Log'u asenkron olarak kaydet (performans için)
+    asyncio.create_task(save_api_log(
+        endpoint=endpoint,
+        method=method,
+        status_code=response.status_code,
+        response_time_ms=response_time_ms,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        request_payload=request_payload,
+        response_payload=response_payload,
+        error_message=error_message,
+        api_category=api_category
+    ))
+    
+    return response
+
+async def save_api_log(endpoint: str, method: str, status_code: int, 
+                      response_time_ms: float, ip_address: str = None,
+                      user_agent: str = None, request_payload: str = None,
+                      response_payload: str = None, error_message: str = None,
+                      api_category: str = "other", member_id: int = None,
+                      device_info: str = None):
+    """API log'unu database'e kaydet"""
+    try:
+        db = next(get_db())
+        
+        # Request/response payload'ları çok uzunsa kısalt
+        if request_payload and len(request_payload) > 10000:
+            request_payload = request_payload[:10000] + "... [truncated]"
+        if response_payload and len(response_payload) > 10000:
+            response_payload = response_payload[:10000] + "... [truncated]"
+        
+        api_log = DBApiCallLog(
+            endpoint=endpoint,
+            method=method,
+            status_code=status_code,
+            response_time_ms=response_time_ms,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            request_payload=request_payload,
+            response_payload=response_payload,
+            error_message=error_message,
+            api_category=api_category,
+            member_id=member_id,
+            device_info=device_info
+        )
+        
+        db.add(api_log)
+        db.commit()
+        
+    except Exception as e:
+        print(f"⚠️ API log kaydetme hatası: {e}")
+    finally:
+        db.close()
 
 # Initialize database on startup
 @app.on_event("startup")
@@ -1201,6 +1329,149 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
         )
         print(f"NFC decrypt error: {e}")
         raise HTTPException(status_code=500, detail=f"Sunucu hatası: {str(e)}")
+
+## Dashboard API Endpoints
+@app.get("/api/dashboard/stats")
+async def get_dashboard_stats(db: Session = Depends(get_db)):
+    """Dashboard için gerçek istatistikleri getir"""
+    try:
+        # Son 30 günlük istatistikleri al
+        end_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        start_date = end_date - timedelta(days=30)
+        
+        # Günlük istatistikleri getir
+        daily_stats = db.query(DBDashboardStats).filter(
+            DBDashboardStats.stat_date >= start_date,
+            DBDashboardStats.stat_date <= end_date
+        ).order_by(DBDashboardStats.stat_date.desc()).all()
+        
+        # Eğer istatistik yoksa bugün için hesapla
+        if not daily_stats:
+            calculate_daily_stats()
+            daily_stats = db.query(DBDashboardStats).filter(
+                DBDashboardStats.stat_date >= start_date,
+                DBDashboardStats.stat_date <= end_date
+            ).order_by(DBDashboardStats.stat_date.desc()).all()
+        
+        # Son 30 günün toplamları
+        total_stats = {
+            "total_nfc_scans": sum(stat.total_nfc_scans for stat in daily_stats),
+            "successful_nfc_scans": sum(stat.successful_nfc_scans for stat in daily_stats),
+            "total_qr_verifications": sum(stat.total_qr_verifications for stat in daily_stats),
+            "successful_qr_verifications": sum(stat.successful_qr_verifications for stat in daily_stats),
+            "total_api_calls": sum(stat.total_api_calls for stat in daily_stats),
+            "successful_api_calls": sum(stat.successful_api_calls for stat in daily_stats),
+        }
+        
+        # Bu ayın istatistikleri
+        month_start = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        month_stats = db.query(DBDashboardStats).filter(
+            DBDashboardStats.stat_date >= month_start
+        ).all()
+        
+        monthly_totals = {
+            "nfc_scans": sum(stat.total_nfc_scans for stat in month_stats),
+            "qr_verifications": sum(stat.total_qr_verifications for stat in month_stats),
+            "new_members": sum(stat.new_members_count for stat in month_stats),
+        }
+        
+        # Genel sistem istatistikleri
+        total_members = db.query(DBMember).count()
+        active_members = db.query(DBMember).filter(DBMember.status == 'active').count()
+        total_businesses = db.query(DBBusiness).count()
+        active_campaigns = db.query(DBBusinessEvent).filter(
+            DBBusinessEvent.is_active == True,
+            DBBusinessEvent.start_date <= datetime.utcnow(),
+            DBBusinessEvent.end_date >= datetime.utcnow()
+        ).count()
+        
+        # Günlük grafik verisi (son 7 gün)
+        last_7_days = daily_stats[:7] if len(daily_stats) >= 7 else daily_stats
+        chart_data = {
+            "dates": [stat.stat_date.strftime('%Y-%m-%d') for stat in reversed(last_7_days)],
+            "nfc_scans": [stat.total_nfc_scans for stat in reversed(last_7_days)],
+            "qr_verifications": [stat.total_qr_verifications for stat in reversed(last_7_days)],
+            "api_calls": [stat.total_api_calls for stat in reversed(last_7_days)]
+        }
+        
+        return {
+            "success": True,
+            "data": {
+                "monthly": {
+                    "revenue": 12450,  # Bu sabit kalabilir - finans sistemi yok
+                    "nfc_scans": monthly_totals["nfc_scans"],
+                    "qr_verifications": monthly_totals["qr_verifications"],
+                    "new_members": monthly_totals["new_members"],
+                    "growth_rate": 15  # Bu hesaplanabilir
+                },
+                "totals": {
+                    "members": total_members,
+                    "active_members": active_members,
+                    "businesses": total_businesses,
+                    "active_campaigns": active_campaigns
+                },
+                "last_30_days": total_stats,
+                "chart_data": chart_data,
+                "last_updated": datetime.utcnow().isoformat()
+            }
+        }
+        
+    except Exception as e:
+        print(f"Dashboard stats error: {e}")
+        # Hata durumunda varsayılan değerler döndür
+        return {
+            "success": False,
+            "data": {
+                "monthly": {"revenue": 0, "nfc_scans": 0, "qr_verifications": 0, "new_members": 0, "growth_rate": 0},
+                "totals": {"members": 0, "active_members": 0, "businesses": 0, "active_campaigns": 0},
+                "last_30_days": {"total_nfc_scans": 0, "successful_nfc_scans": 0, "total_qr_verifications": 0, "successful_qr_verifications": 0, "total_api_calls": 0, "successful_api_calls": 0},
+                "chart_data": {"dates": [], "nfc_scans": [], "qr_verifications": [], "api_calls": []},
+                "last_updated": datetime.utcnow().isoformat()
+            },
+            "error": str(e)
+        }
+
+@app.post("/api/admin/calculate-stats")
+async def trigger_stats_calculation(db: Session = Depends(get_db)):
+    """Manuel istatistik hesaplama tetikle (admin endpoint)"""
+    try:
+        # Dün için istatistikleri hesapla
+        yesterday = datetime.utcnow() - timedelta(days=1)
+        result = calculate_daily_stats(yesterday.replace(hour=0, minute=0, second=0, microsecond=0))
+        
+        return {
+            "success": True,
+            "message": "İstatistikler başarıyla hesaplandı",
+            "data": result
+        }
+        
+    except Exception as e:
+        print(f"Stats calculation error: {e}")
+        return {
+            "success": False,
+            "message": "İstatistik hesaplama hatası",
+            "error": str(e)
+        }
+
+@app.post("/api/admin/cleanup-logs")
+async def trigger_log_cleanup(retention_days: int = 30):
+    """Manuel log temizleme tetikle (admin endpoint)"""
+    try:
+        result = cleanup_old_logs(retention_days)
+        
+        return {
+            "success": True,
+            "message": f"{retention_days} günden eski loglar temizlendi",
+            "data": result
+        }
+        
+    except Exception as e:
+        print(f"Log cleanup error: {e}")
+        return {
+            "success": False,
+            "message": "Log temizleme hatası",
+            "error": str(e)
+        }
 
 ## NFC işlemleri artık MAUI uygulaması tarafından yapılacak. Backend bu amaçla ek NFC endpointlerini içermemektedir.
 

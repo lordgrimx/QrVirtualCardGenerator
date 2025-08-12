@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 import hashlib
@@ -154,9 +154,69 @@ class NfcReadingHistory(Base):
     # Relationship
     member = relationship("Member", backref="nfc_readings")
 
+# API Call Logs model - NFC ve diğer API çağrılarının logları
+class ApiCallLog(Base):
+    __tablename__ = "api_call_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    endpoint = Column(String(255), nullable=False, index=True)  # API endpoint
+    method = Column(String(10), nullable=False)  # GET, POST, PUT, DELETE
+    status_code = Column(Integer, nullable=False, index=True)  # HTTP status code
+    response_time_ms = Column(Float, nullable=True)  # Response time in milliseconds
+    ip_address = Column(String(45), nullable=True)  # Client IP address
+    user_agent = Column(Text, nullable=True)  # Client user agent
+    request_payload = Column(Text, nullable=True)  # Request body (JSON)
+    response_payload = Column(Text, nullable=True)  # Response body (JSON)
+    error_message = Column(Text, nullable=True)  # Error details if failed
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=True)  # Related member if applicable
+    device_info = Column(Text, nullable=True)  # Device information for NFC calls
+    
+    # API kategorisi - NFC, QR, Auth, Dashboard vs.
+    api_category = Column(String(50), nullable=False, index=True)  # nfc, qr, auth, dashboard, member
+    
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationship
+    member = relationship("Member", backref="api_logs")
+
+# Dashboard Statistics model - Dashboard için önceden hesaplanmış istatistikler
+class DashboardStats(Base):
+    __tablename__ = "dashboard_stats"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    stat_date = Column(DateTime, nullable=False, index=True)  # İstatistik tarihi (günlük)
+    
+    # NFC ve QR istatistikleri
+    total_nfc_scans = Column(Integer, default=0)  # Günlük toplam NFC tarama
+    successful_nfc_scans = Column(Integer, default=0)  # Başarılı NFC tarama
+    failed_nfc_scans = Column(Integer, default=0)  # Başarısız NFC tarama
+    total_qr_verifications = Column(Integer, default=0)  # Toplam QR doğrulama
+    successful_qr_verifications = Column(Integer, default=0)  # Başarılı QR doğrulama
+    
+    # API istatistikleri
+    total_api_calls = Column(Integer, default=0)  # Toplam API çağrısı
+    successful_api_calls = Column(Integer, default=0)  # Başarılı API çağrısı (2xx)
+    failed_api_calls = Column(Integer, default=0)  # Başarısız API çağrısı (4xx, 5xx)
+    avg_response_time_ms = Column(Float, default=0)  # Ortalama yanıt süresi
+    
+    # Üye istatistikleri
+    new_members_count = Column(Integer, default=0)  # Yeni üye sayısı
+    active_members_count = Column(Integer, default=0)  # Aktif üye sayısı
+    
+    # İşletme istatistikleri
+    new_businesses_count = Column(Integer, default=0)  # Yeni işletme sayısı
+    active_campaigns_count = Column(Integer, default=0)  # Aktif kampanya sayısı
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 # Create tables
 def create_tables():
     Base.metadata.create_all(bind=engine)
+
+# Import alias for main.py
+DBApiCallLog = ApiCallLog
+DBDashboardStats = DashboardStats
 
 # Dependency to get database session
 def get_db():
@@ -203,6 +263,167 @@ def create_default_admin():
     except Exception as e:
         print(f"❌ Error creating default admin user: {e}")
         db.rollback()
+    finally:
+        db.close()
+
+# Data cleanup functions
+def cleanup_old_logs(retention_days: int = 30):
+    """1 aylık eski API loglarını ve NFC reading history'sini temizle"""
+    db = SessionLocal()
+    try:
+        cutoff_date = datetime.utcnow() - timedelta(days=retention_days)
+        
+        # API call logs temizleme
+        deleted_api_logs = db.query(ApiCallLog).filter(
+            ApiCallLog.created_at < cutoff_date
+        ).delete()
+        
+        # NFC reading history temizleme
+        deleted_nfc_logs = db.query(NfcReadingHistory).filter(
+            NfcReadingHistory.created_at < cutoff_date
+        ).delete()
+        
+        # Dashboard stats temizleme (90 günden eski)
+        stats_cutoff_date = datetime.utcnow() - timedelta(days=90)
+        deleted_stats = db.query(DashboardStats).filter(
+            DashboardStats.stat_date < stats_cutoff_date
+        ).delete()
+        
+        db.commit()
+        
+        print(f"✅ Cleanup completed:")
+        print(f"   - API logs deleted: {deleted_api_logs}")
+        print(f"   - NFC reading logs deleted: {deleted_nfc_logs}")
+        print(f"   - Dashboard stats deleted: {deleted_stats}")
+        
+        return {
+            "api_logs_deleted": deleted_api_logs,
+            "nfc_logs_deleted": deleted_nfc_logs,
+            "stats_deleted": deleted_stats
+        }
+        
+    except Exception as e:
+        print(f"❌ Error during cleanup: {e}")
+        db.rollback()
+        raise e
+    finally:
+        db.close()
+
+def calculate_daily_stats(target_date: datetime = None):
+    """Belirtilen tarih için günlük istatistikleri hesapla ve kaydet"""
+    if target_date is None:
+        target_date = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    db = SessionLocal()
+    try:
+        start_date = target_date
+        end_date = start_date + timedelta(days=1)
+        
+        # API call istatistikleri
+        api_logs = db.query(ApiCallLog).filter(
+            ApiCallLog.created_at >= start_date,
+            ApiCallLog.created_at < end_date
+        ).all()
+        
+        total_api_calls = len(api_logs)
+        successful_api_calls = len([log for log in api_logs if 200 <= log.status_code < 300])
+        failed_api_calls = total_api_calls - successful_api_calls
+        
+        # Ortalama yanıt süresi hesapla
+        response_times = [log.response_time_ms for log in api_logs if log.response_time_ms is not None]
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        
+        # NFC ve QR istatistikleri
+        nfc_logs = [log for log in api_logs if log.api_category == 'nfc']
+        qr_logs = [log for log in api_logs if log.api_category == 'qr']
+        
+        total_nfc_scans = len(nfc_logs)
+        successful_nfc_scans = len([log for log in nfc_logs if 200 <= log.status_code < 300])
+        failed_nfc_scans = total_nfc_scans - successful_nfc_scans
+        
+        total_qr_verifications = len(qr_logs)
+        successful_qr_verifications = len([log for log in qr_logs if 200 <= log.status_code < 300])
+        
+        # Üye istatistikleri
+        new_members_count = db.query(Member).filter(
+            Member.created_at >= start_date,
+            Member.created_at < end_date
+        ).count()
+        
+        active_members_count = db.query(Member).filter(
+            Member.status == 'active'
+        ).count()
+        
+        # İşletme istatistikleri
+        new_businesses_count = db.query(Business).filter(
+            Business.created_at >= start_date,
+            Business.created_at < end_date
+        ).count()
+        
+        active_campaigns_count = db.query(BusinessEvent).filter(
+            BusinessEvent.is_active == True,
+            BusinessEvent.start_date <= datetime.utcnow(),
+            BusinessEvent.end_date >= datetime.utcnow()
+        ).count()
+        
+        # Mevcut istatistiği kontrol et
+        existing_stat = db.query(DashboardStats).filter(
+            DashboardStats.stat_date == start_date
+        ).first()
+        
+        if existing_stat:
+            # Güncelle
+            existing_stat.total_api_calls = total_api_calls
+            existing_stat.successful_api_calls = successful_api_calls
+            existing_stat.failed_api_calls = failed_api_calls
+            existing_stat.avg_response_time_ms = avg_response_time
+            existing_stat.total_nfc_scans = total_nfc_scans
+            existing_stat.successful_nfc_scans = successful_nfc_scans
+            existing_stat.failed_nfc_scans = failed_nfc_scans
+            existing_stat.total_qr_verifications = total_qr_verifications
+            existing_stat.successful_qr_verifications = successful_qr_verifications
+            existing_stat.new_members_count = new_members_count
+            existing_stat.active_members_count = active_members_count
+            existing_stat.new_businesses_count = new_businesses_count
+            existing_stat.active_campaigns_count = active_campaigns_count
+            existing_stat.updated_at = datetime.utcnow()
+        else:
+            # Yeni kayıt oluştur
+            new_stat = DashboardStats(
+                stat_date=start_date,
+                total_api_calls=total_api_calls,
+                successful_api_calls=successful_api_calls,
+                failed_api_calls=failed_api_calls,
+                avg_response_time_ms=avg_response_time,
+                total_nfc_scans=total_nfc_scans,
+                successful_nfc_scans=successful_nfc_scans,
+                failed_nfc_scans=failed_nfc_scans,
+                total_qr_verifications=total_qr_verifications,
+                successful_qr_verifications=successful_qr_verifications,
+                new_members_count=new_members_count,
+                active_members_count=active_members_count,
+                new_businesses_count=new_businesses_count,
+                active_campaigns_count=active_campaigns_count
+            )
+            db.add(new_stat)
+        
+        db.commit()
+        print(f"✅ Daily stats calculated for {start_date.strftime('%Y-%m-%d')}")
+        
+        return {
+            "date": start_date.strftime('%Y-%m-%d'),
+            "total_api_calls": total_api_calls,
+            "successful_api_calls": successful_api_calls,
+            "total_nfc_scans": total_nfc_scans,
+            "total_qr_verifications": total_qr_verifications,
+            "new_members_count": new_members_count,
+            "active_campaigns_count": active_campaigns_count
+        }
+        
+    except Exception as e:
+        print(f"❌ Error calculating daily stats: {e}")
+        db.rollback()
+        raise e
     finally:
         db.close()
 
