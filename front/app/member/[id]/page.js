@@ -289,74 +289,89 @@ export default function MemberPage() {
         
         // Tüm elementleri recursive olarak işle
         const forceRGBColors = (element) => {
-          // Ana kartın background'ını manuel olarak ayarla
-          if (element.classList.contains('card-front')) {
-            element.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)';
-            element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
-          } else if (element.classList.contains('card-back')) {
-            element.style.background = 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)';
-            element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
+          // Element geçerliliği kontrol et
+          if (!element || !element.style || !element.classList) {
+            return;
           }
           
-          // Class-based stil dönüştürmeleri
-          const classes = element.className.split(' ');
-          
-          // Background gradient kombinasyonları kontrol et
-          if (classes.includes('bg-gradient-to-br')) {
-            if (classes.includes('from-blue-600')) {
+          // Ana kartın background'ını manuel olarak ayarla
+          try {
+            if (element.classList.contains('card-front')) {
+              element.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)';
               element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
-            } else if (classes.includes('from-gray-800')) {
+            } else if (element.classList.contains('card-back')) {
+              element.style.background = 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)';
               element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
             }
-          } else if (classes.includes('bg-gradient-to-r')) {
-            if (classes.includes('from-blue-500')) {
+          } catch (e) {
+            console.warn('Card background ayarlama hatası:', e);
+          }
+          
+          // Güvenli classList kontrolü - className.split hatası önlendi
+          const hasClass = (className) => {
+            try {
+              return element.classList && element.classList.contains(className);
+            } catch (e) {
+              return false;
+            }
+          };
+          
+          // Background gradient kombinasyonları kontrol et
+          if (hasClass('bg-gradient-to-br')) {
+            if (hasClass('from-blue-600')) {
+              element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
+            } else if (hasClass('from-gray-800')) {
+              element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
+            }
+          } else if (hasClass('bg-gradient-to-r')) {
+            if (hasClass('from-blue-500')) {
               element.style.setProperty('background', 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)', 'important');
             }
           }
           
           // Tek renk background'ları
-          if (classes.includes('bg-white')) {
+          if (hasClass('bg-white')) {
             element.style.setProperty('background-color', '#ffffff', 'important');
-          } else if (classes.includes('bg-green-500')) {
+          } else if (hasClass('bg-green-500')) {
             element.style.setProperty('background-color', '#10b981', 'important');
           }
           
           // Text renkleri
-          if (classes.includes('text-white')) {
+          if (hasClass('text-white')) {
             element.style.setProperty('color', '#ffffff', 'important');
-          } else if (classes.includes('text-gray-900')) {
+          } else if (hasClass('text-gray-900')) {
             element.style.setProperty('color', '#111827', 'important');
-          } else if (classes.includes('text-gray-800')) {
+          } else if (hasClass('text-gray-800')) {
             element.style.setProperty('color', '#1f2937', 'important');
-          } else if (classes.includes('text-gray-700')) {
+          } else if (hasClass('text-gray-700')) {
             element.style.setProperty('color', '#374151', 'important');
-          } else if (classes.includes('text-gray-600')) {
+          } else if (hasClass('text-gray-600')) {
             element.style.setProperty('color', '#4b5563', 'important');
-          } else if (classes.includes('text-gray-500')) {
+          } else if (hasClass('text-gray-500')) {
             element.style.setProperty('color', '#6b7280', 'important');
-          } else if (classes.includes('text-gray-400')) {
+          } else if (hasClass('text-gray-400')) {
             element.style.setProperty('color', '#9ca3af', 'important');
-          } else if (classes.includes('text-blue-700')) {
+          } else if (hasClass('text-blue-700')) {
             element.style.setProperty('color', '#1d4ed8', 'important');
-          } else if (classes.includes('text-blue-900')) {
+          } else if (hasClass('text-blue-900')) {
             element.style.setProperty('color', '#1e3a8a', 'important');
           }
           
           // Border renkleri
-          if (classes.includes('border-gray-700')) {
+          if (hasClass('border-gray-700')) {
             element.style.setProperty('border-color', '#374151', 'important');
-          } else if (classes.includes('border-gray-200')) {
+          } else if (hasClass('border-gray-200')) {
             element.style.setProperty('border-color', '#e5e7eb', 'important');
-          } else if (classes.includes('border-blue-200')) {
+          } else if (hasClass('border-blue-200')) {
             element.style.setProperty('border-color', '#bfdbfe', 'important');
           }
           
           // Box shadow'ları basit RGB ile değiştir
-          if (classes.includes('shadow-lg')) {
+          if (hasClass('shadow-lg')) {
             element.style.setProperty('box-shadow', '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)', 'important');
-          } else if (classes.includes('shadow-2xl')) {
+          } else if (hasClass('shadow-2xl')) {
             element.style.setProperty('box-shadow', '0 25px 50px -12px rgba(0, 0, 0, 0.25)', 'important');
-          } else if (classes.includes('shadow-xl')) {
+          } else if (hasClass('shadow-xl')) {
             element.style.setProperty('box-shadow', '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)', 'important');
           }
           
@@ -371,9 +386,22 @@ export default function MemberPage() {
           element.style.setProperty('animation', 'none', 'important');
         };
         
-        // Ana element ve tüm alt elementleri işle
-        forceRGBColors(card);
-        card.querySelectorAll('*').forEach(forceRGBColors);
+        // Ana element ve tüm alt elementleri güvenli şekilde işle
+        try {
+          forceRGBColors(card);
+          if (card && card.querySelectorAll) {
+            const allElements = card.querySelectorAll('*');
+            allElements.forEach(element => {
+              try {
+                forceRGBColors(element);
+              } catch (e) {
+                console.warn('Element işleme hatası:', e);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('Card processing hatası:', e);
+        }
         
         console.log('✅ Agresif RGB dönüştürme tamamlandı');
       };
@@ -407,10 +435,30 @@ export default function MemberPage() {
         
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Add rounded corners
+        // Add rounded corners (eski tarayıcı uyumluluğu ile)
         ctx.globalCompositeOperation = 'destination-in';
         ctx.beginPath();
-        ctx.roundRect(0, 0, canvas.width, canvas.height, 24);
+        try {
+          // Modern tarayıcılar için roundRect
+          if (ctx.roundRect) {
+            ctx.roundRect(0, 0, canvas.width, canvas.height, 24);
+          } else {
+            // Fallback için manuel rounded rectangle
+            const x = 0, y = 0, width = canvas.width, height = canvas.height, radius = 24;
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+          }
+        } catch (e) {
+          // Basit rectangle fallback
+          ctx.rect(0, 0, canvas.width, canvas.height);
+        }
         ctx.fill();
         ctx.globalCompositeOperation = 'source-over';
         
