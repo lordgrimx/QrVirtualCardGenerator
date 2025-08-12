@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { QRCodeCanvas } from 'qrcode.react';
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 
 export default function MemberPage() {
   const params = useParams();
+  const router = useRouter();
+  const { data: session, status } = useSession();
   const memberId = params.id;
   
   const [activeTab, setActiveTab] = useState('front');
@@ -18,6 +21,17 @@ export default function MemberPage() {
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
   const [nfcWriteStatus, setNfcWriteStatus] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+
+  // Authentication kontrolü
+  useEffect(() => {
+    if (status === 'loading') return; // Henüz yükleniyor
+
+    if (status === 'unauthenticated') {
+      // Giriş yapmamış kullanıcıyı ana sayfaya yönlendir
+      router.push('/auth/signin?callbackUrl=' + encodeURIComponent(window.location.href));
+      return;
+    }
+  }, [status, router]);
 
   // NFC yazma işlemleri MAUI uygulaması üzerinden yapılır
   const writeToNFC = async () => {
@@ -309,6 +323,36 @@ export default function MemberPage() {
     }
   };
 
+  // Authentication loading state
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Unauthenticated state
+  if (status === 'unauthenticated') {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-1a2 2 0 00-2-2H6a2 2 0 00-2 2v1a2 2 0 002 2zM12 1v6m0 0l-3-3m3 3l3-3" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Authentication Required</h2>
+          <p className="text-gray-600 mb-4">Please sign in to access member profiles</p>
+          <p className="text-sm text-gray-500">Redirecting to login page...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -321,11 +365,22 @@ export default function MemberPage() {
           </a>
           
           {/* Navigation */}
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-6">
             <a href="/" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
-              {userInfo.name.split(' ').map(n => n[0]).join('')}
-            </div>
+            {session?.user && (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-700">Welcome, {session.user.name}</span>
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
+                </div>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1 rounded hover:bg-gray-100"
+                >
+                  Sign Out
+                </button>
+              </div>
+            )}
           </nav>
         </div>
       </header>
