@@ -134,6 +134,26 @@ class Member(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+# NFC Reading History model
+class NfcReadingHistory(Base):
+    __tablename__ = "nfc_reading_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String(255), nullable=True)  # Device identifier
+    device_info = Column(Text, nullable=True)  # Device information
+    card_uid = Column(String(50), nullable=True)  # NFC card UID
+    read_success = Column(Boolean, nullable=False)  # Reading success status
+    member_id = Column(Integer, ForeignKey("members.id"), nullable=True)  # Related member if found
+    error_message = Column(Text, nullable=True)  # Error details if failed
+    reader_name = Column(String(255), nullable=True)  # NFC reader name
+    verification_type = Column(String(50), nullable=True)  # online, offline
+    ip_address = Column(String(45), nullable=True)  # Client IP address
+    user_agent = Column(Text, nullable=True)  # Client user agent
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationship
+    member = relationship("Member", backref="nfc_readings")
+
 # Create tables
 def create_tables():
     Base.metadata.create_all(bind=engine)

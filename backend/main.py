@@ -20,6 +20,7 @@ from database import (
     Business as DBBusiness, 
     BusinessEvent as DBBusinessEvent, 
     BusinessContract as DBBusinessContract,
+    NfcReadingHistory as DBNfcReadingHistory,
     hash_password, 
     verify_password
 )
@@ -940,17 +941,124 @@ async def download_certificate():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Sertifika okunamadı: {str(e)}")
 
+# NFC Reading History API
+@app.get("/api/nfc/reading-history")
+async def get_nfc_reading_history(
+    days: int = 7,
+    device_id: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    NFC okuma geçmişini getir - Dashboard için
+    """
+    try:
+        from datetime import date, timedelta
+        from sqlalchemy import func, and_
+        
+        # Son X günün tarih aralığını hesapla
+        end_date = date.today()
+        start_date = end_date - timedelta(days=days-1)
+        
+        # Günlük okuma istatistiklerini getir
+        query = db.query(
+            func.date(DBNfcReadingHistory.created_at).label('date'),
+            func.sum(func.case([(DBNfcReadingHistory.read_success == True, 1)], else_=0)).label('successful'),
+            func.sum(func.case([(DBNfcReadingHistory.read_success == False, 1)], else_=0)).label('failed')
+        ).filter(
+            func.date(DBNfcReadingHistory.created_at) >= start_date,
+            func.date(DBNfcReadingHistory.created_at) <= end_date
+        )
+        
+        # Device filter ekleme
+        if device_id:
+            query = query.filter(DBNfcReadingHistory.device_id == device_id)
+        
+        # Tarihe göre grupla
+        results = query.group_by(func.date(DBNfcReadingHistory.created_at)).all()
+        
+        # Eksik günleri 0 değerle doldur
+        date_dict = {r.date: {"successful": int(r.successful), "failed": int(r.failed)} for r in results}
+        
+        readings = []
+        current_date = start_date
+        while current_date <= end_date:
+            if current_date in date_dict:
+                readings.append({
+                    "date": current_date.isoformat(),
+                    "successful": date_dict[current_date]["successful"],
+                    "failed": date_dict[current_date]["failed"]
+                })
+            else:
+                readings.append({
+                    "date": current_date.isoformat(),
+                    "successful": 0,
+                    "failed": 0
+                })
+            current_date += timedelta(days=1)
+        
+        return {
+            "success": True,
+            "readings": readings,
+            "total_days": days,
+            "date_range": {
+                "start": start_date.isoformat(),
+                "end": end_date.isoformat()
+            }
+        }
+        
+    except Exception as e:
+        print(f"NFC reading history error: {e}")
+        raise HTTPException(status_code=500, detail=f"Okuma geçmişi alınamadı: {str(e)}")
+
+# Helper function to log NFC reading
+def log_nfc_reading(
+    db: Session,
+    device_id: str = None,
+    device_info: str = None,
+    card_uid: str = None,
+    read_success: bool = True,
+    member_id: int = None,
+    error_message: str = None,
+    reader_name: str = None,
+    verification_type: str = None,
+    ip_address: str = None,
+    user_agent: str = None
+):
+    """Log NFC reading to history"""
+    try:
+        nfc_log = DBNfcReadingHistory(
+            device_id=device_id,
+            device_info=device_info,
+            card_uid=card_uid,
+            read_success=read_success,
+            member_id=member_id,
+            error_message=error_message,
+            reader_name=reader_name,
+            verification_type=verification_type,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+        db.add(nfc_log)
+        db.commit()
+    except Exception as e:
+        print(f"NFC logging error: {e}")
+        db.rollback()
+
 # NFC Decryption API for MAUI
 class NfcDecryptRequest(BaseModel):
     encryptedData: str
     deviceInfo: Optional[str] = None
 
 @app.post("/api/nfc/decrypt")
-async def decrypt_nfc_data(request: NfcDecryptRequest):
+async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get_db)):
     """
     Şifrelenmiş NFC verisini çözüp doğrula
     MAUI uygulaması için backend doğrulama endpoint'i
     """
+    device_info = request.deviceInfo or "Unknown Device"
+    card_uid = None
+    member_id = None
+    
     try:
         encrypted_data = request.encryptedData.strip()
         
@@ -958,19 +1066,49 @@ async def decrypt_nfc_data(request: NfcDecryptRequest):
         decrypted_json = secure_qr._decrypt_nfc_data(encrypted_data)
         
         if not decrypted_json:
+            # Başarısız okuma kaydını log'la
+            log_nfc_reading(
+                db=db,
+                device_info=device_info,
+                read_success=False,
+                error_message="Veri çözülemedi - geçersiz şifreleme",
+                verification_type="online",
+                reader_name="MAUI App"
+            )
             raise HTTPException(status_code=400, detail="Veri çözülemedi - geçersiz şifreleme")
         
         # JSON parse et
         try:
             nfc_data = json.loads(decrypted_json)
         except json.JSONDecodeError:
+            # Başarısız okuma kaydını log'la
+            log_nfc_reading(
+                db=db,
+                device_info=device_info,
+                read_success=False,
+                error_message="Geçersiz JSON formatı",
+                verification_type="online",
+                reader_name="MAUI App"
+            )
             raise HTTPException(status_code=400, detail="Geçersiz JSON formatı")
         
         # Gerekli alanları kontrol et
         required_fields = ['v', 'mid', 'name', 'exp', 'sig']
         for field in required_fields:
             if field not in nfc_data:
+                # Başarısız okuma kaydını log'la
+                log_nfc_reading(
+                    db=db,
+                    device_info=device_info,
+                    read_success=False,
+                    error_message=f"Eksik alan: {field}",
+                    verification_type="online",
+                    reader_name="MAUI App"
+                )
                 raise HTTPException(status_code=400, detail=f"Eksik alan: {field}")
+        
+        # UID'yi JSON'dan al (varsa)
+        card_uid = nfc_data.get('uid') or nfc_data.get('card_uid')
         
         # Version kontrolü
         if nfc_data['v'] != 1:
@@ -1016,6 +1154,7 @@ async def decrypt_nfc_data(request: NfcDecryptRequest):
         
         # Database'de üye varsa tam bilgileri ekle
         if member:
+            member_id = member.id  # Log için member ID'yi al
             member_info.update({
                 "fullName": member.full_name,
                 "email": member.email,
@@ -1026,6 +1165,17 @@ async def decrypt_nfc_data(request: NfcDecryptRequest):
                 "joinDate": member.created_at.strftime('%Y-%m-%d'),
                 "fromDatabase": True
             })
+        
+        # Başarılı okuma kaydını log'la
+        log_nfc_reading(
+            db=db,
+            device_info=device_info,
+            card_uid=card_uid,
+            read_success=True,
+            member_id=member_id,
+            verification_type="online",
+            reader_name="MAUI App"
+        )
         
         return {
             "success": True,
@@ -1039,6 +1189,16 @@ async def decrypt_nfc_data(request: NfcDecryptRequest):
     except HTTPException:
         raise
     except Exception as e:
+        # Genel sunucu hatası log'la
+        log_nfc_reading(
+            db=db,
+            device_info=device_info,
+            card_uid=card_uid,
+            read_success=False,
+            error_message=f"Sunucu hatası: {str(e)}",
+            verification_type="online",
+            reader_name="MAUI App"
+        )
         print(f"NFC decrypt error: {e}")
         raise HTTPException(status_code=500, detail=f"Sunucu hatası: {str(e)}")
 
