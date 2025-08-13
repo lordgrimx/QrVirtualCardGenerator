@@ -101,4 +101,9 @@
 		<!-- PCSC servisini artık dahil ediyoruz -->
 	</ItemGroup>
 
+	<!-- iOS Release build'inde linker davranışını SdkOnly yap -->
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-ios' and '$(Configuration)' == 'Release'">
+		<MtouchLink>SdkOnly</MtouchLink>
+	</PropertyGroup>
+
 </Project>
