@@ -68,9 +68,9 @@
   <!-- Not: Runtime'da env dosyaları BackendApiService tarafından okunacaktır. -->
 
 	<ItemGroup>
-		<!-- MAUI Controls paketi .NET 8+ ile açık olarak gerekli -->
-		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.82" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
+		<!-- MAUI Controls paketi .NET 8 uyumlu versiyon -->
+		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.90" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
 		
 		<!-- NFC ve PCSC Libraries -->
 		<PackageReference Include="PCSC" Version="6.2.0" />
@@ -78,22 +78,22 @@
 		
 		<!-- MVVM ve UI -->
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
-		<PackageReference Include="CommunityToolkit.Maui" Version="9.1.1" />
+		<PackageReference Include="CommunityToolkit.Maui" Version="7.0.1" />
 		
 		<!-- Logging ve Configuration -->
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
-		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.5" />
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
 		
 		<!-- Kriptografi -->
 		<PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
 	</ItemGroup>
 
-	<PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-android' and '$(Configuration)' == 'Release'">
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android' and '$(Configuration)' == 'Release'">
 		<AndroidLinkMode>SdkOnly</AndroidLinkMode>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-android' and '$(Configuration)' == 'Debug'">
+	<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-android' and '$(Configuration)' == 'Debug'">
 		<AndroidLinkMode>None</AndroidLinkMode>
 	</PropertyGroup>
 
