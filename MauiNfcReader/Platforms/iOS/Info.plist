@@ -28,5 +28,15 @@
 	</array>
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
+	
+	<!-- NFC Support -->
+	<key>NFCReaderUsageDescription</key>
+	<string>Bu uygulama NFC etiketlerini okumak için NFC kullanır</string>
+	
+	<!-- NFC entitlements for NDEF -->
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>NDEF</string>
+	</array>
 </dict>
 </plist>

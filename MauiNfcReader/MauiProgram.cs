@@ -29,7 +29,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<IBackendApiService, BackendApiService>();
 		builder.Services.AddSingleton<IQrVerificationService, QrVerificationService>();
 		
-		// WINDOWS: Gerçek PCSC servisini etkinleştir
+		// Platform-specific NFC Services
 #if WINDOWS
         // Windows'ta harici USB NFC okuyucu (PC/SC)
         builder.Services.AddSingleton<INfcService, MauiNfcReader.Platforms.Windows.Services.WindowsNfcService>();
@@ -37,6 +37,14 @@ public static class MauiProgram
         // Android'de telefonun yerleşik NFC'sini kullan
         builder.Services.AddSingleton<MauiNfcReader.Platforms.Android.Services.AndroidNfcService>();
         builder.Services.AddSingleton<INfcService>(sp => sp.GetRequiredService<MauiNfcReader.Platforms.Android.Services.AndroidNfcService>());
+#elif IOS
+        #if DEBUG
+        // Debug modda iOS için Mock service kullan (Windows'ta test için)
+        builder.Services.AddSingleton<INfcService, MockNfcService>();
+        #else
+        // Release modda gerçek iOS NFC service kullan
+        builder.Services.AddSingleton<INfcService, MauiNfcReader.Platforms.iOS.Services.IOSNfcService>();
+        #endif
 #else
         builder.Services.AddSingleton<INfcService, MockNfcService>();
 #endif

@@ -24,7 +24,7 @@
 		<ApplicationTitle>MauiNfcReader</ApplicationTitle>
 
 		<!-- App Identifier -->
-		<ApplicationId>com.companyname.mauinfcreader</ApplicationId>
+		<ApplicationId>com.yourcompany.qrvirtualcard</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
@@ -42,6 +42,9 @@
 
 		<!-- Android cihaz ARM64 olduğundan, Debug için arm64 binary üretelim -->
 		<RuntimeIdentifiers Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">android-arm64</RuntimeIdentifiers>
+		
+		<!-- MAUI implicit package uyarılarını bastır -->
+		<SkipValidateMauiImplicitPackageReferences>true</SkipValidateMauiImplicitPackageReferences>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -65,7 +68,8 @@
   <!-- Not: Runtime'da env dosyaları BackendApiService tarafından okunacaktır. -->
 
 	<ItemGroup>
-		<!-- MAUI Controls paketini SDK zaten getirir; ekstra paket referansını kaldırdık -->
+		<!-- MAUI Controls paketi .NET 8+ ile açık olarak gerekli -->
+		<PackageReference Include="Microsoft.Maui.Controls" Version="9.0.82" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.5" />
 		
 		<!-- NFC ve PCSC Libraries -->

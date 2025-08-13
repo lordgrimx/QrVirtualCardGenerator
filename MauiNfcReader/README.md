@@ -1,11 +1,13 @@
-# 🔌 Windows .NET MAUI NFC Kart Okuyucu
+# 🔌 .NET MAUI NFC Kart Okuyucu
 
-Bu proje, Windows platformu için USB NFC okuyucular (ACR122U gibi) kullanarak şifrelenmiş NFC kartlarını okumaya yönelik .NET MAUI uygulamasıdır.
+Bu proje, Windows, Android ve iOS platformları için NFC kartlarını okumaya yönelik cross-platform .NET MAUI uygulamasıdır. Windows'ta USB NFC okuyucular (ACR122U gibi), Android ve iOS'ta cihazın yerleşik NFC özelliği kullanılır.
 
 ## ✨ Özellikler
 
 ### 🎴 **NFC Kart Okuma**
-- USB NFC okuyucu desteği (ACR122U, ACR38U)
+- **Windows**: USB NFC okuyucu desteği (ACR122U, ACR38U)
+- **Android**: Yerleşik NFC ile kart okuma
+- **iOS**: Core NFC framework ile NDEF okuma
 - Otomatik kart algılama
 - UID okuma ve kart türü tespiti
 - Gerçek zamanlı kart durumu monitoring
@@ -17,7 +19,8 @@ Bu proje, Windows platformu için USB NFC okuyucular (ACR122U gibi) kullanarak �
 - Güvenli veri saklama
 
 ### 💻 **Modern UI/UX**
-- .NET MAUI native Windows UI
+- .NET MAUI cross-platform native UI
+- Windows, Android, iOS desteği
 - Real-time status updates
 - Okuma geçmişi
 - Responsive tasarım
@@ -25,25 +28,38 @@ Bu proje, Windows platformu için USB NFC okuyucular (ACR122U gibi) kullanarak �
 
 ## 🚀 Sistem Gereksinimleri
 
-### Donanım
+### Windows
+#### Donanım
 - **USB NFC Okuyucu**: ACR122U, ACR38U veya uyumlu PCSC cihazları
 - **USB Port**: 2.0 veya üstü
 - **RAM**: Minimum 4GB
 - **Disk**: 100MB boş alan
 
-### Yazılım
+#### Yazılım
 - **Windows 10/11** (x64)
 - **.NET 9.0** Runtime
 - **Smart Card Service** aktif
 - **Visual C++ Redistributable** 2015-2022
 
-### Sürücüler
+### Android
+- **Android 5.0** (API level 21) veya üstü
+- **NFC özelliği** bulunan cihaz
+- **NFC etkin** durumda olmalı
+
+### iOS
+- **iOS 15.0** veya üstü
+- **iPhone 7** veya daha yeni model (NFC okuma için)
+- **iOS NFC** ayarları etkin
+
+### Windows Sürücüleri
 - **PCSC Drivers**: Windows built-in veya ACS sürücüleri
 - **USB Drivers**: Cihaz üreticisi sürücüleri
 
 ## 🔧 Kurulum
 
-### 1. NFC Okuyucu Kurulumu
+### Windows Kurulumu
+
+#### 1. NFC Okuyucu Kurulumu
 
 #### ACR122U Kurulumu:
 ```powershell
@@ -161,6 +177,29 @@ MauiNfcReader/
 - **Test UID**: `04:12:34:56:78:9A:BC`
 - **Empty MIFARE**: Boş 1K kart
 - **Sample Data**: Test şifrelenmiş veri
+
+### Android Kurulumu
+1. **NFC Özelliğini Etkinleştir**:
+   - Ayarlar > Bağlantılar > NFC ve Ödeme > NFC Açık
+   - Uygulama ilk açılışta NFC izinlerini onaylayın
+
+2. **Uygulama İzinleri**:
+   - NFC okuma izni otomatik olarak verilir
+   - İnternet erişimi (backend API için)
+
+### iOS Kurulumu
+1. **NFC Özelliği Kontrolü**:
+   - iPhone 7 veya daha yeni model gereklidir
+   - iOS 15.0 veya üstü sürüm gereklidir
+   
+2. **Uygulama İzinleri**:
+   - İlk NFC okuma sırasında izin verilmesi gerekir
+   - "Bu uygulama NFC etiketlerini okumak için NFC kullanır" mesajını onaylayın
+
+3. **NFC Kullanımı**:
+   - iOS'ta NFC okuma session bazlı çalışır
+   - Her okuma için "NFC Oku" butonuna basmanız gerekir
+   - Cihazı NFC etiketine yaklaştırın (1-3cm)
 
 ## 🚨 Troubleshooting
 

@@ -1,0 +1,58 @@
+# iOS Build ve TestFlight Deploy Pipeline
+name: iOS Build and Deploy
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  ios-build:
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Install MAUI workload
+      run: dotnet workload install maui
+      
+    - name: Restore dependencies
+      run: dotnet restore MauiNfcReader/MauiNfcReader.csproj
+      
+    - name: Build iOS app
+      run: |
+        dotnet build MauiNfcReader/MauiNfcReader.csproj \
+          -f net9.0-ios \
+          -c Release \
+          /p:BuildIpa=true \
+          /p:RuntimeIdentifier=ios-arm64
+          
+    - name: Upload IPA artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-app
+        path: MauiNfcReader/bin/Release/net9.0-ios/ios-arm64/*.ipa
+        
+    # TestFlight upload için Apple Developer hesabı gerekli
+    - name: Upload to TestFlight
+      env:
+        APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
+        APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      run: |
+        # API Key dosyasını oluştur
+        echo "$APP_STORE_CONNECT_API_KEY" > /tmp/api_key.p8
+        
+        # xcrun altool ile TestFlight'a yükle
+        xcrun altool --upload-app \
+          --type ios \
+          --file MauiNfcReader/bin/Release/net9.0-ios/ios-arm64/*.ipa \
+          --apiKey $APP_STORE_CONNECT_API_KEY_ID \
+          --apiIssuer $APP_STORE_CONNECT_ISSUER_ID \
+          --apiKeyFile /tmp/api_key.p8
