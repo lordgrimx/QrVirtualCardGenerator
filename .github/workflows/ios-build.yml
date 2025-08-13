@@ -17,7 +17,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '9.0.x'
+        dotnet-version: '8.0.x'
         
     - name: Install MAUI workload
       run: dotnet workload install maui
@@ -28,7 +28,7 @@ jobs:
     - name: Build iOS app
       run: |
         dotnet build MauiNfcReader/MauiNfcReader.csproj \
-          -f net9.0-ios \
+          -f net8.0-ios \
           -c Release \
           /p:BuildIpa=true \
           /p:RuntimeIdentifier=ios-arm64
@@ -37,7 +37,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ios-app
-        path: MauiNfcReader/bin/Release/net9.0-ios/ios-arm64/*.ipa
+        path: MauiNfcReader/bin/Release/net8.0-ios/ios-arm64/*.ipa
         
     # TestFlight upload için Apple Developer hesabı gerekli
     - name: Upload to TestFlight
@@ -52,7 +52,7 @@ jobs:
         # xcrun altool ile TestFlight'a yükle
         xcrun altool --upload-app \
           --type ios \
-          --file MauiNfcReader/bin/Release/net9.0-ios/ios-arm64/*.ipa \
+          --file MauiNfcReader/bin/Release/net8.0-ios/ios-arm64/*.ipa \
           --apiKey $APP_STORE_CONNECT_API_KEY_ID \
           --apiIssuer $APP_STORE_CONNECT_ISSUER_ID \
           --apiKeyFile /tmp/api_key.p8
