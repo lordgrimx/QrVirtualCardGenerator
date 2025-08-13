@@ -25,13 +25,39 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore MauiNfcReader/MauiNfcReader.csproj
       
+    # iOS Certificate ve Provisioning Profile setup
+    - name: Setup iOS Signing
+      env:
+        BUILD_CERTIFICATE_BASE64: ${{ secrets.BUILD_CERTIFICATE_BASE64 }}
+        P12_PASSWORD: ${{ secrets.P12_PASSWORD }}
+        BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.BUILD_PROVISION_PROFILE_BASE64 }}
+        KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      run: |
+        # Temporary keychain oluştur
+        security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Certificate'ı decode et ve keychain'e ekle
+        echo $BUILD_CERTIFICATE_BASE64 | base64 --decode > certificate.p12
+        security import certificate.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+        
+        # Provisioning profile'ı setup et
+        echo $BUILD_PROVISION_PROFILE_BASE64 | base64 --decode > build_pp.mobileprovision
+        mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+        cp build_pp.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/
+      if: env.BUILD_CERTIFICATE_BASE64 != ''
+      
     - name: Build iOS app
       run: |
         dotnet build MauiNfcReader/MauiNfcReader.csproj \
           -f net8.0-ios \
           -c Release \
           /p:BuildIpa=true \
-          /p:RuntimeIdentifier=ios-arm64
+          /p:RuntimeIdentifier=ios-arm64 \
+          /p:CodesignKey="iPhone Distribution" \
+          /p:CodesignProvision="QrVirtualCard"
           
     - name: Upload IPA artifact
       uses: actions/upload-artifact@v4
