@@ -1,10 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Ortam değişkenleri: .env öncelikli, yoksa Render backend'e düş
   env: {
-    // Mobil erişim için dinamik API URL
-    NEXT_PUBLIC_API_URL: process.env.NODE_ENV === 'production'
-      ? 'https://qrvirtualcardgenerator.onrender.com'
-      : 'http://localhost:8000'
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'https://qrvirtualcardgenerator.onrender.com',
+  },
+  // Harici görseller için izinler (ELFED logosu)
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'www.elfed.org.tr' },
+      { protocol: 'https', hostname: 'elfed.org.tr' },
+    ],
   },
   // HTTPS development server
   async headers() {

@@ -17,6 +17,10 @@ const handler = NextAuth({
           console.log('🔐 Attempting login with:', credentials.email)
           console.log('🌐 API URL:', apiUrl)
           
+          // AbortController ile timeout
+          const controller = new AbortController()
+          const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+
           const response = await fetch(`${apiUrl}/api/auth/login`, {
             method: 'POST',
             headers: {
@@ -27,11 +31,18 @@ const handler = NextAuth({
               email: credentials.email,
               password: credentials.password,
             }),
-          })
+            signal: controller.signal,
+          }).finally(() => clearTimeout(timeoutId))
 
           console.log('📡 Response status:', response.status)
           
-          const data = await response.json()
+          let data
+          try {
+            data = await response.json()
+          } catch (e) {
+            console.error('🧩 JSON parse error:', e)
+            data = { success: false, message: 'Geçersiz sunucu yanıtı' }
+          }
           console.log('📨 Response data:', data)
 
           if (response.ok && data.success && data.user) {
