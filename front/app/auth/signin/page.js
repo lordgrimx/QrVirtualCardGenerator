@@ -165,6 +165,49 @@ export default function SignIn() {
             <p>Lütfen sabırlı olun ve sayfayı yenilemeyin.</p>
           </div>
 
+          {/* Debug Section - For Troubleshooting */}
+          <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-xl">
+            <p className="text-xs text-gray-600 mb-2 font-semibold">🔍 Bağlantı Test</p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => window.open('/api/debug/backend-test', '_blank')}
+                className="text-xs px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Backend Test
+              </button>
+              <button
+                onClick={() => {
+                  const envInfo = {
+                    NODE_ENV: typeof window !== 'undefined' ? 'client' : process.env.NODE_ENV,
+                    API_URL: process.env.NEXT_PUBLIC_API_URL || 'NOT_SET',
+                    timestamp: new Date().toISOString()
+                  }
+                  console.log('🔍 Frontend ENV Check:', envInfo)
+                  alert(`ENV Check - Console'u kontrol edin\nAPI URL: ${envInfo.API_URL}`)
+                }}
+                className="text-xs px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                ENV Check
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('https://qrvirtualcardgenerator.onrender.com/health')
+                    const data = await response.json()
+                    console.log('🔍 Direct Backend Test:', data)
+                    alert('Backend Online ✅\nConsole\'u kontrol edin')
+                  } catch (error) {
+                    console.error('🔍 Backend Error:', error)
+                    alert('Backend Offline ❌\nConsole\'u kontrol edin')
+                  }
+                }}
+                className="text-xs px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600"
+              >
+                Direct Test
+              </button>
+            </div>
+          </div>
+
           {/* Ana Sayfa Linki */}
           <div className="mt-6 text-center">
             <Link 

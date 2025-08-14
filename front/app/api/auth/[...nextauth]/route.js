@@ -107,31 +107,56 @@ const handler = NextAuth({
     maxAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
+      console.log('🔐 JWT Callback - User:', user ? 'Present' : 'None')
+      console.log('🔐 JWT Callback - Account:', account ? account.provider : 'None')
       if (user) {
         token.role = user.role
+        console.log('🔐 JWT Token updated with role:', user.role)
       }
       return token
     },
     async session({ session, token }) {
+      console.log('🔐 Session Callback - Token:', token ? 'Present' : 'None')
       session.user.id = token.sub
       session.user.role = token.role
+      console.log('🔐 Session created for user:', session.user.email)
       return session
+    },
+    async signIn({ user, account, profile }) {
+      console.log('🔐 SignIn Callback triggered!')
+      console.log('🔐 SignIn - User:', user ? { id: user.id, email: user.email, role: user.role } : 'None')
+      console.log('🔐 SignIn - Account:', account ? { provider: account.provider, type: account.type } : 'None')
+      console.log('🔐 SignIn - Profile:', profile ? 'Present' : 'None')
+      
+      // Always allow sign in for credentials
+      if (account?.provider === 'credentials') {
+        console.log('🔐 Credentials sign in - ALLOWED')
+        return true
+      }
+      
+      console.log('🔐 Non-credentials sign in - checking...')
+      return true
     },
   },
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error', // Custom error page
   },
-  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-here',
-  debug: process.env.NODE_ENV === 'development', // Enable debug in development
-  // Add custom error handling
+  secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-here-change-in-production',
+  debug: true, // Always enable debug for troubleshooting
   events: {
     async signIn({ user, account, profile }) {
-      console.log('🔐 User signed in:', user.email)
+      console.log('🔐 Event: User signed in successfully:', user.email)
     },
     async signInError({ error }) {
-      console.error('🚨 Sign in error:', error)
+      console.error('🚨 Event: Sign in error occurred:', error)
+    },
+    async createUser({ user }) {
+      console.log('🔐 Event: User created:', user.email)
+    },
+    async session({ session, token }) {
+      console.log('🔐 Event: Session accessed:', session.user.email)
     },
   },
 })
