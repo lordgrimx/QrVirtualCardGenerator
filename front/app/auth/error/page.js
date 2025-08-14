@@ -26,11 +26,12 @@ export default function AuthErrorPage() {
       <div className="max-w-md w-full">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20 text-center">
           <Image 
-            src="https://www.elfed.org.tr/images/logo.png" 
+            src="/elfed-logo.png" 
             alt="ELFED Logo" 
             width={56} 
             height={56} 
             className="mx-auto mb-4 rounded-2xl object-contain"
+            priority
           />
           <h1 className="text-xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent mb-2">
             Giriş Hatası

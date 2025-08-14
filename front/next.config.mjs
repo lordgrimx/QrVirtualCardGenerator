@@ -7,9 +7,19 @@ const nextConfig = {
   // Harici görseller için izinler (ELFED logosu)
   images: {
     remotePatterns: [
-      { protocol: 'https', hostname: 'www.elfed.org.tr' },
-      { protocol: 'https', hostname: 'elfed.org.tr' },
+      { 
+        protocol: 'https', 
+        hostname: 'www.elfed.org.tr',
+        pathname: '/images/**'
+      },
+      { 
+        protocol: 'https', 
+        hostname: 'elfed.org.tr',
+        pathname: '/images/**'
+      },
     ],
+    // Vercel'de external image optimization sorunları için
+    unoptimized: process.env.NODE_ENV === 'production',
   },
   // HTTPS development server
   async headers() {

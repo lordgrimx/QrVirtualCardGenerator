@@ -77,11 +77,12 @@ export default function SignIn() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Image 
-              src="https://www.elfed.org.tr/images/logo.png" 
+              src="/elfed-logo.png" 
               alt="ELFED Logo" 
               width={64} 
               height={64} 
               className="mx-auto mb-4 rounded-2xl object-contain"
+              priority
             />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
               ELFED
@@ -134,7 +135,12 @@ export default function SignIn() {
               disabled={loading}
               className="w-full py-3 bg-gradient-to-r from-red-600 via-red-700 to-orange-600 hover:from-red-700 hover:via-red-800 hover:to-orange-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+              {loading ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Sunucu başlatılıyor... (30-45 saniye)</span>
+                </div>
+              ) : 'Giriş Yap'}
             </button>
           </form>
 
@@ -150,6 +156,13 @@ export default function SignIn() {
             <p className="font-semibold mb-2">ELFED Demo Hesabı:</p>
             <p>📧 Email: admin@elfed.org.tr</p>
             <p>🔑 Şifre: elfed2024</p>
+          </div>
+
+          {/* Cold Start Warning */}
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs">
+            <p className="font-semibold mb-1">⚠️ Önemli Bilgi:</p>
+            <p>İlk giriş 30-45 saniye sürebilir (sunucu başlatma)</p>
+            <p>Lütfen sabırlı olun ve sayfayı yenilemeyin.</p>
           </div>
 
           {/* Ana Sayfa Linki */}

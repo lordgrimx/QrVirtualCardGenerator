@@ -16,10 +16,11 @@ const handler = NextAuth({
           
           console.log('🔐 Attempting login with:', credentials.email)
           console.log('🌐 API URL:', apiUrl)
+          console.log('⏰ Cold start bekleniyor... Bu işlem 30-45 saniye sürebilir')
           
-          // AbortController ile timeout
+          // AbortController ile timeout - Render cold start için artırıldı
           const controller = new AbortController()
-          const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+          const timeoutId = setTimeout(() => controller.abort(), 45000) // 45s timeout
 
           const response = await fetch(`${apiUrl}/api/auth/login`, {
             method: 'POST',
