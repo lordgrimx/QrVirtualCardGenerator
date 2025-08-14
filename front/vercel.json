@@ -1,0 +1,15 @@
+{
+  "functions": {
+    "app/api/auth/[...nextauth]/route.js": {
+      "maxDuration": 30
+    }
+  },
+  "build": {
+    "env": {
+      "NEXT_PRIVATE_STANDALONE": "true"
+    }
+  },
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --prefer-offline --no-audit",
+  "framework": "nextjs"
+}
