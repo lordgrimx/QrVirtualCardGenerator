@@ -11,7 +11,11 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+          // Use environment variable or fallback to production URL
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com'
+          
+          console.log('🔐 Attempting login with:', credentials.email)
+          console.log('🌐 API URL:', apiUrl)
           
           const response = await fetch(`${apiUrl}/api/auth/login`, {
             method: 'POST',
@@ -22,11 +26,22 @@ const handler = NextAuth({
               email: credentials.email,
               password: credentials.password,
             }),
+            // Add timeout and proper error handling
+            signal: AbortSignal.timeout(30000), // 30 second timeout
           })
 
-          const data = await response.json()
+          console.log('📡 Response status:', response.status)
+          
+          if (!response.ok) {
+            console.error('❌ Response not OK:', response.status, response.statusText)
+            return null
+          }
 
-          if (response.ok && data.success) {
+          const data = await response.json()
+          console.log('📨 Response data:', data)
+
+          if (data.success && data.user) {
+            console.log('✅ Login successful for:', data.user.email)
             return {
               id: data.user.id.toString(),
               name: data.user.name,
@@ -35,9 +50,13 @@ const handler = NextAuth({
             }
           }
 
+          console.error('❌ Login failed:', data.message || 'Unknown error')
           return null
         } catch (error) {
-          console.error('Authentication error:', error)
+          console.error('🚨 Authentication error:', error)
+          if (error.name === 'TimeoutError') {
+            console.error('⏰ Request timed out')
+          }
           return null
         }
       },
@@ -45,6 +64,7 @@ const handler = NextAuth({
   ],
   session: {
     strategy: 'jwt',
+    maxAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -61,9 +81,19 @@ const handler = NextAuth({
   },
   pages: {
     signIn: '/auth/signin',
-    signUp: '/auth/signup',
+    error: '/auth/error', // Custom error page
   },
   secret: process.env.NEXTAUTH_SECRET || 'your-secret-key-here',
+  debug: process.env.NODE_ENV === 'development', // Enable debug in development
+  // Add custom error handling
+  events: {
+    async signIn({ user, account, profile }) {
+      console.log('🔐 User signed in:', user.email)
+    },
+    async signInError({ error }) {
+      console.error('🚨 Sign in error:', error)
+    },
+  },
 })
 
 export { handler as GET, handler as POST }

@@ -28,28 +28,43 @@ export default function SignIn() {
     setLoading(true)
 
     try {
+      console.log('🔐 Attempting sign in...')
+      
       const result = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       })
 
+      console.log('📡 Sign in result:', result)
+
       if (result?.error) {
-        setError('Geçersiz email veya şifre')
-      } else {
+        console.error('❌ Sign in error:', result.error)
+        if (result.error === 'CredentialsSignin') {
+          setError('Geçersiz email veya şifre. Lütfen bilgilerinizi kontrol edin.')
+        } else {
+          setError('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.')
+        }
+      } else if (result?.ok) {
+        console.log('✅ Sign in successful, redirecting...')
         // Get the updated session
         const session = await getSession()
+        console.log('👤 Session:', session)
         
         // Redirect based on user role
         if (session?.user?.role === 'admin') {
+          console.log('👑 Redirecting to admin panel')
           router.push('/admin')
         } else {
+          console.log('👤 Redirecting to dashboard')
           router.push('/dashboard')
         }
+      } else {
+        setError('Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.')
       }
     } catch (error) {
-      console.error('Sign in error:', error)
-      setError('Giriş yapılırken bir hata oluştu')
+      console.error('🚨 Sign in error:', error)
+      setError('Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.')
     } finally {
       setLoading(false)
     }
@@ -62,11 +77,11 @@ export default function SignIn() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Image 
-              src="/elfed-logo.svg" 
+              src="https://www.elfed.org.tr/images/logo.png" 
               alt="ELFED Logo" 
               width={64} 
               height={64} 
-              className="mx-auto mb-4 rounded-2xl"
+              className="mx-auto mb-4 rounded-2xl object-contain"
             />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
               ELFED

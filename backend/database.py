@@ -248,26 +248,41 @@ def create_default_admin():
     db = SessionLocal()
     try:
         # Check if admin user already exists
-        admin_user = db.query(User).filter(User.email == "admin@qrvirtualcard.com").first()
+        admin_user = db.query(User).filter(User.email == "admin@elfed.org.tr").first()
         
         if not admin_user:
-            # Create default admin user
+            # Create default admin user for ELFED
             admin_user = User(
-                name="Admin User",
-                email="admin@qrvirtualcard.com",
-                password_hash=hash_password("admin123"),  # Default password
+                name="ELFED Admin",
+                email="admin@elfed.org.tr",
+                password_hash=hash_password("elfed2024"),  # ELFED password
                 role="admin",
                 is_active=True,
                 email_verified=datetime.utcnow()
             )
             db.add(admin_user)
-            db.commit()
-            print("✅ Default admin user created successfully!")
-            print("📧 Email: admin@qrvirtualcard.com")
-            print("🔑 Password: admin123")
-            print("⚠️  Please change the default password after first login!")
+            print("✅ ELFED admin user created successfully!")
+            print("📧 Email: admin@elfed.org.tr")
+            print("🔑 Password: elfed2024")
         else:
-            print("ℹ️  Default admin user already exists")
+            print("ℹ️  ELFED admin user already exists")
+            
+        # Also create old admin for compatibility
+        old_admin = db.query(User).filter(User.email == "admin@qrvirtualcard.com").first()
+        if not old_admin:
+            old_admin = User(
+                name="Admin User",
+                email="admin@qrvirtualcard.com",
+                password_hash=hash_password("admin123"),
+                role="admin",
+                is_active=True,
+                email_verified=datetime.utcnow()
+            )
+            db.add(old_admin)
+            print("✅ Compatibility admin user created!")
+            
+        db.commit()
+        
     except Exception as e:
         print(f"❌ Error creating default admin user: {e}")
         db.rollback()

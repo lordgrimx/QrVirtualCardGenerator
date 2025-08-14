@@ -729,19 +729,22 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex">
       {/* Sidebar */}
       <div className={`${sidebarCollapsed ? 'w-20' : 'w-80'} bg-white/80 backdrop-blur-sm border-r border-gray-200/50 ${sidebarCollapsed ? 'p-3' : 'p-6'} shadow-xl transition-all duration-300 ease-in-out`}>
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-white rounded-sm"></div>
+              <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-orange-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">E</span>
               </div>
               {!sidebarCollapsed && (
-                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent whitespace-nowrap">
-                  Virtual ID Admin
-                </h1>
+                <div>
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent whitespace-nowrap">
+                    ELFED Yönetimi
+                  </h1>
+                  <p className="text-xs text-gray-600">Dernekler Federasyonu</p>
+                </div>
               )}
             </div>
             <button

@@ -30,11 +30,11 @@ export default function HomePage() {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <Image 
-                src="/elfed-logo.svg" 
+                src="https://www.elfed.org.tr/images/logo.png" 
                 alt="ELFED Logo" 
                 width={48} 
                 height={48} 
-                className="rounded-lg"
+                className="rounded-lg object-contain"
               />
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
@@ -350,11 +350,11 @@ export default function HomePage() {
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-6">
                 <Image 
-                  src="/elfed-logo.svg" 
+                  src="https://www.elfed.org.tr/images/logo.png" 
                   alt="ELFED Logo" 
                   width={48} 
                   height={48} 
-                  className="rounded-lg"
+                  className="rounded-lg object-contain"
                 />
                 <div>
                   <h3 className="text-xl font-bold text-white">ELFED</h3>
