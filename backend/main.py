@@ -55,9 +55,17 @@ app = FastAPI(
 frontend_url = os.getenv("FRONTEND_URL", "https://qr-virtual-card-generator.vercel.app")
 allowed_origins = [
     frontend_url,
+    "https://qr-virtual-card-generator.vercel.app",
+    "https://qr-virtual-card-generator-git-main-allpepper.vercel.app", 
+    "https://qr-virtual-card-generator-allpepper.vercel.app",
     "http://localhost:3000",
     "https://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://127.0.0.1:3000",
 ]
+
+print(f"🌐 CORS Allowed Origins: {allowed_origins}")
+print(f"🌐 Frontend URL from env: {frontend_url}")
 
 app.add_middleware(
     CORSMiddleware,
