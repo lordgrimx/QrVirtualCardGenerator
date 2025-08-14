@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn, getSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function SignIn() {
   const [formData, setFormData] = useState({
@@ -55,18 +56,23 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <div className="w-8 h-8 bg-white rounded-lg"></div>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-              QR Virtual Card
+            <Image 
+              src="/elfed-logo.svg" 
+              alt="ELFED Logo" 
+              width={64} 
+              height={64} 
+              className="mx-auto mb-4 rounded-2xl"
+            />
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
+              ELFED
             </h1>
-            <p className="text-gray-600 mt-2">Hesabınıza giriş yapın</p>
+            <p className="text-sm text-gray-600 mt-1">Elazığ Dernekler Federasyonu</p>
+            <p className="text-gray-600 mt-2">Yönetici hesabınıza giriş yapın</p>
           </div>
 
           {/* Error Message */}
@@ -88,7 +94,7 @@ export default function SignIn() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="email@example.com"
-                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
                 required
               />
             </div>
@@ -103,7 +109,7 @@ export default function SignIn() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200"
                 required
               />
             </div>
@@ -111,7 +117,7 @@ export default function SignIn() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full py-3 bg-gradient-to-r from-red-600 via-red-700 to-orange-600 hover:from-red-700 hover:via-red-800 hover:to-orange-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
             </button>
@@ -125,10 +131,20 @@ export default function SignIn() {
           </div>
 
           {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm">
-            <p className="font-semibold mb-2">Demo Hesap:</p>
-            <p>📧 Email: admin@qrvirtualcard.com</p>
-            <p>🔑 Şifre: admin123</p>
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+            <p className="font-semibold mb-2">ELFED Demo Hesabı:</p>
+            <p>📧 Email: admin@elfed.org.tr</p>
+            <p>🔑 Şifre: elfed2024</p>
+          </div>
+
+          {/* Ana Sayfa Linki */}
+          <div className="mt-6 text-center">
+            <Link 
+              href="/" 
+              className="text-red-600 hover:text-red-700 text-sm font-medium transition-colors"
+            >
+              ← Ana sayfaya dön
+            </Link>
           </div>
         </div>
       </div>

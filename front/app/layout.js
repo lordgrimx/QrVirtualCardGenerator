@@ -2,8 +2,8 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata = {
-  title: "Community Connect - QR Virtual Card",
-  description: "Community Connect member management and virtual card system",
+  title: "ELFED - Elazığ Dernekler Federasyonu",
+  description: "Elazığ Dernekler Federasyonu - Kültürel ve sosyal faaliyetler, etkinlikler ve dernek yönetimi",
 };
 
 export default function RootLayout({ children }) {
