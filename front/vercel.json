@@ -1,7 +1,7 @@
 {
   "functions": {
     "app/api/auth/[...nextauth]/route.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   },
   "framework": "nextjs",

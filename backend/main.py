@@ -82,6 +82,14 @@ async def log_api_calls(request: Request, call_next):
     ip_address = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent", "")
     
+    # Authentication endpoint için özel debug
+    if endpoint == "/api/auth/login":
+        print(f"🔐 AUTH LOGIN REQUEST BAŞLADI - {datetime.now()}")
+        print(f"🔐 Method: {method}, IP: {ip_address}")
+        print(f"🔐 User-Agent: {user_agent}")
+        print(f"🔐 Full URL: {url}")
+        print(f"🔐 Headers: {dict(request.headers)}")
+    
     # NFC decrypt endpoint için özel debug
     if endpoint == "/api/nfc/decrypt":
         print(f"🚀 NFC DECRYPT BAŞLADI - {datetime.now()}")
@@ -107,6 +115,16 @@ async def log_api_calls(request: Request, call_next):
     
     # Response süresini hesapla
     response_time_ms = (time.time() - start_time) * 1000
+    
+    # Authentication endpoint için özel debug
+    if endpoint == "/api/auth/login":
+        print(f"🔐 AUTH LOGIN RESPONSE - {datetime.now()}")
+        print(f"🔐 Total middleware time: {response_time_ms:.2f}ms")
+        print(f"🔐 Status code: {response.status_code}")
+        if response.status_code >= 400:
+            print(f"🔐 ❌ AUTH LOGIN FAILED - Status: {response.status_code}")
+        else:
+            print(f"🔐 ✅ AUTH LOGIN SUCCESS - Status: {response.status_code}")
     
     # NFC decrypt endpoint için özel debug
     if endpoint == "/api/nfc/decrypt":
@@ -224,7 +242,18 @@ def save_api_log_sync(endpoint: str, method: str, status_code: int,
 # Initialize database on startup
 @app.on_event("startup")
 async def startup_event():
-    init_db()
+    startup_start = time.time()
+    print(f"🚀 SERVER STARTUP BAŞLADI - {datetime.utcnow()}")
+    
+    try:
+        init_db()
+        startup_time = (time.time() - startup_start) * 1000
+        print(f"✅ DATABASE INITIALIZATION TAMAMLANDI - {startup_time:.2f}ms")
+        print(f"🚀 Server hazır - Backend authentication endpoint: /api/auth/login")
+    except Exception as e:
+        startup_time = (time.time() - startup_start) * 1000
+        print(f"❌ STARTUP HATASI - {startup_time:.2f}ms: {str(e)}")
+        raise
 
 @app.get("/")
 async def read_root():
@@ -232,7 +261,51 @@ async def read_root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "API çalışıyor"}
+    start_time = time.time()
+    health_id = f"health_{int(time.time() * 1000)}"
+    
+    print(f"❤️ [{health_id}] Health check başlıyor...")
+    
+    health_data = {
+        "status": "healthy", 
+        "message": "API çalışıyor",
+        "timestamp": datetime.utcnow().isoformat(),
+        "checks": {}
+    }
+    
+    # Database connectivity test
+    try:
+        db_start = time.time()
+        db = next(get_db())
+        
+        # Simple query to test database
+        test_query = db.execute("SELECT 1 as test").fetchone()
+        db.close()
+        
+        db_time = (time.time() - db_start) * 1000
+        health_data["checks"]["database"] = {
+            "status": "ok",
+            "response_time_ms": round(db_time, 2),
+            "test_result": test_query[0] if test_query else None
+        }
+        print(f"❤️ [{health_id}] Database check: ✅ OK ({db_time:.2f}ms)")
+        
+    except Exception as e:
+        db_time = (time.time() - db_start if 'db_start' in locals() else start_time) * 1000
+        health_data["checks"]["database"] = {
+            "status": "error",
+            "response_time_ms": round(db_time, 2),
+            "error": str(e)
+        }
+        health_data["status"] = "degraded"
+        print(f"❤️ [{health_id}] Database check: ❌ ERROR ({db_time:.2f}ms) - {str(e)}")
+    
+    total_time = (time.time() - start_time) * 1000
+    health_data["total_response_time_ms"] = round(total_time, 2)
+    
+    print(f"❤️ [{health_id}] Health check tamamlandı: {total_time:.2f}ms - Status: {health_data['status']}")
+    
+    return health_data
 
 # Pydantic Models
 class MemberCreate(BaseModel):
@@ -386,26 +459,124 @@ class MemberResponse(BaseModel):
 async def test_endpoint():
     return {"data": "Test verisi", "success": True}
 
+@app.get("/api/debug/timing")
+async def debug_timing_test():
+    """Frontend'ten timing test için debug endpoint"""
+    start_time = time.time()
+    debug_id = f"debug_{int(time.time() * 1000)}"
+    
+    print(f"🐛 [{debug_id}] DEBUG TIMING TEST BAŞLADI")
+    
+    timing_data = {
+        "test_id": debug_id,
+        "timestamp": datetime.utcnow().isoformat(),
+        "tests": {}
+    }
+    
+    # Test 1: Simple response
+    simple_start = time.time()
+    simple_result = {"message": "Hello World"}
+    simple_time = (time.time() - simple_start) * 1000
+    timing_data["tests"]["simple_response"] = {
+        "time_ms": round(simple_time, 2),
+        "result": simple_result
+    }
+    
+    # Test 2: Database query
+    try:
+        db_start = time.time()
+        db = next(get_db())
+        count_query = db.execute("SELECT COUNT(*) as count FROM users").fetchone()
+        db.close()
+        db_time = (time.time() - db_start) * 1000
+        
+        timing_data["tests"]["database_query"] = {
+            "time_ms": round(db_time, 2),
+            "result": {"user_count": count_query[0] if count_query else 0},
+            "status": "success"
+        }
+    except Exception as e:
+        db_time = (time.time() - db_start if 'db_start' in locals() else start_time) * 1000
+        timing_data["tests"]["database_query"] = {
+            "time_ms": round(db_time, 2),
+            "error": str(e),
+            "status": "error"
+        }
+    
+    # Test 3: Password hashing test
+    hash_start = time.time()
+    test_hash = hash_password("test123")
+    hash_time = (time.time() - hash_start) * 1000
+    
+    timing_data["tests"]["password_hashing"] = {
+        "time_ms": round(hash_time, 2),
+        "result": {"hash_length": len(test_hash)},
+        "status": "success"
+    }
+    
+    total_time = (time.time() - start_time) * 1000
+    timing_data["total_time_ms"] = round(total_time, 2)
+    
+    print(f"🐛 [{debug_id}] DEBUG TEST TAMAMLANDI - {total_time:.2f}ms")
+    
+    return timing_data
+
 # Authentication Endpoints
 
 @app.post("/api/auth/login", response_model=LoginResponse)
 async def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    """User login endpoint"""
+    """User login endpoint with detailed timing logs"""
+    start_time = time.time()
+    request_id = f"auth_{int(time.time() * 1000)}"
+    
+    print(f"\n🔐 [{request_id}] AUTH LOGIN BAŞLADI - {datetime.utcnow()}")
+    print(f"🔐 [{request_id}] Email: {credentials.email}")
+    
     try:
-        # Find user by email
+        # Step 1: Database user lookup
+        db_lookup_start = time.time()
+        print(f"🔍 [{request_id}] Database user lookup başlıyor...")
+        
         user = db.query(DBUser).filter(DBUser.email == credentials.email).first()
         
+        db_lookup_time = (time.time() - db_lookup_start) * 1000
+        print(f"🔍 [{request_id}] Database lookup tamamlandı: {db_lookup_time:.2f}ms")
+        
         if not user:
+            total_time = (time.time() - start_time) * 1000
+            print(f"❌ [{request_id}] User bulunamadı - Toplam süre: {total_time:.2f}ms")
             raise HTTPException(status_code=401, detail="Geçersiz email veya şifre")
         
+        print(f"✅ [{request_id}] User bulundu: {user.name} (ID: {user.id})")
+        
+        # Step 2: Active user check
         if not user.is_active:
+            total_time = (time.time() - start_time) * 1000
+            print(f"❌ [{request_id}] User deaktif - Toplam süre: {total_time:.2f}ms")
             raise HTTPException(status_code=401, detail="Hesap deaktif edilmiş")
         
-        # Verify password
-        if not verify_password(credentials.password, user.password_hash):
+        print(f"✅ [{request_id}] User aktif durumda")
+        
+        # Step 3: Password verification
+        password_start = time.time()
+        print(f"🔑 [{request_id}] Password verification başlıyor...")
+        
+        password_valid = verify_password(credentials.password, user.password_hash)
+        
+        password_time = (time.time() - password_start) * 1000
+        print(f"🔑 [{request_id}] Password verification tamamlandı: {password_time:.2f}ms")
+        
+        if not password_valid:
+            total_time = (time.time() - start_time) * 1000
+            print(f"❌ [{request_id}] Password yanlış - Toplam süre: {total_time:.2f}ms")
             raise HTTPException(status_code=401, detail="Geçersiz email veya şifre")
         
-        # Create user response
+        print(f"✅ [{request_id}] Password doğru")
+        
+        # Step 4: Response preparation
+        response_start = time.time()
+        print(f"📦 [{request_id}] Response hazırlanıyor...")
+        
         user_response = UserResponse(
             id=user.id,
             name=user.name,
@@ -415,16 +586,37 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
             created_at=user.created_at
         )
         
-        return LoginResponse(
+        login_response = LoginResponse(
             user=user_response,
             message="Giriş başarılı",
             success=True
         )
         
-    except HTTPException:
+        response_time = (time.time() - response_start) * 1000
+        total_time = (time.time() - start_time) * 1000
+        
+        print(f"📦 [{request_id}] Response hazırlandı: {response_time:.2f}ms")
+        print(f"✅ [{request_id}] LOGIN BAŞARILI - Toplam süre: {total_time:.2f}ms")
+        
+        # Detaylı timing breakdown
+        print(f"📊 [{request_id}] TIMING BREAKDOWN:")
+        print(f"📊   - Database lookup: {db_lookup_time:.2f}ms ({(db_lookup_time/total_time)*100:.1f}%)")
+        print(f"📊   - Password verify: {password_time:.2f}ms ({(password_time/total_time)*100:.1f}%)")
+        print(f"📊   - Response prep:   {response_time:.2f}ms ({(response_time/total_time)*100:.1f}%)")
+        print(f"📊   - TOPLAM:          {total_time:.2f}ms")
+        
+        return login_response
+        
+    except HTTPException as he:
+        total_time = (time.time() - start_time) * 1000
+        print(f"❌ [{request_id}] HTTP Exception: {he.detail} - Süre: {total_time:.2f}ms")
         raise
     except Exception as e:
-        print(f"Login error: {e}")
+        total_time = (time.time() - start_time) * 1000
+        print(f"🚨 [{request_id}] Unexpected error: {str(e)} - Süre: {total_time:.2f}ms")
+        print(f"🚨 [{request_id}] Error type: {type(e).__name__}")
+        import traceback
+        print(f"🚨 [{request_id}] Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail="Giriş sırasında hata oluştu")
 
 # Registration endpoint removed - Admin only system

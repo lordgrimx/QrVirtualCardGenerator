@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
 import hashlib
+import time
 
 # Load environment variables
 load_dotenv()
@@ -228,11 +229,43 @@ DBDashboardStats = DashboardStats
 
 # Dependency to get database session
 def get_db():
+    start_time = time.time()
+    request_id = f"db_{int(time.time() * 1000)}"
+    
+    # Sadece authentication endpoint'leri için detaylı logging
+    import inspect
+    frame = inspect.currentframe()
+    caller_name = ""
+    try:
+        if frame and frame.f_back and frame.f_back.f_back:
+            caller_name = frame.f_back.f_back.f_code.co_name
+    except:
+        pass
+    
+    # Authentication related calls için özel logging
+    is_auth_call = caller_name in ['login', 'get_current_user'] or 'auth' in caller_name.lower()
+    
+    if is_auth_call:
+        print(f"🗄️ [{request_id}] Database session oluşturuluyor... (caller: {caller_name})")
+    
+    session_start = time.time()
     db = SessionLocal()
+    session_time = (time.time() - session_start) * 1000
+    
+    if is_auth_call:
+        print(f"🗄️ [{request_id}] Database session oluşturuldu: {session_time:.2f}ms")
+    
     try:
         yield db
     finally:
+        close_start = time.time()
         db.close()
+        close_time = (time.time() - close_start) * 1000
+        total_time = (time.time() - start_time) * 1000
+        
+        if is_auth_call:
+            print(f"🗄️ [{request_id}] Database session kapatıldı: {close_time:.2f}ms")
+            print(f"🗄️ [{request_id}] Total DB session time: {total_time:.2f}ms")
 
 # Utility functions for password hashing
 def hash_password(password: str) -> str:
@@ -240,8 +273,41 @@ def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_password(password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash"""
-    return hash_password(password) == hashed_password
+    """Verify a password against its hash with timing logs"""
+    start_time = time.time()
+    request_id = f"pwd_{int(time.time() * 1000)}"
+    
+    print(f"🔑 [{request_id}] Password verification başlıyor...")
+    print(f"🔑 [{request_id}] Input password length: {len(password)} chars")
+    print(f"🔑 [{request_id}] Stored hash length: {len(hashed_password)} chars")
+    
+    try:
+        # Hash the input password
+        hash_start = time.time()
+        input_hash = hash_password(password)
+        hash_time = (time.time() - hash_start) * 1000
+        print(f"🔑 [{request_id}] Password hashing tamamlandı: {hash_time:.2f}ms")
+        
+        # Compare hashes
+        compare_start = time.time()
+        is_match = input_hash == hashed_password
+        compare_time = (time.time() - compare_start) * 1000
+        
+        total_time = (time.time() - start_time) * 1000
+        
+        print(f"🔑 [{request_id}] Hash comparison tamamlandı: {compare_time:.2f}ms")
+        print(f"🔑 [{request_id}] Password verification result: {'✅ MATCH' if is_match else '❌ NO MATCH'}")
+        print(f"🔑 [{request_id}] TOTAL PASSWORD VERIFY TIME: {total_time:.2f}ms")
+        
+        # Timing breakdown
+        print(f"🔑 [{request_id}] BREAKDOWN: Hash={hash_time:.1f}ms, Compare={compare_time:.1f}ms")
+        
+        return is_match
+        
+    except Exception as e:
+        total_time = (time.time() - start_time) * 1000
+        print(f"🚨 [{request_id}] Password verification error: {str(e)} - Time: {total_time:.2f}ms")
+        return False
 
 def create_default_admin():
     """Create default admin user if it doesn't exist"""
