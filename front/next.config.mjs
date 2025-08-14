@@ -2,6 +2,10 @@
 const nextConfig = {
   // SWC optimizations for Vercel
   swcMinify: true,
+  experimental: {
+    // Next.js 14 için uygun experimental özellikler
+    optimizePackageImports: ['react-icons'],
+  },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
       exclude: ['error', 'warn']

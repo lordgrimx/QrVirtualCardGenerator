@@ -4,12 +4,7 @@
       "maxDuration": 30
     }
   },
-  "build": {
-    "env": {
-      "NEXT_PRIVATE_STANDALONE": "true"
-    }
-  },
+  "framework": "nextjs",
   "buildCommand": "npm run build",
-  "installCommand": "npm install --prefer-offline --no-audit",
-  "framework": "nextjs"
+  "installCommand": "npm install"
 }
