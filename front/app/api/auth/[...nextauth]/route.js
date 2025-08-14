@@ -21,26 +21,20 @@ const handler = NextAuth({
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Accept': 'application/json',
             },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,
             }),
-            // Add timeout and proper error handling
-            signal: AbortSignal.timeout(30000), // 30 second timeout
           })
 
           console.log('📡 Response status:', response.status)
           
-          if (!response.ok) {
-            console.error('❌ Response not OK:', response.status, response.statusText)
-            return null
-          }
-
           const data = await response.json()
           console.log('📨 Response data:', data)
 
-          if (data.success && data.user) {
+          if (response.ok && data.success && data.user) {
             console.log('✅ Login successful for:', data.user.email)
             return {
               id: data.user.id.toString(),
@@ -54,9 +48,6 @@ const handler = NextAuth({
           return null
         } catch (error) {
           console.error('🚨 Authentication error:', error)
-          if (error.name === 'TimeoutError') {
-            console.error('⏰ Request timed out')
-          }
           return null
         }
       },
