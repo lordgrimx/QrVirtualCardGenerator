@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
+// Static generation'dan hariç tut - backend'e bağımlı
+export const dynamic = 'force-dynamic';
+
 // NFC Okuma Grafiği Komponenti
 const NfcReadingChart = () => {
   const [chartData, setChartData] = useState([]);

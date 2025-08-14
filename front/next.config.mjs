@@ -5,6 +5,10 @@ const nextConfig = {
   experimental: {
     // Next.js 14 için uygun experimental özellikler
     optimizePackageImports: ['react-icons'],
+    // Static generation timeout'u artır
+    staticPageGenerationTimeout: 120,
+    // ISR revalidation timeout'u artır  
+    isrFlushToDisk: false,
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {

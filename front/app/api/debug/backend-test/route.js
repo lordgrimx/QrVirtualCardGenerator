@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 
+// Bu route'u static generation'dan hariç tut
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+
 export async function GET() {
   const testResults = {
     timestamp: new Date().toISOString(),

@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 
+// Static generation'dan hariç tut - auth bağımlı
+export const dynamic = 'force-dynamic'
+
 export default function SignIn() {
   const [formData, setFormData] = useState({
     email: '',

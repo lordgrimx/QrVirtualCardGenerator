@@ -26,6 +26,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@swc/core": "^1.7.26",
     "@tailwindcss/postcss": "^4",
     "tailwindcss": "^4"
   }

@@ -5,6 +5,9 @@ import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
+// Static generation'dan hariç tut - auth bağımlı
+export const dynamic = 'force-dynamic'
+
 function ErrorContent() {
   const params = useSearchParams()
   const error = params.get('error')

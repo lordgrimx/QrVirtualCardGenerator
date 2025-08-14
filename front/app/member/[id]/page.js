@@ -8,6 +8,9 @@ import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 import Image from 'next/image';
 
+// Static generation'dan hariç tut - backend'e bağımlı
+export const dynamic = 'force-dynamic';
+
 export default function MemberPage() {
   const params = useParams();
   const router = useRouter();
