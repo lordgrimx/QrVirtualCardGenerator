@@ -109,7 +109,6 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user, account }) {
       console.log('🔐 JWT Callback - User:', user ? 'Present' : 'None')
-      console.log('🔐 JWT Callback - Account:', account ? account.provider : 'None')
       if (user) {
         token.role = user.role
         console.log('🔐 JWT Token updated with role:', user.role)

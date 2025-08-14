@@ -75,7 +75,49 @@ export async function GET() {
     }
   }
 
-  // Test 3: Mock login attempt
+  // Test 3: Raw auth debug test
+  try {
+    console.log('🔍 Raw auth debug test başlıyor...')
+    const authPayload = {
+      email: 'admin@elfed.org.tr',
+      password: 'elfed2024'
+    }
+    
+    const rawAuthResponse = await fetch(`${apiUrl}/api/debug/auth-raw`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'User-Agent': 'Frontend-Debug-Test/1.0'
+      },
+      body: JSON.stringify(authPayload)
+    })
+
+    let rawAuthData
+    try {
+      rawAuthData = await rawAuthResponse.json()
+    } catch (e) {
+      rawAuthData = { error: 'JSON parse error', raw: await rawAuthResponse.text() }
+    }
+    
+    testResults.tests.raw_auth_debug = {
+      status: rawAuthResponse.ok ? 'SUCCESS' : 'FAILED',
+      status_code: rawAuthResponse.status,
+      payload_sent: authPayload,
+      data: rawAuthData
+    }
+    
+    console.log('🔍 Raw auth debug sonucu:', rawAuthData)
+  } catch (error) {
+    console.error('❌ Raw auth debug hatası:', error)
+    testResults.tests.raw_auth_debug = {
+      status: 'ERROR',
+      error: error.message,
+      error_type: error.constructor.name
+    }
+  }
+
+  // Test 4: Mock login attempt
   try {
     console.log('🔍 Mock login test başlıyor...')
     const loginResponse = await fetch(`${apiUrl}/api/auth/login`, {

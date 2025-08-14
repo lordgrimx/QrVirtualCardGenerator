@@ -96,18 +96,21 @@ async def log_api_calls(request: Request, call_next):
         print(f"🚀 Method: {method}, IP: {ip_address}")
         print(f"🚀 User-Agent: {user_agent}")
     
-    # Request body'yi al (sadece POST/PUT için) - NFC decrypt için kısalt
+    # Request body'yi al (sadece POST/PUT için) - Auth için middleware'de body okumayı skip et
     request_payload = None
     if method in ["POST", "PUT", "PATCH"]:
         try:
+            # Auth login için body okumayı skip et (endpoint'de okunacak)
+            if endpoint == "/api/auth/login":
+                request_payload = "[AUTH_BODY_WILL_BE_LOGGED_IN_ENDPOINT]"
             # NFC decrypt için body okumayı atla (performans için)
-            if endpoint == "/api/nfc/decrypt":
+            elif endpoint == "/api/nfc/decrypt":
                 request_payload = "[NFC_DECRYPT_BODY_SKIPPED]"
             else:
                 body = await request.body()
                 if body:
                     request_payload = body.decode('utf-8')
-        except Exception:
+        except Exception as e:
             request_payload = None
     
     # Response'u işle
@@ -279,7 +282,8 @@ async def health_check():
         db = next(get_db())
         
         # Simple query to test database
-        test_query = db.execute("SELECT 1 as test").fetchone()
+        from sqlalchemy import text
+        test_query = db.execute(text("SELECT 1 as test")).fetchone()
         db.close()
         
         db_time = (time.time() - db_start) * 1000
@@ -459,6 +463,63 @@ class MemberResponse(BaseModel):
 async def test_endpoint():
     return {"data": "Test verisi", "success": True}
 
+@app.post("/api/debug/auth-raw")
+async def debug_auth_raw(request: Request):
+    """Raw auth request debugging"""
+    debug_id = f"debug_auth_{int(time.time() * 1000)}"
+    
+    try:
+        print(f"🐛 [{debug_id}] RAW AUTH DEBUG BAŞLADI")
+        print(f"🐛 [{debug_id}] Method: {request.method}")
+        print(f"🐛 [{debug_id}] Headers: {dict(request.headers)}")
+        
+        # Raw body okuma
+        body = await request.body()
+        print(f"🐛 [{debug_id}] Raw body length: {len(body)}")
+        print(f"🐛 [{debug_id}] Raw body bytes: {body}")
+        
+        body_str = body.decode('utf-8') if body else ""
+        print(f"🐛 [{debug_id}] Body string: '{body_str}'")
+        
+        # JSON parse test
+        import json
+        try:
+            if body_str:
+                parsed = json.loads(body_str)
+                print(f"🐛 [{debug_id}] Parsed JSON: {parsed}")
+                print(f"🐛 [{debug_id}] JSON keys: {list(parsed.keys())}")
+                return {
+                    "success": True,
+                    "debug_id": debug_id,
+                    "raw_body": body_str,
+                    "parsed_json": parsed,
+                    "json_keys": list(parsed.keys())
+                }
+            else:
+                print(f"🐛 [{debug_id}] EMPTY BODY")
+                return {
+                    "success": False,
+                    "debug_id": debug_id,
+                    "error": "Empty body",
+                    "raw_body": ""
+                }
+        except json.JSONDecodeError as e:
+            print(f"🐛 [{debug_id}] JSON ERROR: {e}")
+            return {
+                "success": False,
+                "debug_id": debug_id,
+                "error": f"JSON decode error: {e}",
+                "raw_body": body_str
+            }
+            
+    except Exception as e:
+        print(f"🐛 [{debug_id}] EXCEPTION: {e}")
+        return {
+            "success": False,
+            "debug_id": debug_id,
+            "error": f"Exception: {e}"
+        }
+
 @app.get("/api/debug/timing")
 async def debug_timing_test():
     """Frontend'ten timing test için debug endpoint"""
@@ -486,7 +547,8 @@ async def debug_timing_test():
     try:
         db_start = time.time()
         db = next(get_db())
-        count_query = db.execute("SELECT COUNT(*) as count FROM users").fetchone()
+        from sqlalchemy import text
+        count_query = db.execute(text("SELECT COUNT(*) as count FROM users")).fetchone()
         db.close()
         db_time = (time.time() - db_start) * 1000
         
@@ -524,13 +586,29 @@ async def debug_timing_test():
 # Authentication Endpoints
 
 @app.post("/api/auth/login", response_model=LoginResponse)
-async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+async def login(credentials: UserLogin, request: Request, db: Session = Depends(get_db)):
     """User login endpoint with detailed timing logs"""
     start_time = time.time()
     request_id = f"auth_{int(time.time() * 1000)}"
     
-    print(f"\n🔐 [{request_id}] AUTH LOGIN BAŞLADI - {datetime.utcnow()}")
-    print(f"🔐 [{request_id}] Email: {credentials.email}")
+    print(f"\n🔐 [{request_id}] ===== AUTH LOGIN ENDPOINT BAŞLADI =====")
+    print(f"🔐 [{request_id}] Timestamp: {datetime.utcnow()}")
+    print(f"🔐 [{request_id}] Credentials type: {type(credentials)}")
+    print(f"🔐 [{request_id}] Email received: {credentials.email}")
+    print(f"🔐 [{request_id}] Password length: {len(credentials.password) if credentials.password else 0}")
+    print(f"🔐 [{request_id}] Client IP: {request.client.host if request.client else 'Unknown'}")
+    print(f"🔐 [{request_id}] User-Agent: {request.headers.get('user-agent', 'Unknown')}")
+    
+    # Request validation
+    if not credentials.email:
+        print(f"❌ [{request_id}] MISSING EMAIL")
+        raise HTTPException(status_code=400, detail="Email gerekli")
+    
+    if not credentials.password:
+        print(f"❌ [{request_id}] MISSING PASSWORD")
+        raise HTTPException(status_code=400, detail="Password gerekli")
+    
+    print(f"✅ [{request_id}] Credentials validation passed")
     
     try:
         # Step 1: Database user lookup
