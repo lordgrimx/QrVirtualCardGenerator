@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { QRCodeCanvas } from 'qrcode.react';
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
+import Image from 'next/image';
 
 export default function MemberPage() {
   const params = useParams();
@@ -76,6 +77,7 @@ export default function MemberPage() {
           membershipType: data.member.membershipType,
           address: data.member.address,
           dateOfBirth: data.member.dateOfBirth,
+          profilePhoto: data.member.profilePhoto, // Profil fotoğrafı (base64)
           secureQrCode: data.member.secureQrCode, // Güvenli QR kod verisi
           nfcQrCode: data.member.nfcQrCode // NFC kompakt QR kod verisi
         };
@@ -219,6 +221,23 @@ export default function MemberPage() {
 
   const qrInfo = getQrInfo();
   console.log(`🔍 QR Kod Tipi: ${qrInfo.type} (${qrType})`);;
+
+  // Profil fotoğrafı için yardımcı fonksiyon
+  const getProfilePhotoSrc = () => {
+    if (userInfo?.profilePhoto) {
+      // Base64 fotoğraf varsa kullan
+      return `data:image/jpeg;base64,${userInfo.profilePhoto}`;
+    } else {
+      // Varsayılan profil fotoğrafı: ismin baş harflerini kullan
+      return null;
+    }
+  };
+
+  // Varsayılan profil fotoğrafı için ismin baş harflerini al
+  const getInitials = (name) => {
+    if (!name) return 'EL';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
 
   // Geliştirilmiş kart indirme fonksiyonu
   const downloadCard = async () => {
@@ -635,28 +654,40 @@ export default function MemberPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="border-b border-gray-200 px-10 py-4">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-10 py-4">
         <div className="flex items-center justify-between max-w-[1280px] mx-auto">
           {/* Logo */}
           <a href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-            <div className="w-4 h-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded"></div>
-            <h1 className="text-lg font-bold text-gray-900">Community Connect</h1>
+            <Image 
+              src="/elfed-logo.png" 
+              alt="ELFED Logo" 
+              width={48} 
+              height={48} 
+              className="rounded-lg object-contain"
+              priority
+            />
+            <div>
+              <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
+                ELFED
+              </h1>
+              <p className="text-xs text-gray-600">Elazığ Dernekler Federasyonu</p>
+            </div>
           </a>
           
           {/* Navigation */}
           <nav className="flex items-center gap-6">
-            <a href="/admin" className="text-sm font-medium text-gray-900 hover:text-blue-600 transition-colors">Home</a>
+            <a href="/admin" className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors">Ana Sayfa</a>
             {session?.user && (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-700">Welcome, {session.user.name}</span>
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                <span className="text-sm text-gray-700">Hoş geldiniz, {session.user.name}</span>
+                <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                   {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
                 </div>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1 rounded hover:bg-gray-100"
                 >
-                  Sign Out
+                  Çıkış
                 </button>
               </div>
             )}
@@ -665,14 +696,14 @@ export default function MemberPage() {
       </header>
 
       {/* Member ID Info Banner */}
-      <div className="bg-blue-50 border-b border-blue-200 px-10 py-3">
+      <div className="bg-red-50 border-b border-red-200 px-10 py-3">
         <div className="max-w-[1280px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-blue-700">Member ID:</span>
-            <span className="text-sm font-semibold text-blue-900">{memberId}</span>
-            <span className="text-sm text-blue-600">•</span>
-            <span className="text-sm text-blue-700">Membership ID:</span>
-            <span className="text-sm font-semibold text-blue-900">{userInfo.memberId}</span>
+            <span className="text-sm text-red-700">Üye ID:</span>
+            <span className="text-sm font-semibold text-red-900">{memberId}</span>
+            <span className="text-sm text-red-600">•</span>
+            <span className="text-sm text-red-700">Üyelik ID:</span>
+            <span className="text-sm font-semibold text-red-900">{userInfo.memberId}</span>
           </div>
           {error && (
             <span className="text-sm text-orange-600 bg-orange-100 px-3 py-1 rounded-full">
@@ -699,7 +730,7 @@ export default function MemberPage() {
                   activeTab === 'back' ? 'rotate-y-180' : ''
                 }`}>
                   {/* Front of Card */}
-                  <div className="card-front absolute inset-0 w-full h-full bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800 rounded-xl p-6 text-white relative overflow-hidden shadow-2xl">
+                  <div className="card-front absolute inset-0 w-full h-full bg-gradient-to-br from-red-600 via-red-700 to-orange-800 rounded-xl p-6 text-white relative overflow-hidden shadow-2xl">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10">
                       <div className="w-full h-full bg-gradient-to-r from-white/20 to-transparent rotate-12 transform translate-x-1/2"></div>
@@ -710,9 +741,9 @@ export default function MemberPage() {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-white rounded"></div>
-                          <span className="text-sm font-semibold">Community Connect</span>
+                          <span className="text-sm font-semibold">ELFED</span>
                         </div>
-                        <div className="text-xs opacity-80">MEMBER</div>
+                        <div className="text-xs opacity-80">ÜYE</div>
                       </div>
                       
                                       {/* QR Code */}
@@ -727,14 +758,14 @@ export default function MemberPage() {
                       includeMargin={false}
                     />
                     {/* QR Tip Badge */}
-                    <div className="absolute -top-1 -left-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
+                    <div className="absolute -top-1 -left-1 bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 py-1 rounded text-xs font-bold shadow-lg">
                       {qrInfo.isSecure ? (qrType === 'nfc' ? 'NFC' : 'QR') : 'STD'}
                     </div>
                     
                     {/* Büyütme İkonu */}
                     <button
                       onClick={() => setQrModalOpen(true)}
-                      className="absolute -top-2 -right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      className="absolute -top-2 -right-2 bg-red-600 hover:bg-red-700 text-white p-2 rounded-full shadow-lg transition-all duration-200 opacity-0 group-hover:opacity-100"
                       title="QR Kodu Büyüt"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -765,7 +796,7 @@ export default function MemberPage() {
                             <p className="text-xs font-medium">{userInfo.joinDate}</p>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs opacity-80">community-connect.org</div>
+                            <div className="text-xs opacity-80">elfed.org.tr</div>
                           </div>
                         </div>
                       </div>
@@ -782,8 +813,8 @@ export default function MemberPage() {
                     <div className="relative z-10 h-full flex flex-col">
                       {/* Header */}
                       <div className="flex items-center justify-between mb-6">
-                        <span className="text-sm font-semibold">Member Information</span>
-                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded"></div>
+                        <span className="text-sm font-semibold">Üye Bilgileri</span>
+                        <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-orange-600 rounded"></div>
                       </div>
                       
                       {/* Contact Information */}
@@ -807,7 +838,7 @@ export default function MemberPage() {
                       {/* Emergency Contact */}
                       <div className="border-t border-gray-700 pt-4 mt-4">
                         <p className="text-xs text-gray-400 mb-2">Emergency: {userInfo.emergencyContact || '(555) 123-HELP'}</p>
-                        <p className="text-xs text-gray-500">This card is property of Community Connect</p>
+                        <p className="text-xs text-gray-500">Bu kart ELFED mülkiyetindedir</p>
                       </div>
                     </div>
                   </div>
@@ -871,19 +902,19 @@ export default function MemberPage() {
           </div>
 
           {/* QR Code Type Selector */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <h4 className="text-sm font-semibold text-blue-900 mb-3">QR Code Format</h4>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <h4 className="text-sm font-semibold text-red-900 mb-3">QR Kod Formatı</h4>
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={() => setQrType('standard')}
                 className={`p-3 rounded-lg border-2 text-left transition-all ${
                   qrType === 'standard' 
-                    ? 'border-blue-500 bg-blue-100 text-blue-900' 
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-blue-300'
+                    ? 'border-red-500 bg-red-100 text-red-900' 
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-red-300'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-3 h-3 rounded-full ${qrType === 'standard' ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${qrType === 'standard' ? 'bg-red-500' : 'bg-gray-300'}`}></div>
                   <span className="font-medium text-sm">Standard QR</span>
                 </div>
                 <p className="text-xs text-gray-600">RSA-PSS Security</p>
@@ -896,12 +927,12 @@ export default function MemberPage() {
                 onClick={() => setQrType('nfc')}
                 className={`p-3 rounded-lg border-2 text-left transition-all ${
                   qrType === 'nfc' 
-                    ? 'border-purple-500 bg-purple-100 text-purple-900' 
-                    : 'border-gray-200 bg-white text-gray-700 hover:border-purple-300'
+                    ? 'border-orange-500 bg-orange-100 text-orange-900' 
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-orange-300'
                 }`}
               >
                 <div className="flex items-center gap-2 mb-1">
-                  <div className={`w-3 h-3 rounded-full ${qrType === 'nfc' ? 'bg-purple-500' : 'bg-gray-300'}`}></div>
+                  <div className={`w-3 h-3 rounded-full ${qrType === 'nfc' ? 'bg-orange-500' : 'bg-gray-300'}`}></div>
                   <span className="font-medium text-sm">NFC Compact</span>
                 </div>
                 <p className="text-xs text-gray-600">ECDSA P-256</p>
@@ -917,7 +948,7 @@ export default function MemberPage() {
                 <span className="font-medium text-gray-700">Active Format:</span>
                 <span className={`px-2 py-1 rounded text-xs font-bold ${
                   qrInfo.isSecure 
-                    ? (qrType === 'nfc' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')
+                    ? (qrType === 'nfc' ? 'bg-orange-100 text-orange-800' : 'bg-red-100 text-red-800')
                     : 'bg-gray-100 text-gray-800'
                 }`}>
                   {qrInfo.type}
@@ -941,7 +972,7 @@ export default function MemberPage() {
               className={`px-8 py-3 rounded-full text-sm font-bold transition-all duration-200 shadow-lg flex items-center gap-2 ${
                 isDownloading 
                   ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white hover:shadow-xl transform hover:-translate-y-0.5'
+                  : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white hover:shadow-xl transform hover:-translate-y-0.5'
               }`}
             >
               {isDownloading ? (
@@ -969,18 +1000,46 @@ export default function MemberPage() {
         {/* Right Panel - Profile Information */}
         <div className="w-[360px]">
           <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Profile Information</h3>
+            <h3 className="text-xl font-bold text-gray-900">Profil Bilgileri</h3>
+          </div>
+
+          {/* Profile Photo Section */}
+          <div className="mb-6 text-center">
+            <div className="relative inline-block">
+              {getProfilePhotoSrc() ? (
+                <img
+                  src={getProfilePhotoSrc()}
+                  alt={`${userInfo.name} profil fotoğrafı`}
+                  className="w-24 h-24 rounded-full object-cover border-4 border-red-200 shadow-lg"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gradient-to-r from-red-600 to-orange-600 border-4 border-red-200 shadow-lg flex items-center justify-center text-white text-xl font-bold">
+                  {getInitials(userInfo.name)}
+                </div>
+              )}
+              {/* Status indicator */}
+              <div className={`absolute bottom-1 right-1 w-6 h-6 rounded-full border-2 border-white flex items-center justify-center ${
+                userInfo.status === 'active' ? 'bg-green-500' : 
+                userInfo.status === 'pending' ? 'bg-yellow-500' : 
+                userInfo.status === 'suspended' ? 'bg-red-500' : 'bg-gray-500'
+              }`}>
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <h4 className="mt-3 text-lg font-semibold text-gray-900">{userInfo.name}</h4>
+            <p className="text-sm text-gray-600">{userInfo.role}</p>
+            <p className="text-xs text-red-600 font-medium">ELFED Üyesi</p>
           </div>
 
           <div className="space-y-6">
             {/* Full Name & Email */}
             <div className="grid grid-cols-2 gap-0">
               <div className="border border-gray-200 p-4">
-                <p className="text-sm text-gray-600 mb-2">Full Name</p>
+                <p className="text-sm text-gray-600 mb-2">Ad Soyad</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.name}</p>
               </div>
               <div className="border border-gray-200 border-l-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Email</p>
+                <p className="text-sm text-gray-600 mb-2">E-posta</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.email}</p>
               </div>
             </div>
@@ -988,11 +1047,11 @@ export default function MemberPage() {
             {/* Phone & Role */}
             <div className="grid grid-cols-2 gap-0">
               <div className="border border-gray-200 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Phone Number</p>
+                <p className="text-sm text-gray-600 mb-2">Telefon</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.phone}</p>
               </div>
               <div className="border border-gray-200 border-l-0 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Role</p>
+                <p className="text-sm text-gray-600 mb-2">Rol</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.role}</p>
               </div>
             </div>
@@ -1000,11 +1059,11 @@ export default function MemberPage() {
             {/* Member ID & Status */}
             <div className="grid grid-cols-2 gap-0">
               <div className="border border-gray-200 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Member ID</p>
+                <p className="text-sm text-gray-600 mb-2">Üye ID</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.memberId}</p>
               </div>
               <div className="border border-gray-200 border-l-0 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Status</p>
+                <p className="text-sm text-gray-600 mb-2">Durum</p>
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${
                     userInfo.status === 'active' ? 'bg-green-500' : 
@@ -1020,11 +1079,11 @@ export default function MemberPage() {
             {userInfo.membershipType && (
               <div className="grid grid-cols-2 gap-0">
                 <div className="border border-gray-200 border-t-0 p-4">
-                  <p className="text-sm text-gray-600 mb-2">Membership Type</p>
+                  <p className="text-sm text-gray-600 mb-2">Üyelik Türü</p>
                   <p className="text-sm text-gray-900 font-medium capitalize">{userInfo.membershipType}</p>
                 </div>
                 <div className="border border-gray-200 border-l-0 border-t-0 p-4">
-                  <p className="text-sm text-gray-600 mb-2">Emergency Contact</p>
+                  <p className="text-sm text-gray-600 mb-2">Acil Durum</p>
                   <p className="text-sm text-gray-900 font-medium">{userInfo.emergencyContact}</p>
                 </div>
               </div>
@@ -1033,13 +1092,13 @@ export default function MemberPage() {
             {/* Date of Birth & Join Date */}
             <div className="grid grid-cols-2 gap-0">
               <div className="border border-gray-200 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Date of Birth</p>
+                <p className="text-sm text-gray-600 mb-2">Doğum Tarihi</p>
                 <p className="text-sm text-gray-900 font-medium">
-                  {userInfo.dateOfBirth ? new Date(userInfo.dateOfBirth).toLocaleDateString() : 'N/A'}
+                  {userInfo.dateOfBirth ? new Date(userInfo.dateOfBirth).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
                 </p>
               </div>
               <div className="border border-gray-200 border-l-0 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Member Since</p>
+                <p className="text-sm text-gray-600 mb-2">Üyelik Tarihi</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.joinDate}</p>
               </div>
             </div>
@@ -1047,7 +1106,7 @@ export default function MemberPage() {
             {/* Address - Full Width */}
             {userInfo.address && (
               <div className="border border-gray-200 border-t-0 p-4">
-                <p className="text-sm text-gray-600 mb-2">Address</p>
+                <p className="text-sm text-gray-600 mb-2">Adres</p>
                 <p className="text-sm text-gray-900 font-medium">{userInfo.address}</p>
               </div>
             )}
@@ -1086,7 +1145,7 @@ export default function MemberPage() {
                   onClick={() => setQrType('standard')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     qrType === 'standard' 
-                      ? 'bg-blue-500 text-white shadow-lg' 
+                      ? 'bg-red-500 text-white shadow-lg' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                   disabled={!userInfo?.secureQrCode}
@@ -1097,7 +1156,7 @@ export default function MemberPage() {
                   onClick={() => setQrType('nfc')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                     qrType === 'nfc' 
-                      ? 'bg-purple-500 text-white shadow-lg' 
+                      ? 'bg-orange-500 text-white shadow-lg' 
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                   disabled={!userInfo?.nfcQrCode}
@@ -1110,7 +1169,7 @@ export default function MemberPage() {
                 {qrInfo.isSecure ? (
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
                     qrType === 'nfc' 
-                      ? 'bg-purple-100 text-purple-800' 
+                      ? 'bg-orange-100 text-orange-800' 
                       : 'bg-green-100 text-green-800'
                   }`}>
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1135,7 +1194,7 @@ export default function MemberPage() {
                   {qrInfo.maxSize ? ` (${((qrInfo.size/qrInfo.maxSize)*100).toFixed(1)}%)` : ' chars'}
                 </span>
                 {qrType === 'nfc' && (
-                  <span className="ml-2 text-purple-600">• NTAG215 Uyumlu</span>
+                  <span className="ml-2 text-orange-600">• NTAG215 Uyumlu</span>
                 )}
               </div>
             </div>
@@ -1162,7 +1221,7 @@ export default function MemberPage() {
                   readOnly
                   value={qrData}
                   rows={4}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono resize-none bg-purple-50 text-purple-900"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono resize-none bg-orange-50 text-orange-900"
                 />
                 <div className="flex gap-2 mt-2">
                   <button
@@ -1171,11 +1230,11 @@ export default function MemberPage() {
                   >
                     📋 Kopyala
                   </button>
-                  <span className="px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded">
+                  <span className="px-3 py-1 text-xs bg-orange-100 text-orange-800 rounded">
                     🔐 Çift şifreleme aktif
                   </span>
                 </div>
-                <p className="text-xs text-purple-600 mt-2">
+                <p className="text-xs text-orange-600 mt-2">
                   * Bu veri NFC optimizasyonu için JSON formatında hazırlanmış ve ek güvenlik için şifrelenmiştir.
                 </p>
               </div>
@@ -1190,10 +1249,10 @@ export default function MemberPage() {
 
             {/* Kullanım Bilgisi */}
             <div className={`mt-6 p-4 rounded-lg ${
-              qrType === 'nfc' ? 'bg-purple-50' : 'bg-blue-50'
+              qrType === 'nfc' ? 'bg-orange-50' : 'bg-red-50'
             }`}>
               <p className={`text-sm text-center ${
-                qrType === 'nfc' ? 'text-purple-800' : 'text-blue-800'
+                qrType === 'nfc' ? 'text-orange-800' : 'text-red-800'
               }`}>
                 {qrInfo.isSecure ? (
                   qrType === 'nfc' ? (
@@ -1227,7 +1286,7 @@ export default function MemberPage() {
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <button
                     onClick={() => writeToNFC(qrData)}
-                    className="w-full bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                     disabled={!('NDEFReader' in window)}
                     title={!('NDEFReader' in window) ? 'NFC API desteklenmiyor (Android Chrome gerekli)' : 'NFC kartına yaz'}
                   >
@@ -1237,7 +1296,7 @@ export default function MemberPage() {
                     {('NDEFReader' in window) ? 'NFC Kartına Yaz' : 'NFC Desteklenmiyor'}
                   </button>
                   {('NDEFReader' in window) && (
-                    <p className="text-xs text-center text-purple-600 mt-2">
+                    <p className="text-xs text-center text-orange-600 mt-2">
                       NTAG215 kartını telefona yaklaştırın
                     </p>
                   )}

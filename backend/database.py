@@ -140,6 +140,7 @@ class Member(Base):
     membership_type = Column(String(50), nullable=False)
     role = Column(String(50), nullable=False)
     status = Column(String(20), default="active")
+    profile_photo = Column(Text, nullable=True)  # Base64 encoded profile photo
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

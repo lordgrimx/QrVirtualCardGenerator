@@ -334,6 +334,15 @@ class MemberUpdate(BaseModel):
     role: Optional[str] = None
     status: Optional[str] = None
 
+# Profile Photo Models
+class ProfilePhotoUpload(BaseModel):
+    profile_photo: str  # Base64 encoded image data
+    
+class ProfilePhotoResponse(BaseModel):
+    success: bool
+    message: str
+    profile_photo_url: Optional[str] = None
+
 # Authentication Models
 class UserLogin(BaseModel):
     email: str
@@ -1140,6 +1149,7 @@ async def get_member(member_id: int, db: Session = Depends(get_db)):
         "membershipType": member.membership_type,
         "role": member.role,
         "status": member.status,
+        "profilePhoto": member.profile_photo,  # Profil fotoğrafını ekle
         "createdAt": member.created_at,
         "updatedAt": member.updated_at
     }
@@ -1266,6 +1276,106 @@ async def update_member(member_id: int, member: MemberUpdate, db: Session = Depe
         "message": "Üye bilgileri başarıyla güncellendi",
         "success": True
     }
+
+# Profile Photo Endpoints
+
+@app.post("/api/members/{member_id}/profile-photo", response_model=ProfilePhotoResponse)
+async def upload_profile_photo(member_id: int, photo_data: ProfilePhotoUpload, db: Session = Depends(get_db)):
+    """Üye profil fotoğrafını yükle (Base64 format)"""
+    try:
+        # Üyenin varlığını kontrol et
+        db_member = db.query(DBMember).filter(DBMember.id == member_id).first()
+        if not db_member:
+            raise HTTPException(status_code=404, detail="Üye bulunamadı")
+        
+        # Base64 formatı kontrol et
+        profile_photo = photo_data.profile_photo
+        if not profile_photo:
+            raise HTTPException(status_code=400, detail="Profil fotoğrafı verisi gerekli")
+        
+        # Base64 başlığını kontrol et ve temizle
+        if profile_photo.startswith('data:image'):
+            # data:image/jpeg;base64, kısmını kaldır
+            profile_photo = profile_photo.split(',')[1] if ',' in profile_photo else profile_photo
+        
+        # Base64 geçerliliğini kontrol et
+        try:
+            import base64
+            base64.b64decode(profile_photo)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Geçersiz Base64 formatı")
+        
+        # Profil fotoğrafını veritabanında güncelle
+        db_member.profile_photo = profile_photo
+        db_member.updated_at = datetime.utcnow()
+        db.commit()
+        
+        return ProfilePhotoResponse(
+            success=True,
+            message="Profil fotoğrafı başarıyla yüklendi",
+            profile_photo_url=f"/api/members/{member_id}/profile-photo"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Profile photo upload error: {e}")
+        raise HTTPException(status_code=500, detail="Profil fotoğrafı yüklenirken hata oluştu")
+
+@app.get("/api/members/{member_id}/profile-photo")
+async def get_profile_photo(member_id: int, db: Session = Depends(get_db)):
+    """Üye profil fotoğrafını al"""
+    try:
+        # Üyenin varlığını kontrol et
+        db_member = db.query(DBMember).filter(DBMember.id == member_id).first()
+        if not db_member:
+            raise HTTPException(status_code=404, detail="Üye bulunamadı")
+        
+        # Profil fotoğrafı varsa döndür
+        if db_member.profile_photo:
+            return {
+                "success": True,
+                "profile_photo": db_member.profile_photo,
+                "has_photo": True
+            }
+        else:
+            return {
+                "success": True,
+                "profile_photo": None,
+                "has_photo": False,
+                "message": "Profil fotoğrafı bulunamadı"
+            }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Get profile photo error: {e}")
+        raise HTTPException(status_code=500, detail="Profil fotoğrafı alınırken hata oluştu")
+
+@app.delete("/api/members/{member_id}/profile-photo")
+async def delete_profile_photo(member_id: int, db: Session = Depends(get_db)):
+    """Üye profil fotoğrafını sil"""
+    try:
+        # Üyenin varlığını kontrol et
+        db_member = db.query(DBMember).filter(DBMember.id == member_id).first()
+        if not db_member:
+            raise HTTPException(status_code=404, detail="Üye bulunamadı")
+        
+        # Profil fotoğrafını sil
+        db_member.profile_photo = None
+        db_member.updated_at = datetime.utcnow()
+        db.commit()
+        
+        return {
+            "success": True,
+            "message": "Profil fotoğrafı başarıyla silindi"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Delete profile photo error: {e}")
+        raise HTTPException(status_code=500, detail="Profil fotoğrafı silinirken hata oluştu")
 
 # Güvenlik endpoint'leri
 
