@@ -244,6 +244,13 @@ export default function AdminPage() {
     }
   }, [session, status, router]);
 
+  // Fetch members when showMembers tab is active
+  useEffect(() => {
+    if (activeMenu === 'showMembers' && session) {
+      fetchMembers();
+    }
+  }, [activeMenu, session]);
+
   // Show loading while checking auth
   if (status === 'loading') {
     return (
@@ -1436,23 +1443,15 @@ export default function AdminPage() {
           {/* Show Members Content */}
           {activeMenu === 'showMembers' && (
             <div className="flex-1 flex flex-col">
-              {loading ? (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading members...</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 flex-1 overflow-y-auto">
                   {members.length === 0 ? (
                     <div className="col-span-full flex items-center justify-center py-12">
                       <div className="text-center">
                         <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                           <div className="w-8 h-8 bg-gray-400 rounded-lg"></div>
                         </div>
-                        <p className="text-gray-600 text-lg">No members found</p>
-                        <p className="text-gray-400 text-sm">Add your first member to get started</p>
+                        <p className="text-gray-600 text-lg">Henüz üye bulunamadı</p>
+                        <p className="text-gray-400 text-sm">İlk üyenizi eklemek için "Üye Ekle" sekmesini kullanın</p>
                       </div>
                     </div>
                   ) : (
@@ -1528,7 +1527,6 @@ export default function AdminPage() {
                     ))
                   )}
                 </div>
-              )}
             </div>
           )}
 
