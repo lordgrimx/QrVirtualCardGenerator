@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import AdminLayout from '../components/AdminLayout';
 
 // Static generation'dan hariç tut - backend'e bağımlı
 export const dynamic = 'force-dynamic';
@@ -732,35 +733,9 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex">
-      {/* Sidebar */}
-      <div className={`${sidebarCollapsed ? 'w-20' : 'w-80'} bg-white/80 backdrop-blur-sm border-r border-gray-200/50 ${sidebarCollapsed ? 'p-3' : 'p-6'} shadow-xl transition-all duration-300 ease-in-out`}>
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-red-600 to-orange-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">E</span>
-              </div>
-              {!sidebarCollapsed && (
-                <div>
-                  <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent whitespace-nowrap">
-                    ELFED Yönetimi
-                  </h1>
-                  <p className="text-xs text-gray-600">Dernekler Federasyonu</p>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-              className="w-8 h-8 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center justify-center transition-colors"
-              title={sidebarCollapsed ? "Sidebar'ı Aç" : "Sidebar'ı Kapat"}
-            >
-              <svg className={`w-5 h-5 transition-transform duration-300 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          </div>
-        </div>
+    <AdminLayout activeMenu={activeMenu} setActiveMenu={setActiveMenu}>
+      <div>
+
         
         <nav className="space-y-2">
           <div 
@@ -2371,6 +2346,6 @@ export default function AdminPage() {
           )}
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }

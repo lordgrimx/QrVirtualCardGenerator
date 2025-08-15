@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import AdminLayout from '../components/AdminLayout';
 
 // Static generation'dan hariç tut - auth bağımlı
 export const dynamic = 'force-dynamic';
@@ -122,7 +123,8 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
+    <AdminLayout activeMenu="dashboard" setActiveMenu={() => {}}>
+      <div>
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -339,6 +341,7 @@ export default function Dashboard() {
           )}
         </div>
       </main>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }
