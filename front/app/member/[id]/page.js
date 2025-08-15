@@ -285,10 +285,10 @@ export default function MemberPage() {
         
         // Tailwind CSS class'larından RGB renklerini mapple
         const tailwindColorMap = {
-          // Backgrounds
-          'bg-gradient-to-br from-blue-600 via-blue-700 to-purple-800': 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #6b21a8 100%)',
+          // Backgrounds - ELFED kırmızı-turuncu teması
+          'bg-gradient-to-br from-red-600 via-red-700 to-orange-800': 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)',
           'bg-gradient-to-br from-gray-800 via-gray-900 to-black': 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)',
-          'bg-gradient-to-r from-blue-500 to-purple-500': 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)',
+          'bg-gradient-to-r from-red-500 to-orange-500': 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)',
           'bg-white': '#ffffff',
           'bg-green-500': '#10b981',
           
@@ -300,13 +300,13 @@ export default function MemberPage() {
           'text-gray-600': '#4b5563',
           'text-gray-500': '#6b7280',
           'text-gray-400': '#9ca3af',
-          'text-blue-700': '#1d4ed8',
-          'text-blue-900': '#1e3a8a',
+          'text-red-700': '#b91c1c',
+          'text-red-900': '#7f1d1d',
           
           // Border colors
           'border-gray-700': '#374151',
           'border-gray-200': '#e5e7eb',
-          'border-blue-200': '#bfdbfe'
+          'border-red-200': '#fecaca'
         };
         
         // Tüm elementleri recursive olarak işle
@@ -316,11 +316,11 @@ export default function MemberPage() {
             return;
           }
           
-          // Ana kartın background'ını manuel olarak ayarla
+          // Ana kartın background'ını manuel olarak ayarla - ELFED kırmızı-turuncu teması
           try {
             if (element.classList.contains('card-front')) {
-              element.style.background = 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)';
-              element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
+              element.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)';
+              element.style.setProperty('background', 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)', 'important');
             } else if (element.classList.contains('card-back')) {
               element.style.background = 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)';
               element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
@@ -338,16 +338,16 @@ export default function MemberPage() {
             }
           };
           
-          // Background gradient kombinasyonları kontrol et
+          // Background gradient kombinasyonları kontrol et - ELFED kırmızı-turuncu teması
           if (hasClass('bg-gradient-to-br')) {
-            if (hasClass('from-blue-600')) {
-              element.style.setProperty('background', 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 30%, #6b21a8 100%)', 'important');
+            if (hasClass('from-red-600')) {
+              element.style.setProperty('background', 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)', 'important');
             } else if (hasClass('from-gray-800')) {
               element.style.setProperty('background', 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)', 'important');
             }
           } else if (hasClass('bg-gradient-to-r')) {
-            if (hasClass('from-blue-500')) {
-              element.style.setProperty('background', 'linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%)', 'important');
+            if (hasClass('from-red-500')) {
+              element.style.setProperty('background', 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)', 'important');
             }
           }
           
@@ -373,10 +373,10 @@ export default function MemberPage() {
             element.style.setProperty('color', '#6b7280', 'important');
           } else if (hasClass('text-gray-400')) {
             element.style.setProperty('color', '#9ca3af', 'important');
-          } else if (hasClass('text-blue-700')) {
-            element.style.setProperty('color', '#1d4ed8', 'important');
-          } else if (hasClass('text-blue-900')) {
-            element.style.setProperty('color', '#1e3a8a', 'important');
+          } else if (hasClass('text-red-700')) {
+            element.style.setProperty('color', '#b91c1c', 'important');
+          } else if (hasClass('text-red-900')) {
+            element.style.setProperty('color', '#7f1d1d', 'important');
           }
           
           // Border renkleri
@@ -384,8 +384,8 @@ export default function MemberPage() {
             element.style.setProperty('border-color', '#374151', 'important');
           } else if (hasClass('border-gray-200')) {
             element.style.setProperty('border-color', '#e5e7eb', 'important');
-          } else if (hasClass('border-blue-200')) {
-            element.style.setProperty('border-color', '#bfdbfe', 'important');
+          } else if (hasClass('border-red-200')) {
+            element.style.setProperty('border-color', '#fecaca', 'important');
           }
           
           // Box shadow'ları basit RGB ile değiştir
@@ -440,12 +440,12 @@ export default function MemberPage() {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Card background gradient
+        // Card background gradient - ELFED kırmızı-turuncu teması
         if (element.classList.contains('card-front')) {
           const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-          gradient.addColorStop(0, '#2563eb');
-          gradient.addColorStop(0.5, '#1d4ed8');
-          gradient.addColorStop(1, '#6b21a8');
+          gradient.addColorStop(0, '#dc2626');
+          gradient.addColorStop(0.5, '#b91c1c');
+          gradient.addColorStop(1, '#ea580c');
           ctx.fillStyle = gradient;
         } else {
           const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);

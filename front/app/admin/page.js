@@ -80,7 +80,7 @@ const NfcReadingChart = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
       </div>
     );
   }
@@ -108,7 +108,7 @@ const NfcReadingChart = () => {
                   />
                   {/* Successful readings (green) */}
                   <div 
-                    className="absolute bottom-0 w-full bg-green-500 rounded-t-lg opacity-90 hover:opacity-100 transition-opacity"
+                    className="absolute bottom-0 w-full bg-red-500 rounded-t-lg opacity-90 hover:opacity-100 transition-opacity"
                     style={{ height: `${successfulHeight}%` }}
                   />
                 </div>
@@ -1045,40 +1045,40 @@ export default function AdminPage() {
                     
                     {/* Event Types */}
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
+                      <div className="bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                          <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                             </svg>
                           </div>
-                          <span className="font-semibold text-green-800">İndirim</span>
+                          <span className="font-semibold text-red-800">İndirim</span>
                         </div>
-                        <p className="text-sm text-green-700">Yüzde veya tutar bazlı indirimler</p>
+                        <p className="text-sm text-red-700">Yüzde veya tutar bazlı indirimler</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
+                      <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                          <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
                             </svg>
                           </div>
-                          <span className="font-semibold text-blue-800">Kampanya</span>
+                          <span className="font-semibold text-orange-800">Kampanya</span>
                         </div>
-                        <p className="text-sm text-blue-700">Özel kampanya ve promosyonlar</p>
+                        <p className="text-sm text-orange-700">Özel kampanya ve promosyonlar</p>
                       </div>
 
-                      <div className="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
+                      <div className="bg-gradient-to-br from-red-50 to-orange-100 border-2 border-red-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
                             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
                           </div>
-                          <span className="font-semibold text-purple-800">Ücretsiz Kargo</span>
+                          <span className="font-semibold text-red-800">Ücretsiz Kargo</span>
                         </div>
-                        <p className="text-sm text-purple-700">Minimum tutar koşullu kargo</p>
+                        <p className="text-sm text-red-700">Minimum tutar koşullu kargo</p>
                       </div>
 
                       <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-all duration-200">
@@ -1095,8 +1095,8 @@ export default function AdminPage() {
                     </div>
 
                     {/* Event Creation Form */}
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-6">
-                      <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-2">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-red-200 rounded-xl p-6">
+                      <h4 className="font-bold text-red-800 mb-4 flex items-center gap-2">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                         </svg>
@@ -1105,7 +1105,7 @@ export default function AdminPage() {
                       
                       <form onSubmit={handleEventSubmit} className="space-y-4">
                         <div>
-                          <label className="block text-sm font-semibold text-blue-700 mb-2">
+                          <label className="block text-sm font-semibold text-red-700 mb-2">
                             İşletme Seçimi *
                           </label>
                           <div className="relative">
@@ -1126,7 +1126,7 @@ export default function AdminPage() {
                                   <div
                                     key={business.id}
                                     onClick={() => selectBusiness(business)}
-                                    className="px-3 py-2 cursor-pointer hover:bg-blue-50 border-b border-gray-100 last:border-b-0"
+                                    className="px-3 py-2 cursor-pointer hover:bg-red-50 border-b border-gray-100 last:border-b-0"
                                   >
                                     <div className="font-medium text-gray-900">{business.name}</div>
                                     <div className="text-xs text-gray-500">{business.business_type} • {business.email}</div>
@@ -1138,7 +1138,7 @@ export default function AdminPage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-blue-700 mb-2">
+                          <label className="block text-sm font-semibold text-red-700 mb-2">
                             Event Başlığı *
                           </label>
                           <input
@@ -1153,7 +1153,7 @@ export default function AdminPage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-blue-700 mb-2">
+                          <label className="block text-sm font-semibold text-red-700 mb-2">
                             Event Türü *
                           </label>
                           <select 
@@ -1172,7 +1172,7 @@ export default function AdminPage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-semibold text-blue-700 mb-2">
+                          <label className="block text-sm font-semibold text-red-700 mb-2">
                             Açıklama
                           </label>
                           <textarea
@@ -1254,10 +1254,10 @@ export default function AdminPage() {
                         )}
 
                         {eventFormData.event_type === 'campaign' && (
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-                            <h5 className="font-semibold text-blue-800">Kampanya Detayları</h5>
+                          <div className="bg-red-50 border border-red-200 rounded-lg p-4 space-y-3">
+                            <h5 className="font-semibold text-red-800">Kampanya Detayları</h5>
                             <div>
-                              <label className="block text-sm font-semibold text-blue-700 mb-2">
+                              <label className="block text-sm font-semibold text-red-700 mb-2">
                                 Kampanya Koşulları
                               </label>
                               <textarea
@@ -1270,7 +1270,7 @@ export default function AdminPage() {
                               />
                             </div>
                             <div>
-                              <label className="block text-sm font-semibold text-blue-700 mb-2">
+                              <label className="block text-sm font-semibold text-red-700 mb-2">
                                 Minimum Alışveriş (₺)
                               </label>
                               <input
@@ -1372,7 +1372,7 @@ export default function AdminPage() {
 
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                            <label className="block text-sm font-semibold text-red-700 mb-2">
                               Başlangıç Tarihi *
                             </label>
                             <input
@@ -1385,7 +1385,7 @@ export default function AdminPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-semibold text-blue-700 mb-2">
+                            <label className="block text-sm font-semibold text-red-700 mb-2">
                               Bitiş Tarihi *
                             </label>
                             <input
@@ -1402,7 +1402,7 @@ export default function AdminPage() {
                         <button 
                           type="submit"
                           disabled={loading}
-                          className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? 'Oluşturuluyor...' : 'Event Oluştur'}
                         </button>
@@ -1623,7 +1623,7 @@ export default function AdminPage() {
                             e.stopPropagation();
                             openEditModal(member);
                           }}
-                          className="absolute top-4 right-4 w-8 h-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 z-10"
+                          className="absolute top-4 right-4 w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 z-10"
                           title="Üyeyi Düzenle"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1730,7 +1730,7 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={prevBusiness}
-                        className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                        className="w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -1741,7 +1741,7 @@ export default function AdminPage() {
                       </span>
                       <button
                         onClick={nextBusiness}
-                        className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                        className="w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -1795,8 +1795,8 @@ export default function AdminPage() {
                         <div className="space-y-2">
                           {business.business_type && (
                             <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
-                                <div className="w-2 h-2 bg-blue-600 rounded"></div>
+                              <div className="w-4 h-4 bg-red-100 rounded flex items-center justify-center">
+                                <div className="w-2 h-2 bg-red-600 rounded"></div>
                               </div>
                               <span className="text-sm text-gray-700 capitalize">{business.business_type}</span>
                             </div>
@@ -1822,7 +1822,7 @@ export default function AdminPage() {
                         </div>
 
                         <div className="mt-4 pt-4 border-t border-gray-200">
-                          <p className="text-xs text-blue-600 text-center font-medium group-hover:text-blue-700">
+                          <p className="text-xs text-blue-600 text-center font-medium group-hover:text-red-700">
                             Detaylar için tıklayın
                           </p>
                         </div>
@@ -1898,23 +1898,23 @@ export default function AdminPage() {
                   </div>
 
                   {/* Current Admin Info */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
-                    <h3 className="text-lg font-semibold text-blue-800 mb-4">Mevcut Admin Bilgileri</h3>
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8">
+                    <h3 className="text-lg font-semibold text-red-800 mb-4">Mevcut Admin Bilgileri</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <span className="block text-sm font-medium text-blue-700 mb-1">Ad Soyad:</span>
+                        <span className="block text-sm font-medium text-red-700 mb-1">Ad Soyad:</span>
                         <span className="text-blue-900 font-semibold">{session?.user?.name || 'Admin User'}</span>
                       </div>
                       <div>
-                        <span className="block text-sm font-medium text-blue-700 mb-1">Email:</span>
+                        <span className="block text-sm font-medium text-red-700 mb-1">Email:</span>
                         <span className="text-blue-900 font-semibold">{session?.user?.email || 'admin@qrvirtualcard.com'}</span>
                       </div>
                       <div>
-                        <span className="block text-sm font-medium text-blue-700 mb-1">Rol:</span>
+                        <span className="block text-sm font-medium text-red-700 mb-1">Rol:</span>
                         <span className="text-blue-900 font-semibold capitalize">{session?.user?.role || 'Admin'}</span>
                       </div>
                       <div>
-                        <span className="block text-sm font-medium text-blue-700 mb-1">Son Giriş:</span>
+                        <span className="block text-sm font-medium text-red-700 mb-1">Son Giriş:</span>
                         <span className="text-blue-900 font-semibold">{new Date().toLocaleDateString('tr-TR')}</span>
                       </div>
                     </div>
@@ -2222,7 +2222,7 @@ export default function AdminPage() {
                 {/* Modal Content */}
                 <div className="p-6 space-y-8">
                   {/* Business Information */}
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-red-200 rounded-xl p-6">
                     <h3 className="text-xl font-bold text-blue-900 mb-6 flex items-center gap-2">
                       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -2232,42 +2232,42 @@ export default function AdminPage() {
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="text-sm font-semibold text-blue-700 mb-2">İşletme Adı</h4>
+                        <h4 className="text-sm font-semibold text-red-700 mb-2">İşletme Adı</h4>
                         <p className="text-blue-900 font-medium">{selectedBusiness.name}</p>
                       </div>
                       
                       {selectedBusiness.description && (
                         <div>
-                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Açıklama</h4>
+                          <h4 className="text-sm font-semibold text-red-700 mb-2">Açıklama</h4>
                           <p className="text-blue-900">{selectedBusiness.description}</p>
                         </div>
                       )}
                       
                       {selectedBusiness.business_type && (
                         <div>
-                          <h4 className="text-sm font-semibold text-blue-700 mb-2">İşletme Türü</h4>
+                          <h4 className="text-sm font-semibold text-red-700 mb-2">İşletme Türü</h4>
                           <p className="text-blue-900 capitalize">{selectedBusiness.business_type}</p>
                         </div>
                       )}
                       
                       {selectedBusiness.phone && (
                         <div>
-                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Telefon</h4>
+                          <h4 className="text-sm font-semibold text-red-700 mb-2">Telefon</h4>
                           <p className="text-blue-900">{selectedBusiness.phone}</p>
                         </div>
                       )}
                       
                       {selectedBusiness.email && (
                         <div>
-                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Email</h4>
+                          <h4 className="text-sm font-semibold text-red-700 mb-2">Email</h4>
                           <p className="text-blue-900">{selectedBusiness.email}</p>
                         </div>
                       )}
                       
                       {selectedBusiness.website && (
                         <div>
-                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Website</h4>
-                          <a href={selectedBusiness.website} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:text-blue-800 underline">
+                          <h4 className="text-sm font-semibold text-red-700 mb-2">Website</h4>
+                          <a href={selectedBusiness.website} target="_blank" rel="noopener noreferrer" className="text-red-700 hover:text-red-800 underline">
                             {selectedBusiness.website}
                           </a>
                         </div>
@@ -2275,13 +2275,13 @@ export default function AdminPage() {
                       
                       {selectedBusiness.address && (
                         <div className="md:col-span-2">
-                          <h4 className="text-sm font-semibold text-blue-700 mb-2">Adres</h4>
+                          <h4 className="text-sm font-semibold text-red-700 mb-2">Adres</h4>
                           <p className="text-blue-900">{selectedBusiness.address}</p>
                         </div>
                       )}
                       
                       <div>
-                        <h4 className="text-sm font-semibold text-blue-700 mb-2">Kayıt Tarihi</h4>
+                        <h4 className="text-sm font-semibold text-red-700 mb-2">Kayıt Tarihi</h4>
                         <p className="text-blue-900">{new Date(selectedBusiness.created_at).toLocaleDateString('tr-TR')}</p>
                       </div>
                     </div>
@@ -2303,13 +2303,13 @@ export default function AdminPage() {
 
                     {businessEvents.length === 0 ? (
                       <div className="text-center py-8">
-                        <div className="w-16 h-16 bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4m-6 0h6m-6 0V3m0 4v4m0-4H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-2" />
                           </svg>
                         </div>
-                        <h4 className="text-lg font-semibold text-purple-700 mb-2">Henüz Event Yok</h4>
-                        <p className="text-purple-600">Bu işletme için henüz event/kampanya oluşturulmamış</p>
+                        <h4 className="text-lg font-semibold text-red-700 mb-2">Henüz Event Yok</h4>
+                        <p className="text-red-600">Bu işletme için henüz event/kampanya oluşturulmamış</p>
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2319,7 +2319,7 @@ export default function AdminPage() {
                               <h4 className="font-bold text-gray-900">{event.title}</h4>
                               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                 event.event_type === 'discount' ? 'bg-red-100 text-red-800' :
-                                event.event_type === 'campaign' ? 'bg-blue-100 text-blue-800' :
+                                event.event_type === 'campaign' ? 'bg-red-100 text-red-800' :
                                 event.event_type === 'free_shipping' ? 'bg-green-100 text-green-800' :
                                 event.event_type === 'loyalty' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-gray-100 text-gray-800'
