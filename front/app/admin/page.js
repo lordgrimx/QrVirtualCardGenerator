@@ -246,7 +246,7 @@ export default function AdminPage() {
   // Show loading while checking auth
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Yükleniyor...</p>
@@ -766,7 +766,7 @@ export default function AdminPage() {
           <div 
             className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
               activeMenu === 'dashboard' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
             onClick={() => {
@@ -790,7 +790,7 @@ export default function AdminPage() {
           <div 
             className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
               activeMenu === 'addMember' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
             onClick={() => setActiveMenu('addMember')}
@@ -809,7 +809,7 @@ export default function AdminPage() {
           <div 
             className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
               activeMenu === 'showMembers' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
             onClick={() => {
@@ -832,7 +832,7 @@ export default function AdminPage() {
           <div 
             className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
               activeMenu === 'businessRegistration' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
             onClick={() => {
@@ -856,7 +856,7 @@ export default function AdminPage() {
           <div 
             className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
               activeMenu === 'settings' 
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                 : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
             }`}
             onClick={() => setActiveMenu('settings')}
@@ -896,7 +896,7 @@ export default function AdminPage() {
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-4 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
                 {activeMenu === 'dashboard' && (
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
@@ -923,7 +923,7 @@ export default function AdminPage() {
                   </svg>
                 )}
               </div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-600 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-800 to-orange-600 bg-clip-text text-transparent">
                 {activeMenu === 'addMember' ? 'Add New Member' : 
                  activeMenu === 'showMembers' ? 'All Members' : 
                  activeMenu === 'dashboard' ? 'Dashboard' : 
@@ -1032,7 +1032,7 @@ export default function AdminPage() {
                       <button 
                         type="submit"
                         disabled={loading}
-                        className="w-full py-3 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full py-3 bg-gradient-to-r from-red-600 via-red-700 to-orange-600 hover:from-red-700 hover:via-red-800 hover:to-orange-700 text-white rounded-xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loading ? 'Kaydediliyor...' : 'İşletme Kaydet'}
                       </button>
@@ -1577,7 +1577,7 @@ export default function AdminPage() {
                 <div className="flex justify-end mt-8">
                   <button
                     type="submit"
-                    className="px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 flex items-center gap-3"
+                    className="px-8 py-4 bg-gradient-to-r from-red-600 via-red-700 to-orange-600 hover:from-red-700 hover:via-red-800 hover:to-orange-700 text-white rounded-2xl text-sm font-bold transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 hover:scale-105 flex items-center gap-3"
                   >
                     <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-sm"></div>
@@ -1637,7 +1637,7 @@ export default function AdminPage() {
                           onClick={() => window.open(`/member/${member.id}`, '_blank')}
                         >
                           <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
                               <span className="text-white font-bold text-lg">
                                 {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                               </span>
@@ -1766,11 +1766,11 @@ export default function AdminPage() {
                     {businesses.slice(currentBusinessIndex * 3, (currentBusinessIndex + 1) * 3).map((business, index) => (
                       <div
                         key={business.id}
-                        className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:border-blue-300"
+                        className="bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 rounded-xl p-6 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:border-red-300"
                         onClick={() => openBusinessModal(business)}
                       >
                         <div className="flex items-center justify-between mb-4">
-                          <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                          <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
                             <span className="text-white font-bold text-lg">
                               {business.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                             </span>
@@ -1834,10 +1834,10 @@ export default function AdminPage() {
 
               {/* Stats Section */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-xl p-6 text-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-blue-100 text-sm">Toplam İşletme</p>
+                      <p className="text-red-100 text-sm">Toplam İşletme</p>
                       <p className="text-2xl font-bold">{businesses.length}</p>
                     </div>
                     <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -1885,7 +1885,7 @@ export default function AdminPage() {
               <div className="max-w-2xl mx-auto">
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
                   <div className="flex items-center gap-4 mb-8">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
                       <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1999,7 +1999,7 @@ export default function AdminPage() {
                       <button
                         type="submit"
                         disabled={loading}
-                        className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-8 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-blue-700 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {loading ? 'Güncelleniyor...' : 'Değişiklikleri Kaydet'}
                       </button>
@@ -2180,7 +2180,7 @@ export default function AdminPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-blue-700 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Güncelleniyor...' : 'Güncelle'}
                     </button>
@@ -2198,7 +2198,7 @@ export default function AdminPage() {
                 <div className="sticky top-0 bg-white border-b border-gray-200 p-6 rounded-t-2xl">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                      <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
                         <span className="text-white font-bold text-lg">
                           {selectedBusiness.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </span>
