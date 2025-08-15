@@ -227,7 +227,7 @@ export default function AdminPage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState(null);
   const [editFormData, setEditFormData] = useState({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
   
   // Authentication check
   useEffect(() => {
@@ -734,139 +734,7 @@ export default function AdminPage() {
 
   return (
     <AdminLayout activeMenu={activeMenu} setActiveMenu={setActiveMenu}>
-      <div>
-
-        
-        <nav className="space-y-2">
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'dashboard' 
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => {
-              setActiveMenu('dashboard');
-              if (businesses.length === 0) {
-                fetchBusinesses(); // Dashboard açıldığında işletmeleri yükle
-              }
-            }}
-            title={sidebarCollapsed ? "Dashboard" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'dashboard' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Dashboard</span>}
-          </div>
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'addMember' 
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => setActiveMenu('addMember')}
-            title={sidebarCollapsed ? "Add New Member" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'addMember' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Add New Member</span>}
-          </div>
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'showMembers' 
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => {
-              setActiveMenu('showMembers');
-              fetchMembers();
-            }}
-            title={sidebarCollapsed ? "Show all Members" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'showMembers' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Show all Members</span>}
-          </div>
-          
-          {/* Business Registration - NEW */}
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'businessRegistration' 
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => {
-              setActiveMenu('businessRegistration');
-              if (businesses.length === 0) {
-                fetchBusinesses(); // İşletme listesi yoksa yükle
-              }
-            }}
-            title={sidebarCollapsed ? "İşletme Kayıt" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'businessRegistration' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clipRule="evenodd" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">İşletme Kayıt</span>}
-          </div>
-          
-          <div 
-            className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
-              activeMenu === 'settings' 
-                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
-                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-            }`}
-            onClick={() => setActiveMenu('settings')}
-            title={sidebarCollapsed ? "Settings" : ""}
-          >
-            <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center ${
-              activeMenu === 'settings' ? 'bg-white/20' : 'bg-gray-300'
-            }`}>
-              <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-              </svg>
-            </div>
-            {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Settings</span>}
-          </div>
-
-          {/* Logout Button */}
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <button 
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className={`w-full flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 text-red-600 hover:bg-red-50 hover:text-red-700 group`}
-              title={sidebarCollapsed ? "Çıkış Yap" : ""}
-            >
-              <div className={`${sidebarCollapsed ? 'w-10 h-10' : 'w-8 h-8'} rounded-lg flex items-center justify-center bg-red-100 group-hover:bg-red-200`}>
-                <svg className={`${sidebarCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </div>
-              {!sidebarCollapsed && <span className="text-sm font-semibold whitespace-nowrap">Çıkış Yap</span>}
-            </button>
-          </div>
-        </nav>
-      </div>
-
-      {/* Main Content - I'll continue with the same structure as the original page but add business registration functionality */}
-      <div className="flex-1 p-8 overflow-hidden">
+        {/* Main Content */}
         <div className="h-full flex flex-col max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
