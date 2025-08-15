@@ -69,9 +69,9 @@ print(f"🌐 Frontend URL from env: {frontend_url}")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -1090,35 +1090,41 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
 @app.get("/api/members")
 async def get_all_members(db: Session = Depends(get_db)):
     """Tüm üyeleri listele"""
-    members = db.query(DBMember).all()
-    member_list = []
-    
-    for member in members:
-        member_data = {
-            "id": member.id,
-            "fullName": member.full_name,
-            "membershipId": member.membership_id,
-            "cardNumber": member.card_number,
-            "phoneNumber": member.phone_number,
-            "email": member.email,
-            "address": member.address,
-            "dateOfBirth": member.date_of_birth,
-            "emergencyContact": member.emergency_contact,
-            "membershipType": member.membership_type,
-            "role": member.role,
-            "status": member.status,
-            "createdAt": member.created_at,
-            "updatedAt": member.updated_at,
-            "secureQrCode": None,
-            "nfcQrCode": None
+    try:
+        members = db.query(DBMember).all()
+        member_list = []
+        
+        for member in members:
+            member_data = {
+                "id": member.id,
+                "fullName": member.full_name,
+                "membershipId": member.membership_id,
+                "cardNumber": member.card_number,
+                "phoneNumber": member.phone_number,
+                "email": member.email,
+                "address": member.address,
+                "dateOfBirth": member.date_of_birth,
+                "emergencyContact": member.emergency_contact,
+                "membershipType": member.membership_type,
+                "role": member.role,
+                "status": member.status,
+                "createdAt": member.created_at,
+                "updatedAt": member.updated_at,
+                "secureQrCode": None,
+                "nfcQrCode": None
+            }
+            member_list.append(member_data)
+        
+        return {
+            "members": member_list,
+            "count": len(member_list),
+            "success": True
         }
-        member_list.append(member_data)
-    
-    return {
-        "members": member_list,
-        "count": len(member_list),
-        "success": True
-    }
+    except Exception as e:
+        import traceback
+        print(f"Error in /api/members: {e}")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Internal server error while fetching members.")
 
 # Model for member list dropdown
 class MemberInfo(BaseModel):
