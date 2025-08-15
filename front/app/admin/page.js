@@ -251,6 +251,13 @@ export default function AdminPage() {
     }
   }, [activeMenu, session]);
 
+  // Fetch businesses when dashboard tab is active
+  useEffect(() => {
+    if (activeMenu === 'dashboard' && session) {
+      fetchBusinesses();
+    }
+  }, [activeMenu, session]);
+
   // Show loading while checking auth
   if (status === 'loading') {
     return (
