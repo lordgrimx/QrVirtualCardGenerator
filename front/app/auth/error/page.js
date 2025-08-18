@@ -28,8 +28,8 @@ function ErrorContent() {
   return (
     <>
       <Image 
-        src="/elfed-logo.png" 
-        alt="ELFED Logo" 
+        src="/anef-logo.png" 
+        alt="ANEF Logo" 
         width={56} 
         height={56} 
         className="mx-auto mb-4 rounded-2xl object-contain"
@@ -59,8 +59,8 @@ function LoadingFallback() {
   return (
     <>
       <Image 
-        src="/elfed-logo.png" 
-        alt="ELFED Logo" 
+        src="/anef-logo.png" 
+        alt="ANEF Logo" 
         width={56} 
         height={56} 
         className="mx-auto mb-4 rounded-2xl object-contain"

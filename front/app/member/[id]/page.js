@@ -285,7 +285,7 @@ export default function MemberPage() {
         
         // Tailwind CSS class'larından RGB renklerini mapple
         const tailwindColorMap = {
-          // Backgrounds - ELFED kırmızı-turuncu teması
+          // Backgrounds - ANEF kırmızı-turuncu teması
           'bg-gradient-to-br from-red-600 via-red-700 to-orange-800': 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)',
           'bg-gradient-to-br from-gray-800 via-gray-900 to-black': 'linear-gradient(135deg, #1f2937 0%, #111827 50%, #000000 100%)',
           'bg-gradient-to-r from-red-500 to-orange-500': 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)',
@@ -316,7 +316,7 @@ export default function MemberPage() {
             return;
           }
           
-          // Ana kartın background'ını manuel olarak ayarla - ELFED kırmızı-turuncu teması
+          // Ana kartın background'ını manuel olarak ayarla - ANEF kırmızı-turuncu teması
           try {
             if (element.classList.contains('card-front')) {
               element.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)';
@@ -338,7 +338,7 @@ export default function MemberPage() {
             }
           };
           
-          // Background gradient kombinasyonları kontrol et - ELFED kırmızı-turuncu teması
+          // Background gradient kombinasyonları kontrol et - ANEF kırmızı-turuncu teması
           if (hasClass('bg-gradient-to-br')) {
             if (hasClass('from-red-600')) {
               element.style.setProperty('background', 'linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #ea580c 100%)', 'important');
@@ -440,7 +440,7 @@ export default function MemberPage() {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Card background gradient - ELFED kırmızı-turuncu teması
+        // Card background gradient - ANEF kırmızı-turuncu teması
         if (element.classList.contains('card-front')) {
           const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
           gradient.addColorStop(0, '#dc2626');
@@ -662,8 +662,8 @@ export default function MemberPage() {
           {/* Logo */}
           <a href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
             <Image 
-              src="/elfed-logo.png" 
-              alt="ELFED Logo" 
+              src="/anef-logo.png" 
+              alt="ANEF Logo" 
               width={48} 
               height={48} 
               className="rounded-lg object-contain"
@@ -671,7 +671,7 @@ export default function MemberPage() {
             />
             <div>
               <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
-                ELFED
+                ANEF
               </h1>
               <p className="text-xs text-gray-600">Elazığ Dernekler Federasyonu</p>
             </div>
@@ -744,7 +744,7 @@ export default function MemberPage() {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-white rounded"></div>
-                          <span className="text-sm font-semibold">ELFED</span>
+                          <span className="text-sm font-semibold">ANEF</span>
                         </div>
                         <div className="text-xs opacity-80">ÜYE</div>
                       </div>
@@ -799,7 +799,7 @@ export default function MemberPage() {
                             <p className="text-xs font-medium">{userInfo.joinDate}</p>
                           </div>
                           <div className="text-right">
-                            <div className="text-xs opacity-80">elfed.org.tr</div>
+                            <div className="text-xs opacity-80">anef.org.tr</div>
                           </div>
                         </div>
                       </div>
@@ -841,7 +841,7 @@ export default function MemberPage() {
                       {/* Emergency Contact */}
                       <div className="border-t border-gray-700 pt-4 mt-4">
                         <p className="text-xs text-gray-400 mb-2">Emergency: {userInfo.emergencyContact || '(555) 123-HELP'}</p>
-                        <p className="text-xs text-gray-500">Bu kart ELFED mülkiyetindedir</p>
+                        <p className="text-xs text-gray-500">Bu kart ANEF mülkiyetindedir</p>
                       </div>
                     </div>
                   </div>
@@ -1031,7 +1031,7 @@ export default function MemberPage() {
             </div>
             <h4 className="mt-3 text-lg font-semibold text-gray-900">{userInfo.name}</h4>
             <p className="text-sm text-gray-600">{userInfo.role}</p>
-            <p className="text-xs text-red-600 font-medium">ELFED Üyesi</p>
+            <p className="text-xs text-red-600 font-medium">ANEF Üyesi</p>
           </div>
 
           <div className="space-y-6">

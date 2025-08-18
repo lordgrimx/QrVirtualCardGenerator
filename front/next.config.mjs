@@ -19,17 +19,17 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'https://qrvirtualcardgenerator.onrender.com',
   },
-  // Harici görseller için izinler (ELFED logosu)
+  // Harici görseller için izinler (ANEF logosu)
   images: {
     remotePatterns: [
       { 
         protocol: 'https', 
-        hostname: 'www.elfed.org.tr',
+        hostname: 'www.anef.org.tr',
         pathname: '/images/**'
       },
       { 
         protocol: 'https', 
-        hostname: 'elfed.org.tr',
+        hostname: 'anef.org.tr',
         pathname: '/images/**'
       },
     ],

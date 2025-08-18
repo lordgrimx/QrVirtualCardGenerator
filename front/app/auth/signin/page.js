@@ -80,15 +80,15 @@ export default function SignIn() {
           {/* Logo */}
           <div className="text-center mb-8">
             <Image 
-              src="/elfed-logo.png" 
-              alt="ELFED Logo" 
+              src="/anef-logo.png" 
+              alt="ANEF Logo" 
               width={64} 
               height={64} 
               className="mx-auto mb-4 rounded-2xl object-contain"
               priority
             />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
-              ELFED
+              ANEF
             </h1>
             <p className="text-sm text-gray-600 mt-1">Elazığ Dernekler Federasyonu</p>
             <p className="text-gray-600 mt-2">Yönetici hesabınıza giriş yapın</p>
@@ -156,9 +156,9 @@ export default function SignIn() {
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-            <p className="font-semibold mb-2">ELFED Demo Hesabı:</p>
-            <p>📧 Email: admin@elfed.org.tr</p>
-            <p>🔑 Şifre: elfed2024</p>
+            <p className="font-semibold mb-2">ANEF Demo Hesabı:</p>
+            <p>📧 Email: admin@anef.org.tr</p>
+            <p>🔑 Şifre: anef2024</p>
           </div>
 
           {/* Cold Start Warning */}

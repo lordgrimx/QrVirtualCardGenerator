@@ -83,8 +83,8 @@ export async function GET() {
   try {
     console.log('🔍 Raw auth debug test başlıyor...')
     const authPayload = {
-      email: 'admin@elfed.org.tr',
-      password: 'elfed2024'
+      email: 'admin@anef.org.tr',
+      password: 'anef2024'
     }
     
     const rawAuthResponse = await fetch(`${apiUrl}/api/debug/auth-raw`, {
@@ -132,8 +132,8 @@ export async function GET() {
         'User-Agent': 'Frontend-Debug-Test/1.0'
       },
       body: JSON.stringify({
-        email: 'admin@elfed.org.tr',
-        password: 'elfed2024'
+        email: 'admin@anef.org.tr',
+        password: 'anef2024'
       })
     })
 

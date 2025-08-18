@@ -7,10 +7,10 @@
   --gray-100: #f0f2f5;
   --gray-200: #e5e8eb;
   --gray-600: #637587;
-  --elfed-red: #dc2626;
-  --elfed-orange: #ea580c;
-  --elfed-red-50: #fef2f2;
-  --elfed-orange-50: #fff7ed;
+  --anef-red: #dc2626;
+  --anef-orange: #ea580c;
+  --anef-red-50: #fef2f2;
+  --anef-orange-50: #fff7ed;
 }
 
 body {
@@ -20,25 +20,25 @@ body {
   font-feature-settings: 'liga' 1, 'calt' 1;
 }
 
-/* ELFED Brand Colors */
-.text-elfed-red {
-  color: var(--elfed-red);
+/* ANEF Brand Colors */
+.text-anef-red {
+  color: var(--anef-red);
 }
 
-.bg-elfed-red {
-  background-color: var(--elfed-red);
+.bg-anef-red {
+  background-color: var(--anef-red);
 }
 
-.bg-elfed-orange {
-  background-color: var(--elfed-orange);
+.bg-anef-orange {
+  background-color: var(--anef-orange);
 }
 
-.bg-elfed-red-50 {
-  background-color: var(--elfed-red-50);
+.bg-anef-red-50 {
+  background-color: var(--anef-red-50);
 }
 
-.bg-elfed-orange-50 {
-  background-color: var(--elfed-orange-50);
+.bg-anef-orange-50 {
+  background-color: var(--anef-orange-50);
 }
 
 /* Custom utility classes matching Figma design */

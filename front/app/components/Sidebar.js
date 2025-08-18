@@ -76,8 +76,8 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
           {!sidebarCollapsed && (
             <div className="flex items-center gap-3">
               <Image 
-                src="/elfed-logo.png" 
-                alt="ELFED Logo" 
+                src="/anef-logo.png" 
+                alt="ANEF Logo" 
                 width={40} 
                 height={40} 
                 className="rounded-lg object-contain"
@@ -85,7 +85,7 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
               />
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
-                  ELFED
+                  ANEF
                 </h1>
                 <p className="text-xs text-gray-600">Yönetim Paneli</p>
               </div>
