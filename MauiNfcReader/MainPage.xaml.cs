@@ -7,32 +7,20 @@ namespace MauiNfcReader;
 
 public partial class MainPage : ContentPage
 {
-    private readonly ILogger<MainPage>? _logger;
-    private readonly IServiceProvider? _serviceProvider;
-    private IBackendApiService? _backend;
+    private readonly ILogger<MainPage> _logger;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly IBackendApiService _backend;
 
-    public MainPage()
+    public MainPage(ILogger<MainPage> logger, IServiceProvider serviceProvider, IBackendApiService backendApiService)
     {
         InitializeComponent();
-        // Shell bypass durumunda DI'dan servis sağlayıcıyı manuel çek
-        try
-        {
-            _serviceProvider ??= (Application.Current as App)?.Handler?.MauiContext?.Services;
-            _logger ??= _serviceProvider?.GetService(typeof(ILogger<MainPage>)) as ILogger<MainPage>;
-            _backend = _serviceProvider?.GetService(typeof(IBackendApiService)) as IBackendApiService;
-        }
-        catch { }
-        // Sayfa yüklenince bağlantıyı kontrol et
-        Loaded += async (_, __) => await CheckBackendAsync();
-    }
-
-    public MainPage(ILogger<MainPage> logger, IServiceProvider serviceProvider) : this()
-    {
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _backend = _serviceProvider?.GetService(typeof(IBackendApiService)) as IBackendApiService;
+        _backend = backendApiService;
         
         _logger.LogInformation("Ana sayfa yüklendi");
+        // Sayfa yüklenince bağlantıyı kontrol et
+        Loaded += async (_, __) => await CheckBackendAsync();
     }
 
     private async void OnStartClicked(object? sender, EventArgs e)
@@ -41,16 +29,8 @@ public partial class MainPage : ContentPage
         {
             _logger?.LogInformation("NFC okuyucu sayfasına yönlendiriliyor");
             
-            var sp = _serviceProvider ?? (Application.Current as App)?.Handler?.MauiContext?.Services;
-            if (sp != null)
-            {
-                var nfcReaderPage = sp.GetRequiredService<NfcReaderPage>();
-                await Navigation.PushAsync(nfcReaderPage);
-            }
-            else
-            {
-                await DisplayAlert("Hata", "Servis sağlayıcı bulunamadı", "Tamam");
-            }
+            var nfcReaderPage = _serviceProvider.GetRequiredService<NfcReaderPage>();
+            await Navigation.PushAsync(nfcReaderPage);
         }
         catch (Exception ex)
         {
@@ -65,13 +45,11 @@ public partial class MainPage : ContentPage
         {
             BackendStatusText.Text = "Backend bağlantısı kontrol ediliyor...";
             BackendStatusDot.Color = Color.FromArgb("#9CA3AF");
-            StatusLabel.Text = "Status: Checking...";
 
             if (Connectivity.Current.NetworkAccess != NetworkAccess.Internet)
             {
                 BackendStatusText.Text = "📴 İnternet yok - yeniden deneyin";
                 BackendStatusDot.Color = Color.FromArgb("#F59E0B");
-                StatusLabel.Text = "Status: No Internet";
                 _logger?.LogWarning("Network access not available");
                 return;
             }
@@ -80,7 +58,6 @@ public partial class MainPage : ContentPage
             {
                 BackendStatusText.Text = "❌ Servis bulunamadı";
                 BackendStatusDot.Color = Color.FromArgb("#EF4444");
-                StatusLabel.Text = "Status: Service Error";
                 _logger?.LogError("Backend service is null");
                 return;
             }
@@ -96,14 +73,12 @@ public partial class MainPage : ContentPage
             {
                 BackendStatusText.Text = "✅ Backend'e bağlanıldı";
                 BackendStatusDot.Color = Color.FromArgb("#10B981");
-                StatusLabel.Text = "Status: Connected";
                 _logger?.LogInformation("Backend bağlantısı başarılı");
             }
             else
             {
                 BackendStatusText.Text = $"❌ Backend hatası: {error}";
                 BackendStatusDot.Color = Color.FromArgb("#EF4444");
-                StatusLabel.Text = "Status: Disconnected";
                 _logger?.LogWarning($"Backend bağlantı hatası: {error}");
             }
         }
@@ -112,7 +87,6 @@ public partial class MainPage : ContentPage
             _logger?.LogError(ex, "Backend kontrol hatası detayı");
             BackendStatusText.Text = $"❌ Hata: {ex.Message}";
             BackendStatusDot.Color = Color.FromArgb("#EF4444");
-            StatusLabel.Text = "Status: Error";
             
             // Ek hata detayı göster
             await DisplayAlert("Backend Bağlantı Hatası", 

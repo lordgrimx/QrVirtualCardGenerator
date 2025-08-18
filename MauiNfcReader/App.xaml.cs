@@ -2,15 +2,11 @@
 
 public partial class App : Application
 {
-	public App()
+	public App(MainPage mainPage)
 	{
 		InitializeComponent();
-	}
 
-	protected override Window CreateWindow(IActivationState? activationState)
-	{
         // Shell yerine NavigationPage ile başlat (PushAsync için gereklidir)
-        var root = new Microsoft.Maui.Controls.NavigationPage(new MainPage());
-        return new Window(root);
+        MainPage = new NavigationPage(mainPage);
 	}
 }

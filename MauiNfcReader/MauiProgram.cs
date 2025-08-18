@@ -53,7 +53,13 @@ public static class MauiProgram
 		builder.Services.AddTransient<NfcReaderViewModel>();
 		
 		// Pages
-		builder.Services.AddTransient<MainPage>();
+		builder.Services.AddTransient<MainPage>(sp =>
+			new MainPage(
+				sp.GetRequiredService<ILogger<MainPage>>(),
+				sp,
+				sp.GetRequiredService<IBackendApiService>()
+			)
+		);
 		builder.Services.AddTransient<NfcReaderPage>();
 		builder.Services.AddTransient<Views.MemberSearchPopup>();
 		builder.Services.AddTransient<Views.MemberInfoPopup>();

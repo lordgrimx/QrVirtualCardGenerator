@@ -29,6 +29,25 @@
 	<key>XSAppIconAssets</key>
 	<string>Assets.xcassets/appicon.appiconset</string>
 	
+	<!-- NFC Capabilities for ELFED -->
+	<key>NFCReaderUsageDescription</key>
+	<string>ELFED NFC Okuyucu üye kartlarını okumak için NFC kullanır</string>
+	<key>com.apple.developer.nfc.readersession.formats</key>
+	<array>
+		<string>NDEF</string>
+		<string>TAG</string>
+	</array>
+	
+	<!-- App Display Name -->
+	<key>CFBundleDisplayName</key>
+	<string>ELFED NFC</string>
+	
+	<!-- Status Bar Style -->
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleDefault</string>
+	<key>UIViewControllerBasedStatusBarAppearance</key>
+	<false/>
+	
 	<!-- NFC Support -->
 	<key>NFCReaderUsageDescription</key>
 	<string>Bu uygulama NFC etiketlerini okumak için NFC kullanır</string>

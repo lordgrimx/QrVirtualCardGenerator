@@ -21,7 +21,7 @@ public class WindowsNfcService : INfcService, IDisposable
     private ICardReader? _reader;
     private SCardMonitor? _monitor;
     private string? _connectedReaderName;
-    private readonly Timer _cardCheckTimer;
+    private Timer? _cardCheckTimer;
     private bool _disposed = false;
 
     // Events
@@ -35,13 +35,29 @@ public class WindowsNfcService : INfcService, IDisposable
     public WindowsNfcService(ILogger<WindowsNfcService> logger)
     {
         _logger = logger;
-        
-        // Kart varlığını kontrol etmek için timer
-        _cardCheckTimer = new Timer(CheckCardPresence, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
-        
-        _logger.LogInformation("Windows NFC Service başlatıldı");
+        _logger.LogInformation("Windows NFC Service başlatıldı. PC/SC context'i okuyucu arandığında kurulacak.");
     }
 
+    /// <summary>
+    /// PC/SC context'ini başlatır (henüz başlatılmadıysa)
+    /// </summary>
+    private void InitializeContext()
+    {
+        if (_context == null)
+        {
+            try
+            {
+                _context = ContextFactory.Instance.Establish(SCardScope.System);
+                _logger.LogInformation("PC/SC context'i başarıyla kuruldu.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "PC/SC context'i kurulamadı. Servis çalışmıyor olabilir.");
+                throw; // Hatanın yukarıya bildirilmesi önemli
+            }
+        }
+    }
+    
     /// <summary>
     /// Mevcut NFC okuyucuları listeler
     /// </summary>
@@ -49,10 +65,9 @@ public class WindowsNfcService : INfcService, IDisposable
     {
         try
         {
-            await Task.Run(() =>
-            {
-                _context = ContextFactory.Instance.Establish(SCardScope.System);
-            });
+            await Task.Run(() => InitializeContext());
+
+            if (_context == null) return Enumerable.Empty<string>();
 
             var readers = _context.GetReaders();
             
@@ -74,16 +89,18 @@ public class WindowsNfcService : INfcService, IDisposable
     {
         try
         {
-            if (_context == null)
-            {
-                _context = ContextFactory.Instance.Establish(SCardScope.System);
-            }
+            InitializeContext();
+            if (_context == null) return false;
 
             // Bağlı okuyucu adını sakla (PC/SC bağlantısı her işlem öncesi yapılacak)
             _connectedReaderName = readerName;
 
             // Kart durumu monitoring başlat
             SetupCardMonitoring();
+
+            // Kart varlığını kontrol etmek için timer'ı burada başlat
+            _cardCheckTimer?.Dispose();
+            _cardCheckTimer = new Timer(CheckCardPresence, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(1));
 
             _logger.LogInformation($"'{readerName}' okuyucusuna başarıyla bağlanıldı");
             return true;
@@ -102,6 +119,9 @@ public class WindowsNfcService : INfcService, IDisposable
     {
         try
         {
+            _cardCheckTimer?.Dispose();
+            _cardCheckTimer = null;
+
             if (_monitor != null)
             {
                 _monitor.Cancel();
@@ -125,7 +145,7 @@ public class WindowsNfcService : INfcService, IDisposable
     /// </summary>
     public async Task<bool> IsCardPresentAsync()
     {
-        if (_reader == null) return false;
+        if (_connectedReaderName == null) return false;
 
         try
         {
@@ -134,7 +154,10 @@ public class WindowsNfcService : INfcService, IDisposable
             {
                 try
                 {
-                    using var iso = new IsoReader(_context!, _connectedReaderName!, SCardShareMode.Shared, SCardProtocol.Any, false);
+                    InitializeContext(); // Ensure context is initialized
+                    if (_context == null) return false;
+
+                    using var iso = new IsoReader(_context, _connectedReaderName, SCardShareMode.Shared, SCardProtocol.Any, false);
                     var apdu = new CommandApdu(IsoCase.Case2Short, iso.ActiveProtocol)
                     { CLA = 0xFF, INS = 0xCA, P1 = 0x00, P2 = 0x00, Le = 0x00 };
                     var resp = iso.Transmit(apdu);
@@ -159,7 +182,7 @@ public class WindowsNfcService : INfcService, IDisposable
     /// </summary>
     public async Task<NfcCardData?> ReadCardAsync()
     {
-        if (_reader == null || _connectedReaderName == null)
+        if (_connectedReaderName == null)
         {
             _logger.LogWarning("Okuyucu bağlı değil");
             return new NfcCardData
@@ -215,13 +238,16 @@ public class WindowsNfcService : INfcService, IDisposable
     /// </summary>
     public async Task<(bool ok, string? error)> WriteTextNdefAsync(string text, string language = "en")
     {
-        if (_connectedReaderName == null || _context == null)
+        if (_connectedReaderName == null)
             return (false, "Okuyucu bağlı değil");
 
         try
         {
             return await Task.Run<(bool ok, string? error)>(() =>
             {
+                InitializeContext(); // Ensure context is initialized
+                if (_context == null) return (false, "PC/SC context yok");
+
                 using var iso = new IsoReader(_context, _connectedReaderName, SCardShareMode.Shared, SCardProtocol.Any, false);
 
                 // 1) CC (Capability Container) sayfasını kontrol et (page 0x03)
@@ -353,8 +379,17 @@ public class WindowsNfcService : INfcService, IDisposable
 
         try
         {
+            InitializeContext(); // Ensure context is initialized
+            if (_context == null)
+            {
+                cardData.IsSuccess = false;
+                cardData.ErrorMessage = "PC/SC context yok";
+                _logger.LogError(new Exception("PC/SC context yok"), "PC/SC context yok");
+                return cardData;
+            }
+
             // Basit UID okuma denemesi
-            using var iso = new IsoReader(_context!, _connectedReaderName!, SCardShareMode.Shared, SCardProtocol.Any, false);
+            using var iso = new IsoReader(_context, _connectedReaderName!, SCardShareMode.Shared, SCardProtocol.Any, false);
             var apdu = new CommandApdu(IsoCase.Case2Short, iso.ActiveProtocol)
             { CLA = 0xFF, INS = 0xCA, P1 = 0x00, P2 = 0x00, Le = 0x00 };
             var resp = iso.Transmit(apdu);
@@ -502,7 +537,7 @@ public class WindowsNfcService : INfcService, IDisposable
     /// </summary>
     private void SetupCardMonitoring()
     {
-        if (_context == null || _connectedReaderName == null) return;
+        if (_connectedReaderName == null) return;
 
         try
         {
@@ -550,10 +585,12 @@ public class WindowsNfcService : INfcService, IDisposable
     /// </summary>
     private async void CheckCardPresence(object? state)
     {
-        if (_disposed || _reader == null) return;
+        if (_disposed || _connectedReaderName == null) return;
 
         try
         {
+            // IsCardPresentAsync doğrudan _reader kullandığı için,
+            // burada _reader yerine _connectedReaderName kontrolü daha güvenli.
             await IsCardPresentAsync();
         }
         catch (Exception ex)

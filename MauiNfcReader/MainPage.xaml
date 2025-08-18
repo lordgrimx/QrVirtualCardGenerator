@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="MauiNfcReader.MainPage"
              Title=""
-             BackgroundColor="White">
+             BackgroundColor="#FEF2F2">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -11,108 +11,281 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Background Gradient -->
+        <Rectangle Grid.RowSpan="2">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FEF2F2" Offset="0.0" />
+                    <GradientStop Color="#FFF7ED" Offset="1.0" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
         <!-- Ana İçerik -->
-        <ScrollView Grid.Row="0">
-            <VerticalStackLayout Spacing="0">
+        <ScrollView Grid.Row="0" Padding="16">
+            <VerticalStackLayout Spacing="20">
                 
-                <!-- Header -->
-                <Frame BackgroundColor="White" Padding="16,16,16,8" HasShadow="False">
-                    <Label Text="NFC App" 
-                           FontSize="18" 
-                           FontAttributes="Bold" 
-                           TextColor="#111418" 
-                           HorizontalOptions="Center" />
+                <!-- Header with ELFED Logo -->
+                <Frame BackgroundColor="White" 
+                       Padding="20,16" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.9">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- ELFED Logo -->
+                        <Image Grid.Column="0"
+                               Source="elfedlogo.png"
+                               WidthRequest="50"
+                               HeightRequest="50"
+                               Aspect="AspectFit"
+                               VerticalOptions="Center"
+                               Margin="0,0,12,0"/>
+                        
+                        <!-- Header Text -->
+                        <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                            <Label FontSize="24" 
+                                   FontAttributes="Bold" 
+                                   HorizontalOptions="Start">
+                                <Label.FormattedText>
+                                    <FormattedString>
+                                        <Span Text="ELFED " TextColor="#DC2626"/>
+                                        <Span Text="NFC Okuyucu" TextColor="#111827"/>
+                                    </FormattedString>
+                                </Label.FormattedText>
+                            </Label>
+                            <Label Text="Elazığ Dernekler Federasyonu" 
+                                   FontSize="14" 
+                                   TextColor="#6B7280" 
+                                   HorizontalOptions="Start" />
+                        </VerticalStackLayout>
+                    </Grid>
                 </Frame>
 
-                <!-- Status Bölümü -->
-                <Frame BackgroundColor="White" Padding="16,0,16,12" HasShadow="False">
-                    <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
-                        <Label x:Name="StatusLabel" 
-                               Text="Status: Connected" 
-                               FontSize="14" 
-                               TextColor="#60758A" />
-                        <Button x:Name="RecycleBtn"
-                                Text="🔄"
-                                FontSize="14"
-                                BackgroundColor="Transparent"
-                                TextColor="#60758A"
-                                Padding="8,4"
-                                CornerRadius="6"
-                                Clicked="OnRecycleBackendClicked"
-                                ToolTipProperties.Text="Backend'e yeniden bağlan" />
-                    </HorizontalStackLayout>
+                <!-- Status Card -->
+                <Frame BackgroundColor="White" 
+                       Padding="20" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.9">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="Bağlantı Durumu" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#111827" />
+                        
+                        <HorizontalStackLayout Spacing="12" VerticalOptions="Center">
+                            <BoxView x:Name="BackendStatusDot" 
+                                     WidthRequest="16" 
+                                     HeightRequest="16" 
+                                     CornerRadius="8" 
+                                     Color="#EF4444" />
+                            <Label x:Name="BackendStatusText" 
+                                   Text="Backend bağlantısı kontrol ediliyor..." 
+                                   FontSize="14" 
+                                   TextColor="#374151" />
+                            <Button x:Name="RecycleBtn"
+                                    Text="🔄"
+                                    FontSize="16"
+                                    BackgroundColor="Transparent"
+                                    TextColor="#6B7280"
+                                    Padding="8"
+                                    CornerRadius="8"
+                                    Clicked="OnRecycleBackendClicked"
+                                    ToolTipProperties.Text="Backend'e yeniden bağlan" />
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
                 </Frame>
 
-                <!-- Connect Backend Butonu -->
-                <Frame BackgroundColor="White" Padding="16,12" HasShadow="False">
+                <!-- Action Buttons -->
+                <VerticalStackLayout Spacing="12">
+                    
+                    <!-- Connect Backend Button -->
                     <Button x:Name="ConnectBackendBtn"
-                            Text="Connect to Backend"
+                            Text="Backend'e Bağlan"
                             FontSize="16"
                             FontAttributes="Bold"
-                            BackgroundColor="#3D99F5"
-                            TextColor="White"
-                            HeightRequest="48"
-                            CornerRadius="12"
+                            HeightRequest="56"
+                            CornerRadius="16"
                             Clicked="OnConnectBackendClicked"
-                            HorizontalOptions="Fill" />
-                </Frame>
+                            HorizontalOptions="Fill">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#DC2626" Offset="0.0" />
+                                <GradientStop Color="#EA580C" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <Button.TextColor>White</Button.TextColor>
+                    </Button>
 
-                <!-- Start NFC Reader Butonu -->
-                <Frame BackgroundColor="White" Padding="16,12" HasShadow="False">
+                    <!-- Start NFC Reader Button -->
                     <Button x:Name="StartNfcBtn"
                             FontSize="16"
                             FontAttributes="Bold"
-                            BackgroundColor="#F0F2F5"
-                            TextColor="#111418"
-                            HeightRequest="48"
-                            CornerRadius="12"
+                            BackgroundColor="White"
+                            TextColor="#111827"
+                            HeightRequest="56"
+                            CornerRadius="16"
                             Clicked="OnStartClicked"
-                            HorizontalOptions="Fill">
-                        <Button.ImageSource>
-                            <FontImageSource Glyph="📡" 
-                                           FontFamily="Segoe UI Emoji" 
-                                           Size="24" 
-                                           Color="#111418" />
-                        </Button.ImageSource>
-                        <Button.Text>Start NFC Reader</Button.Text>
+                            HorizontalOptions="Fill"
+                            BorderColor="#E5E7EB"
+                            BorderWidth="1">
+                        <Button.Text>📡 NFC Okuyucuyu Başlat</Button.Text>
                     </Button>
-                </Frame>
+                    
+                </VerticalStackLayout>
 
-                <!-- Durum Bilgisi -->
-                <Frame BackgroundColor="#EEF2FF" Margin="16,12" Padding="16" CornerRadius="12" HasShadow="False">
-                    <VerticalStackLayout Spacing="8">
-                        <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
-                            <BoxView x:Name="BackendStatusDot" WidthRequest="12" HeightRequest="12" CornerRadius="6" Color="#9CA3AF" />
-                            <Label x:Name="BackendStatusText" Text="Backend bağlantısı kontrol ediliyor..." FontSize="14" TextColor="#111827" />
-                        </HorizontalStackLayout>
+                <!-- Features Card -->
+                <Frame BackgroundColor="White" 
+                       Padding="20" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.9">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Özellikler" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#111827" />
                         
-                        <!-- Özellikler -->
-                        <StackLayout Spacing="4" Margin="0,8,0,0">
-                            <Label Text="✅ Windows 10/11 destekli" FontSize="12" TextColor="#60758A" />
-                            <Label Text="✅ ACR122U ve uyumlu USB okuyucular" FontSize="12" TextColor="#60758A" />
-                            <Label Text="✅ AES şifre çözme" FontSize="12" TextColor="#60758A" />
-                            <Label Text="✅ Otomatik kart algılama" FontSize="12" TextColor="#60758A" />
-                        </StackLayout>
+                        <!-- Feature List -->
+                        <VerticalStackLayout Spacing="12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Frame Grid.Column="0" 
+                                       BackgroundColor="#DC2626" 
+                                       WidthRequest="32" 
+                                       HeightRequest="32" 
+                                       CornerRadius="16" 
+                                       Padding="0"
+                                       HasShadow="False">
+                                    <Label Text="💻" 
+                                           FontSize="16" 
+                                           HorizontalOptions="Center" 
+                                           VerticalOptions="Center" />
+                                </Frame>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" Margin="12,0,0,0">
+                                    <Label Text="Windows 10/11 Desteği" 
+                                           FontSize="14" 
+                                           FontAttributes="Bold"
+                                           TextColor="#111827" />
+                                    <Label Text="USB NFC okuyucular ile tam uyumluluk" 
+                                           FontSize="12" 
+                                           TextColor="#6B7280" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Frame Grid.Column="0" 
+                                       BackgroundColor="#EA580C" 
+                                       WidthRequest="32" 
+                                       HeightRequest="32" 
+                                       CornerRadius="16" 
+                                       Padding="0"
+                                       HasShadow="False">
+                                    <Label Text="📱" 
+                                           FontSize="16" 
+                                           HorizontalOptions="Center" 
+                                           VerticalOptions="Center" />
+                                </Frame>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" Margin="12,0,0,0">
+                                    <Label Text="Mobil Platform Desteği" 
+                                           FontSize="14" 
+                                           FontAttributes="Bold"
+                                           TextColor="#111827" />
+                                    <Label Text="Android ve iOS native NFC" 
+                                           FontSize="12" 
+                                           TextColor="#6B7280" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Frame Grid.Column="0" 
+                                       BackgroundColor="#F97316" 
+                                       WidthRequest="32" 
+                                       HeightRequest="32" 
+                                       CornerRadius="16" 
+                                       Padding="0"
+                                       HasShadow="False">
+                                    <Label Text="🔒" 
+                                           FontSize="16" 
+                                           HorizontalOptions="Center" 
+                                           VerticalOptions="Center" />
+                                </Frame>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" Margin="12,0,0,0">
+                                    <Label Text="AES Şifre Çözme" 
+                                           FontSize="14" 
+                                           FontAttributes="Bold"
+                                           TextColor="#111827" />
+                                    <Label Text="Güvenli veri işleme ve doğrulama" 
+                                           FontSize="12" 
+                                           TextColor="#6B7280" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Frame Grid.Column="0" 
+                                       BackgroundColor="#DC2626" 
+                                       WidthRequest="32" 
+                                       HeightRequest="32" 
+                                       CornerRadius="16" 
+                                       Padding="0"
+                                       HasShadow="False">
+                                    <Label Text="⚡" 
+                                           FontSize="16" 
+                                           HorizontalOptions="Center" 
+                                           VerticalOptions="Center" />
+                                </Frame>
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" Margin="12,0,0,0">
+                                    <Label Text="Otomatik Algılama" 
+                                           FontSize="14" 
+                                           FontAttributes="Bold"
+                                           TextColor="#111827" />
+                                    <Label Text="Kart yaklaştırıldığında anında okuma" 
+                                           FontSize="12" 
+                                           TextColor="#6B7280" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </VerticalStackLayout>
                     </VerticalStackLayout>
                 </Frame>
 
             </VerticalStackLayout>
         </ScrollView>
 
-        <!-- Alt Navigasyon Barı -->
+        <!-- Modern Bottom Navigation -->
         <Frame Grid.Row="1" 
                BackgroundColor="White" 
                HasShadow="True" 
-               Padding="16,8,16,12" 
-               CornerRadius="0">
+               Padding="16,12" 
+               CornerRadius="24,24,0,0"
+               Opacity="0.95">
             <HorizontalStackLayout Spacing="0" HorizontalOptions="FillAndExpand">
                 
                 <!-- Home -->
                 <Button BackgroundColor="Transparent" 
-                        Text="🏠" 
+                        Text="🏠"
                         FontSize="24" 
-                        TextColor="#111418" 
-                        Padding="0" 
+                        TextColor="#DC2626"
+                        Padding="12" 
                         HorizontalOptions="FillAndExpand"
                         Clicked="OnHomeClicked" />
                 
@@ -120,8 +293,8 @@
                 <Button BackgroundColor="Transparent" 
                         Text="🔍" 
                         FontSize="24" 
-                        TextColor="#60758A" 
-                        Padding="0" 
+                        TextColor="#6B7280" 
+                        Padding="12" 
                         HorizontalOptions="FillAndExpand"
                         Clicked="OnSearchClicked" />
                 
@@ -129,17 +302,17 @@
                 <Button BackgroundColor="Transparent" 
                         Text="➕" 
                         FontSize="24" 
-                        TextColor="#60758A" 
-                        Padding="0" 
+                        TextColor="#6B7280" 
+                        Padding="12" 
                         HorizontalOptions="FillAndExpand"
                         Clicked="OnAddClicked" />
                 
-                <!-- Bookmark -->
+                <!-- Settings -->
                 <Button BackgroundColor="Transparent" 
-                        Text="🔖" 
+                        Text="⚙️" 
                         FontSize="24" 
-                        TextColor="#60758A" 
-                        Padding="0" 
+                        TextColor="#6B7280" 
+                        Padding="12" 
                         HorizontalOptions="FillAndExpand"
                         Clicked="OnBookmarkClicked" />
                 
@@ -147,8 +320,8 @@
                 <Button BackgroundColor="Transparent" 
                         Text="👤" 
                         FontSize="24" 
-                        TextColor="#60758A" 
-                        Padding="0" 
+                        TextColor="#6B7280" 
+                        Padding="12" 
                         HorizontalOptions="FillAndExpand"
                         Clicked="OnUserClicked" />
                 

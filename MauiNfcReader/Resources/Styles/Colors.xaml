@@ -6,12 +6,23 @@
 
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
-    <Color x:Key="Primary">#512BD4</Color>
-    <Color x:Key="PrimaryDark">#ac99ea</Color>
-    <Color x:Key="PrimaryDarkText">#242424</Color>
-    <Color x:Key="Secondary">#DFD8F7</Color>
-    <Color x:Key="SecondaryDarkText">#9880e5</Color>
-    <Color x:Key="Tertiary">#2B0B98</Color>
+    <!-- ELFED Brand Colors -->
+    <Color x:Key="Primary">#DC2626</Color>
+    <Color x:Key="PrimaryDark">#B91C1C</Color>
+    <Color x:Key="PrimaryLight">#FEF2F2</Color>
+    <Color x:Key="Secondary">#EA580C</Color>
+    <Color x:Key="SecondaryDark">#C2410C</Color>
+    <Color x:Key="SecondaryLight">#FFF7ED</Color>
+    <Color x:Key="Tertiary">#F97316</Color>
+    
+    <!-- Additional ELFED Colors -->
+    <Color x:Key="ElfedRed">#DC2626</Color>
+    <Color x:Key="ElfedOrange">#EA580C</Color>
+    <Color x:Key="ElfedRedLight">#FEF2F2</Color>
+    <Color x:Key="ElfedOrangeLight">#FFF7ED</Color>
+
+    <Color x:Key="PrimaryDarkText">#FFFFFF</Color> <!-- Koyu temada buton yazısı için -->
+    <Color x:Key="SecondaryDarkText">#FFFFFF</Color> <!-- Koyu temada Shell yazısı için -->
 
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>
@@ -33,6 +44,12 @@
     <SolidColorBrush x:Key="TertiaryBrush" Color="{StaticResource Tertiary}"/>
     <SolidColorBrush x:Key="WhiteBrush" Color="{StaticResource White}"/>
     <SolidColorBrush x:Key="BlackBrush" Color="{StaticResource Black}"/>
+    
+    <!-- ELFED Brand Brushes -->
+    <SolidColorBrush x:Key="ElfedRedBrush" Color="{StaticResource ElfedRed}"/>
+    <SolidColorBrush x:Key="ElfedOrangeBrush" Color="{StaticResource ElfedOrange}"/>
+    <SolidColorBrush x:Key="ElfedRedLightBrush" Color="{StaticResource ElfedRedLight}"/>
+    <SolidColorBrush x:Key="ElfedOrangeLightBrush" Color="{StaticResource ElfedOrangeLight}"/>
 
     <SolidColorBrush x:Key="Gray100Brush" Color="{StaticResource Gray100}"/>
     <SolidColorBrush x:Key="Gray200Brush" Color="{StaticResource Gray200}"/>

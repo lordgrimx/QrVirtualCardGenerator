@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiNfcReader.Views.MemberSearchPage"
+             Title="Üye Arama"
+             BackgroundColor="#FEF2F2">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Background Gradient -->
+        <Rectangle Grid.RowSpan="2">
+            <Rectangle.Fill>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#FEF2F2" Offset="0.0" />
+                    <GradientStop Color="#FFF7ED" Offset="1.0" />
+                </LinearGradientBrush>
+            </Rectangle.Fill>
+        </Rectangle>
+
+        <!-- Header with Search -->
+        <Frame Grid.Row="0" 
+               BackgroundColor="White" 
+               Padding="20,16,20,20" 
+               HasShadow="True" 
+               CornerRadius="0,0,24,24"
+               Opacity="0.95"
+               Margin="0,0,0,16">
+            <VerticalStackLayout Spacing="16">
+                
+                <!-- Header Row -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Back Button -->
+                    <Button Grid.Column="0"
+                            Text="←"
+                            FontSize="24"
+                            BackgroundColor="Transparent"
+                            TextColor="#DC2626"
+                            Padding="8"
+                            VerticalOptions="Center"
+                            Clicked="OnBackClicked"/>
+                    
+                    <!-- Title -->
+                    <Label Grid.Column="1"
+                           Text="Üye Arama" 
+                           FontSize="20" 
+                           FontAttributes="Bold" 
+                           TextColor="#111827"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center" />
+                </Grid>
+                
+                <!-- Search Bar -->
+                <Frame BackgroundColor="#F9FAFB"
+                       Padding="16,12"
+                       CornerRadius="16"
+                       HasShadow="False"
+                       BorderColor="#E5E7EB">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Search Icon -->
+                        <Label Grid.Column="0"
+                               Text="🔍"
+                               FontSize="16"
+                               VerticalOptions="Center"
+                               Margin="0,0,8,0"/>
+                        
+                        <!-- Search Entry -->
+                        <Entry Grid.Column="1"
+                               x:Name="SearchEntry"
+                               Placeholder="Üye adı, soyadı veya ID ile arayın..."
+                               FontSize="14"
+                               BackgroundColor="Transparent"
+                               TextColor="#111827"
+                               PlaceholderColor="#9CA3AF"
+                               TextChanged="OnSearchTextChanged"/>
+                        
+                        <!-- Clear Button -->
+                        <Button Grid.Column="2"
+                                x:Name="ClearButton"
+                                Text="✕"
+                                FontSize="14"
+                                BackgroundColor="Transparent"
+                                TextColor="#9CA3AF"
+                                Padding="8"
+                                IsVisible="False"
+                                Clicked="OnClearSearchClicked"/>
+                    </Grid>
+                </Frame>
+                
+                <!-- Search Filters -->
+                <HorizontalStackLayout Spacing="8" HorizontalOptions="Start">
+                    <Button x:Name="FilterAllBtn"
+                            Text="Tümü"
+                            FontSize="12"
+                            FontAttributes="Bold"
+                            HeightRequest="32"
+                            Padding="12,6"
+                            CornerRadius="16"
+                            Clicked="OnFilterAllClicked">
+                        <Button.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Color="#DC2626" Offset="0.0" />
+                                <GradientStop Color="#EA580C" Offset="1.0" />
+                            </LinearGradientBrush>
+                        </Button.Background>
+                        <Button.TextColor>White</Button.TextColor>
+                    </Button>
+                    
+                    <Button x:Name="FilterActiveBtn"
+                            Text="Aktif"
+                            FontSize="12"
+                            BackgroundColor="#F3F4F6"
+                            TextColor="#374151"
+                            HeightRequest="32"
+                            Padding="12,6"
+                            CornerRadius="16"
+                            Clicked="OnFilterActiveClicked"/>
+                    
+                    <Button x:Name="FilterInactiveBtn"
+                            Text="Pasif"
+                            FontSize="12"
+                            BackgroundColor="#F3F4F6"
+                            TextColor="#374151"
+                            HeightRequest="32"
+                            Padding="12,6"
+                            CornerRadius="16"
+                            Clicked="OnFilterInactiveClicked"/>
+                </HorizontalStackLayout>
+                
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Results Area -->
+        <ScrollView Grid.Row="1" Padding="16,0">
+            <VerticalStackLayout Spacing="16">
+                
+                <!-- Search Results Header -->
+                <HorizontalStackLayout Spacing="8" VerticalOptions="Center">
+                    <Label x:Name="ResultsCountLabel"
+                           Text="0 sonuç bulundu"
+                           FontSize="14"
+                           FontAttributes="Bold"
+                           TextColor="#374151" />
+                    
+                    <ActivityIndicator x:Name="SearchLoadingIndicator"
+                                       IsRunning="False"
+                                       IsVisible="False"
+                                       Color="#DC2626"
+                                       WidthRequest="16"
+                                       HeightRequest="16" />
+                </HorizontalStackLayout>
+                
+                <!-- Member Results -->
+                <VerticalStackLayout x:Name="MemberResultsStack" Spacing="12">
+                    
+                    <!-- No Results Message -->
+                    <Frame x:Name="NoResultsFrame"
+                           BackgroundColor="White" 
+                           Padding="32" 
+                           HasShadow="True" 
+                           CornerRadius="16"
+                           Opacity="0.95"
+                           IsVisible="True">
+                        <VerticalStackLayout Spacing="16" HorizontalOptions="Center">
+                            <Label Text="🔍"
+                                   FontSize="48"
+                                   HorizontalOptions="Center"
+                                   Opacity="0.5"/>
+                            <Label Text="Arama Yapmaya Başlayın"
+                                   FontSize="18"
+                                   FontAttributes="Bold"
+                                   TextColor="#111827"
+                                   HorizontalOptions="Center" />
+                            <Label Text="Üye adı, soyadı veya ID numarası ile arama yapabilirsiniz"
+                                   FontSize="14"
+                                   TextColor="#6B7280"
+                                   HorizontalOptions="Center"
+                                   HorizontalTextAlignment="Center" />
+                        </VerticalStackLayout>
+                    </Frame>
+                    
+                </VerticalStackLayout>
+                
+                <!-- Recent Searches -->
+                <Frame BackgroundColor="White" 
+                       Padding="20" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.95">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Son Aramalar" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#111827" />
+                        
+                        <VerticalStackLayout x:Name="RecentSearchesStack" Spacing="8">
+                            <!-- Recent search items will be added here programmatically -->
+                            <Label Text="Henüz arama yapmadınız"
+                                   FontSize="14"
+                                   TextColor="#9CA3AF"
+                                   HorizontalOptions="Center"
+                                   Margin="0,16" />
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+                
+                <!-- Quick Actions -->
+                <Frame BackgroundColor="White" 
+                       Padding="20" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.95">
+                    <VerticalStackLayout Spacing="16">
+                        <Label Text="Hızlı İşlemler" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#111827" />
+                        
+                        <VerticalStackLayout Spacing="12">
+                            
+                            <!-- Scan QR Code -->
+                            <Button Text="📷 QR Kod Tarayın"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    BackgroundColor="#F3F4F6"
+                                    TextColor="#374151"
+                                    HeightRequest="48"
+                                    CornerRadius="12"
+                                    Clicked="OnScanQrClicked"
+                                    HorizontalOptions="Fill" />
+                            
+                            <!-- Manual ID Entry -->
+                            <Button Text="🔢 Manuel ID Girişi"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    BackgroundColor="#F3F4F6"
+                                    TextColor="#374151"
+                                    HeightRequest="48"
+                                    CornerRadius="12"
+                                    Clicked="OnManualIdClicked"
+                                    HorizontalOptions="Fill" />
+                            
+                            <!-- NFC Read -->
+                            <Button Text="📡 NFC Kart Okut"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    HeightRequest="48"
+                                    CornerRadius="12"
+                                    Clicked="OnNfcReadClicked"
+                                    HorizontalOptions="Fill">
+                                <Button.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#DC2626" Offset="0.0" />
+                                        <GradientStop Color="#EA580C" Offset="1.0" />
+                                    </LinearGradientBrush>
+                                </Button.Background>
+                                <Button.TextColor>White</Button.TextColor>
+                            </Button>
+                            
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+    </Grid>
+
+</ContentPage>

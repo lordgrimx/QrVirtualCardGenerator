@@ -7,10 +7,6 @@
     Title="MauiNfcReader"
     Shell.NavBarIsVisible="False">
 
-    <ShellContent
-        Title="Ana Sayfa"
-        Route="MainPage">
-        <local:MainPage />
-    </ShellContent>
-
+    <!-- ShellContent'i kaldırdık çünkü uygulama App.xaml.cs'de NavigationPage ile başlıyor -->
+    
 </Shell>

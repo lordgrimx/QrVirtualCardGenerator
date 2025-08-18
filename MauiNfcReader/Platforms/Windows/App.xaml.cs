@@ -17,6 +17,23 @@ public partial class App : MauiWinUIApplication
 	public App()
 	{
 		this.InitializeComponent();
+
+		// Genel hata yakalayıcı
+		this.UnhandledException += (sender, e) =>
+        {
+            try
+            {
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                string logFilePath = System.IO.Path.Combine(desktopPath, "MauiNfcReader_CrashLog.txt");
+                string errorMessage = $"[{DateTime.Now}] Unhandled Exception:\n{e.Exception}\n\n--- STACK TRACE ---\n{e.Exception.StackTrace}";
+                System.IO.File.WriteAllText(logFilePath, errorMessage);
+                e.Handled = true;
+            }
+            catch
+            {
+                // Loglama başarısız olursa yapacak bir şey yok.
+            }
+        };
 	}
 
 	protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
