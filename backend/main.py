@@ -51,18 +51,25 @@ app = FastAPI(
 )
 
 # CORS middleware
-# Production için Vercel frontend domainini ve local geliştirme hostlarını izinli tut
-frontend_url = os.getenv("FRONTEND_URL", "https://qr-virtual-card-generator.vercel.app")
+# Production için kendi domain ve local geliştirme hostlarını izinli tut
+frontend_url = os.getenv("FRONTEND_URL", "https://qr.sabrialperenkaya.com.tr")
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
+
 allowed_origins = [
     frontend_url,
-    "https://qr-virtual-card-generator.vercel.app",
-    "https://qr-virtual-card-generator-git-main-allpepper.vercel.app", 
-    "https://qr-virtual-card-generator-allpepper.vercel.app",
+    # Sabrialperenkaya.com.tr domain'leri
+    "https://sabrialperenkaya.com.tr",
+    "https://www.sabrialperenkaya.com.tr",
+    "https://qr.sabrialperenkaya.com.tr",
+    "https://api.sabrialperenkaya.com.tr",
+    # Local development için
     "http://localhost:3000",
     "https://localhost:3000",
     "http://127.0.0.1:3000",
     "https://127.0.0.1:3000",
-]
+    # cPanel subdomain (varsa)
+    "https://cpanel.sabrialperenkaya.com.tr",
+] + allowed_origins_env
 
 print(f"🌐 CORS Allowed Origins: {allowed_origins}")
 print(f"🌐 Frontend URL from env: {frontend_url}")
