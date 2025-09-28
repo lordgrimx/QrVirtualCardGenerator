@@ -281,13 +281,13 @@ export default function AdminPage() {
   // Dinamik API URL tespiti (mobil erişim için)
   const getApiUrl = () => {
     if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://localhost:8000';
+      return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
     }
     // Production Vercel → Render backend
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
     if (envUrl) return envUrl;
     // Local dev
-    return 'https://localhost:8000';
+    return 'http://localhost:8000';
   };
 
   // Fetch all members from database
@@ -522,7 +522,6 @@ export default function AdminPage() {
       // İşletme seçilmeli
       if (!eventFormData.business_id) {
         alert('Lütfen bir işletme seçin!');
-        setLoading(false);
         return;
       }
 
@@ -594,13 +593,11 @@ export default function AdminPage() {
       // Validation
       if (settingsFormData.newPassword !== settingsFormData.confirmPassword) {
         alert('❌ Yeni şifreler eşleşmiyor!');
-        setLoading(false);
         return;
       }
 
       if (settingsFormData.newPassword && settingsFormData.newPassword.length < 6) {
         alert('❌ Şifre en az 6 karakter olmalıdır!');
-        setLoading(false);
         return;
       }
 
@@ -617,7 +614,6 @@ export default function AdminPage() {
 
       if (Object.keys(updateData).length === 0) {
         alert('❌ Güncellenecek bir değişiklik bulunamadı!');
-        setLoading(false);
         return;
       }
       
@@ -713,8 +709,6 @@ export default function AdminPage() {
     e.preventDefault();
     
     try {
-      setLoading(true);
-      
       const response = await fetch(`${getApiUrl()}/api/members`, {
         method: 'POST',
         headers: {
@@ -749,8 +743,6 @@ export default function AdminPage() {
     } catch (error) {
       console.error('API Error:', error);
       alert('API bağlantı hatası. Backend server\'ın çalıştığından emin olun.');
-    } finally {
-      setLoading(false);
     }
   };
 

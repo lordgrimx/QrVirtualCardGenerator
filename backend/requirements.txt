@@ -5,8 +5,7 @@ python-multipart==0.0.6
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
 python-dotenv==1.0.0
-PyMySQL==1.1.0
-asgiref==3.7.2
+psycopg2-binary==2.9.9
 sqlalchemy==2.0.23
 alembic==1.13.1
 cryptography==41.0.7
@@ -15,4 +14,6 @@ pillow==10.1.0
 websockets==12.0
 gunicorn
 requests==2.31.0
-pyopenssl==24.2.1 
+pyopenssl==24.2.1
+nfcpy==1.0.4
+pynfc==0.1.1 
