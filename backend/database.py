@@ -16,12 +16,13 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # If DATABASE_URL is not set, build it from individual components
 if not DATABASE_URL:
     DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_PORT = os.getenv("DB_PORT", "5432")
+    DB_PORT = os.getenv("DB_PORT", "3306")
     DB_NAME = os.getenv("DB_NAME", "qrvirtualcard")
-    DB_USER = os.getenv("DB_USER", "postgres")
+    DB_USER = os.getenv("DB_USER", "root")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
     
-    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    # MySQL connection string with PyMySQL driver
+    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
 
 # Create SQLAlchemy engine
 # Pool ayarları: küçük havuz, pre_ping ile bağlantı sağlığı kontrolü, recycle ile uzun bağlantıları yenile
