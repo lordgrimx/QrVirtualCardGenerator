@@ -113,22 +113,9 @@ async def log_api_calls(request: Request, call_next):
         print(f"🚀 Method: {method}, IP: {ip_address}")
         print(f"🚀 User-Agent: {user_agent}")
     
-    # Request body'yi al (sadece POST/PUT için) - Auth için middleware'de body okumayı skip et
-    request_payload = None
-    if method in ["POST", "PUT", "PATCH"]:
-        try:
-            # Auth login için body okumayı skip et (endpoint'de okunacak)
-            if endpoint == "/api/auth/login":
-                request_payload = "[AUTH_BODY_WILL_BE_LOGGED_IN_ENDPOINT]"
-            # NFC decrypt için body okumayı atla (performans için)
-            elif endpoint == "/api/nfc/decrypt":
-                request_payload = "[NFC_DECRYPT_BODY_SKIPPED]"
-            else:
-                body = await request.body()
-                if body:
-                    request_payload = body.decode('utf-8')
-        except Exception as e:
-            request_payload = None
+    # Request body'yi middleware'de OKUMA - FastAPI'de body sadece bir kez okunabilir!
+    # Body okumayı tamamen atlıyoruz, sadece endpoint'e verilen parametreleri logluyoruz
+    request_payload = f"[{method}_REQUEST]"
     
     # Response'u işle
     response = await call_next(request)
