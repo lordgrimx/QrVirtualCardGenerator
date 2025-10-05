@@ -866,13 +866,33 @@ async def create_business(business: BusinessCreate, owner_id: int, db: Session =
 @app.get("/api/businesses")
 async def get_businesses(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
     """Get all businesses or businesses by owner"""
+    start_time = time.time()
     try:
-        query = db.query(DBBusiness).filter(DBBusiness.is_active == True)
+        print(f"🏢 [BUSINESSES] Query başladı - owner_id: {owner_id}")
+        query_start = time.time()
+        
+        # Query oluştur - sadece gerekli alanları seç (relationship'leri atla)
+        query = db.query(
+            DBBusiness.id,
+            DBBusiness.name,
+            DBBusiness.description,
+            DBBusiness.website,
+            DBBusiness.phone,
+            DBBusiness.email,
+            DBBusiness.address,
+            DBBusiness.business_type,
+            DBBusiness.logo_url,
+            DBBusiness.is_active,
+            DBBusiness.owner_id,
+            DBBusiness.created_at
+        ).filter(DBBusiness.is_active == True)
         
         if owner_id:
             query = query.filter(DBBusiness.owner_id == owner_id)
         
         businesses = query.all()
+        query_time = (time.time() - query_start) * 1000
+        print(f"🏢 [BUSINESSES] Query tamamlandı: {query_time:.2f}ms - {len(businesses)} kayıt")
         
         business_list = []
         for business in businesses:
@@ -891,6 +911,9 @@ async def get_businesses(owner_id: Optional[int] = None, db: Session = Depends(g
                 created_at=business.created_at
             ))
         
+        total_time = (time.time() - start_time) * 1000
+        print(f"🏢 [BUSINESSES] Total süre: {total_time:.2f}ms")
+        
         return {
             "businesses": business_list,
             "count": len(business_list),
@@ -898,7 +921,9 @@ async def get_businesses(owner_id: Optional[int] = None, db: Session = Depends(g
         }
         
     except Exception as e:
-        print(f"Get businesses error: {e}")
+        print(f"❌ Get businesses error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail="İşletmeler alınırken hata oluştu")
 
 # Business Events Endpoints

@@ -25,14 +25,19 @@ if not DATABASE_URL:
     DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
 
 # Create SQLAlchemy engine
-# Pool ayarları: küçük havuz, pre_ping ile bağlantı sağlığı kontrolü, recycle ile uzun bağlantıları yenile
+# Pool ayarları: optimize edilmiş havuz, pre_ping ile bağlantı sağlığı kontrolü, recycle ile uzun bağlantıları yenile
 engine = create_engine(
     DATABASE_URL,
     echo=False,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-    pool_recycle=300,
+    pool_pre_ping=True,  # Her bağlantıdan önce ping at
+    pool_size=10,  # Arttırıldı: 5 -> 10
+    max_overflow=20,  # Arttırıldı: 10 -> 20
+    pool_recycle=300,  # 5 dakikada bir bağlantıları yenile
+    connect_args={
+        'connect_timeout': 10,  # 10 saniye connection timeout
+        'read_timeout': 10,     # 10 saniye read timeout
+        'write_timeout': 10     # 10 saniye write timeout
+    }
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
