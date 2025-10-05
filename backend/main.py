@@ -814,6 +814,34 @@ async def update_profile(update_data: UpdateProfileRequest, db: Session = Depend
 
 # Business Management Endpoints
 
+@app.get("/api/businesses/test")
+async def test_business_endpoint(db: Session = Depends(get_db)):
+    """Test endpoint to check if database and endpoint are working"""
+    try:
+        # Test 1: Check if users table exists and has data
+        user_count = db.query(DBUser).count()
+        
+        # Test 2: Check if business table exists
+        business_count = db.query(DBBusiness).count()
+        
+        # Test 3: Get first user if exists
+        first_user = db.query(DBUser).first()
+        
+        return {
+            "status": "OK",
+            "database": "connected",
+            "user_count": user_count,
+            "business_count": business_count,
+            "first_user_id": first_user.id if first_user else None,
+            "first_user_email": first_user.email if first_user else None
+        }
+    except Exception as e:
+        return {
+            "status": "ERROR",
+            "error": str(e),
+            "error_type": type(e).__name__
+        }
+
 @app.post("/api/businesses", response_model=BusinessResponse)
 async def create_business(business: BusinessCreate, owner_id: int, db: Session = Depends(get_db)):
     """Create a new business - requires owner_id"""
