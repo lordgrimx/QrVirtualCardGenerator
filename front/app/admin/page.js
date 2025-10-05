@@ -19,11 +19,11 @@ const NfcReadingChart = () => {
         // Dinamik API URL (mobil erişim için)
         const getApiUrl = () => {
           if (typeof window === 'undefined') {
-            return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+            return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
           }
           const envUrl = process.env.NEXT_PUBLIC_API_URL;
           if (envUrl) return envUrl;
-          return 'http://localhost:8000';
+          return 'https://qrvirtualcardgenerator.onrender.com';
         };
 
         const response = await fetch(`${getApiUrl()}/api/nfc/reading-history?days=7`);
@@ -281,13 +281,13 @@ export default function AdminPage() {
   // Dinamik API URL tespiti (mobil erişim için)
   const getApiUrl = () => {
     if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://localhost:8000';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
     }
     // Production Vercel → Render backend
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
     if (envUrl) return envUrl;
-    // Local dev
-    return 'https://localhost:8000';
+    // Fallback to Render backend
+    return 'https://qrvirtualcardgenerator.onrender.com';
   };
 
   // Fetch all members from database

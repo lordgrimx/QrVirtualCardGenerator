@@ -52,12 +52,14 @@ app = FastAPI(
 
 # CORS middleware
 # Production için kendi domain ve local geliştirme hostlarını izinli tut
-frontend_url = os.getenv("FRONTEND_URL", "https://qr.sabrialperenkaya.com.tr")
+frontend_url = os.getenv("FRONTEND_URL", "https://qr-virtual-card-generator.vercel.app")
 allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else []
 
 allowed_origins = [
     frontend_url,
-    # Sabrialperenkaya.com.tr domain'leri
+    # Vercel deployment URL
+    "https://qr-virtual-card-generator.vercel.app",
+    # Eski domain'ler (backward compatibility)
     "https://sabrialperenkaya.com.tr",
     "https://www.sabrialperenkaya.com.tr",
     "https://qr.sabrialperenkaya.com.tr",

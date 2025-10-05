@@ -11,7 +11,7 @@ NEXTAUTH_SECRET=your-super-secret-key-minimum-32-characters-long-for-production-
 
 ### 2. **NEXTAUTH_URL** (Required)
 ```
-NEXTAUTH_URL=https://qr-virtual-card-generator.vercel.app
+NEXTAUTH_URL=https://qr-virtual-card-generator.vercel.app/
 ```
 
 ### 3. **NEXT_PUBLIC_API_URL** (Required - Backend URL)

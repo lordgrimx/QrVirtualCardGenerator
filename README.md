@@ -115,8 +115,18 @@ npm run dev
 
 Frontend `http://localhost:3000` adresinde çalışacak.
 
+## 🌐 Canlı Deployment
+
+- **Frontend (Vercel):** https://qr-virtual-card-generator.vercel.app/
+- **Backend (Render):** https://qrvirtualcardgenerator.onrender.com
+
 ## 🎯 Kullanım
 
+### Canlı Versiyon
+1. https://qr-virtual-card-generator.vercel.app/ adresine gidin
+2. Üyelik kartınızı görüntüleyin ve yönetin
+
+### Local Development
 1. **Frontend'i başlatın** (`npm run dev`)
 2. **Backend'i başlatın** (`python main.py`)
 3. **Browser'da** `http://localhost:3000` adresine gidin

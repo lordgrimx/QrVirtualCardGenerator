@@ -32,7 +32,13 @@ uvicorn main:app --reload
 
 API şu adreste çalışacak: http://localhost:8000
 
-## API Dokümantasyonu
+## Canlı Deployment
+
+- **Production API:** https://qrvirtualcardgenerator.onrender.com
+- **Swagger UI:** https://qrvirtualcardgenerator.onrender.com/docs
+- **ReDoc:** https://qrvirtualcardgenerator.onrender.com/redoc
+
+## API Dokümantasyonu (Local)
 
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
