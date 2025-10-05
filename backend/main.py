@@ -817,19 +817,17 @@ async def update_profile(update_data: UpdateProfileRequest, db: Session = Depend
 @app.post("/api/businesses", response_model=BusinessResponse)
 async def create_business(business: BusinessCreate, owner_id: int, db: Session = Depends(get_db)):
     """Create a new business - requires owner_id"""
+    print(f"🏢 [CREATE BUSINESS] Request alındı - owner_id: {owner_id}")
+    print(f"🏢 [CREATE BUSINESS] Business data: {business.dict()}")
     start_time = time.time()
     try:
-        print(f"🏢 [CREATE_BUSINESS] Request geldi - owner_id: {owner_id}, timestamp: {datetime.now()}")
-        print(f"🏢 [CREATE_BUSINESS] Business data: {business.name}")
-        
         # Verify owner exists and is active
-        print(f"🏢 [CREATE_BUSINESS] Owner kontrolü başladı...")
-        owner_check_start = time.time()
+        print(f"🏢 [CREATE BUSINESS] Owner kontrolü yapılıyor...")
         owner = db.query(DBUser).filter(DBUser.id == owner_id, DBUser.is_active == True).first()
-        owner_check_time = (time.time() - owner_check_start) * 1000
-        print(f"🏢 [CREATE_BUSINESS] Owner kontrolü bitti: {owner_check_time:.2f}ms - Bulundu: {owner is not None}")
         if not owner:
+            print(f"❌ [CREATE BUSINESS] Owner bulunamadı: {owner_id}")
             raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
+        print(f"✅ [CREATE BUSINESS] Owner bulundu: {owner.email}")
         
         # Create new business
         new_business = DBBusiness(
@@ -845,22 +843,13 @@ async def create_business(business: BusinessCreate, owner_id: int, db: Session =
             is_active=True
         )
         
-        print(f"🏢 [CREATE_BUSINESS] DB'ye ekleniyor...")
-        add_start = time.time()
+        print(f"🏢 [CREATE BUSINESS] Database'e ekleniyor...")
         db.add(new_business)
-        add_time = (time.time() - add_start) * 1000
-        print(f"🏢 [CREATE_BUSINESS] Add tamamlandı: {add_time:.2f}ms")
-        
-        print(f"🏢 [CREATE_BUSINESS] Commit başladı...")
-        commit_start = time.time()
         db.commit()
-        commit_time = (time.time() - commit_start) * 1000
-        print(f"🏢 [CREATE_BUSINESS] Commit tamamlandı: {commit_time:.2f}ms")
-        
         db.refresh(new_business)
         
-        total_time = (time.time() - start_time) * 1000
-        print(f"🏢 [CREATE_BUSINESS] BAŞARILI - Total süre: {total_time:.2f}ms")
+        elapsed = (time.time() - start_time) * 1000
+        print(f"✅ [CREATE BUSINESS] Başarılı! Süre: {elapsed:.2f}ms - Business ID: {new_business.id}")
         
         return BusinessResponse(
             id=new_business.id,
@@ -884,22 +873,11 @@ async def create_business(business: BusinessCreate, owner_id: int, db: Session =
         db.rollback()
         raise HTTPException(status_code=500, detail="İşletme oluşturulurken hata oluştu")
 
-@app.get("/api/businesses/health")
-async def businesses_health():
-    """Test endpoint - database bağlantısı olmadan"""
-    return {
-        "status": "ok",
-        "endpoint": "/api/businesses",
-        "message": "Endpoint çalışıyor (DB sorgusu yok)",
-        "timestamp": datetime.now().isoformat()
-    }
-
 @app.get("/api/businesses")
 async def get_businesses(owner_id: Optional[int] = None, db: Session = Depends(get_db)):
     """Get all businesses or businesses by owner"""
     start_time = time.time()
     try:
-        print(f"🏢 [BUSINESSES] Request geldi - owner_id: {owner_id}, timestamp: {datetime.now()}")
         print(f"🏢 [BUSINESSES] Query başladı - owner_id: {owner_id}")
         query_start = time.time()
         
