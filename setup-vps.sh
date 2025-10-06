@@ -32,11 +32,12 @@ echo -e "${YELLOW}📝 Kurulum Bilgileri${NC}"
 echo "=================================="
 read -p "GitHub kullanıcı adınız: " GITHUB_USER
 echo ""
-echo -e "${YELLOW}MySQL Database Bilgileri (Web Hosting):${NC}"
-read -p "MySQL Host (örn: 212.68.34.228): " DB_HOST
-read -p "MySQL Database Adı: " DB_NAME
-read -p "MySQL Kullanıcı Adı: " DB_USER
-read -p "MySQL Şifresi: " DB_PASSWORD
+echo -e "${YELLOW}PostgreSQL Database Bilgileri (Local VPS):${NC}"
+read -p "Database adı (varsayılan: qrvirtualcard): " DB_NAME
+DB_NAME=${DB_NAME:-qrvirtualcard}
+read -p "Database kullanıcı adı (varsayılan: qruser): " DB_USER
+DB_USER=${DB_USER:-qruser}
+read -p "Database şifresi: " DB_PASSWORD
 echo ""
 read -p "Domain adınız (örn: anefuye.com.tr): " DOMAIN
 read -p "Admin email: " ADMIN_EMAIL
@@ -45,10 +46,9 @@ read -p "Admin email: " ADMIN_EMAIL
 echo ""
 echo -e "${YELLOW}Aşağıdaki bilgilerle kurulum yapılacak:${NC}"
 echo "GitHub User: $GITHUB_USER"
-echo "MySQL Host: $DB_HOST"
-echo "MySQL Database: $DB_NAME"
-echo "MySQL User: $DB_USER"
-echo "MySQL Password: ********"
+echo "PostgreSQL Database: $DB_NAME"
+echo "PostgreSQL User: $DB_USER"
+echo "PostgreSQL Password: ********"
 echo "Domain: ${DOMAIN:-IP adresi kullanılacak}"
 echo "Admin Email: $ADMIN_EMAIL"
 echo ""
@@ -67,7 +67,7 @@ sudo apt update && sudo apt upgrade -y
 
 # 2. Gerekli paketleri yükle
 echo -e "${YELLOW}📦 Gerekli paketler yükleniyor...${NC}"
-sudo apt install -y python3 python3-venv python3-pip nginx git curl build-essential libssl-dev libffi-dev python3-dev mysql-client libmysqlclient-dev
+sudo apt install -y python3 python3-venv python3-pip nginx git curl build-essential libssl-dev libffi-dev python3-dev postgresql postgresql-contrib libpq-dev
 
 # 3. Node.js kurulumu
 echo -e "${YELLOW}📦 Node.js kuruluyor...${NC}"
@@ -78,16 +78,34 @@ sudo apt install -y nodejs
 echo -e "${YELLOW}📦 PM2 kuruluyor...${NC}"
 sudo npm install -g pm2
 
-# 5. MySQL bağlantı testi
-echo -e "${YELLOW}🗄️  MySQL bağlantısı test ediliyor...${NC}"
-echo "MySQL sunucunuza bağlanılıyor: $DB_HOST"
-if mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -e "USE $DB_NAME;" 2>/dev/null; then
-    echo -e "${GREEN}✅ MySQL bağlantısı başarılı!${NC}"
-else
-    echo -e "${RED}❌ MySQL bağlantısı başarısız!${NC}"
-    echo -e "${YELLOW}Lütfen MySQL bağlantı bilgilerinizi kontrol edin.${NC}"
-    exit 1
-fi
+# 5. PostgreSQL kurulumu ve ayarları
+echo -e "${YELLOW}🗄️  PostgreSQL ayarlanıyor...${NC}"
+
+# PostgreSQL servisini başlat
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# Database ve kullanıcı oluştur
+sudo -u postgres psql << EOF
+-- Eğer database varsa sil
+DROP DATABASE IF EXISTS $DB_NAME;
+DROP USER IF EXISTS $DB_USER;
+
+-- Yeni database ve kullanıcı oluştur
+CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';
+CREATE DATABASE $DB_NAME OWNER $DB_USER;
+GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+
+-- PostgreSQL 15+ için gerekli izinler
+\c $DB_NAME
+GRANT ALL ON SCHEMA public TO $DB_USER;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO $DB_USER;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO $DB_USER;
+EOF
+
+echo -e "${GREEN}✅ PostgreSQL başarıyla yapılandırıldı!${NC}"
 
 # 6. Proje dizini oluştur ve klonla
 echo -e "${YELLOW}📂 Proje klonlanıyor...${NC}"
@@ -113,14 +131,11 @@ pip install -r requirements.txt
 # .env dosyası oluştur
 echo -e "${YELLOW}🔧 .env dosyası oluşturuluyor...${NC}"
 
-# Şifredeki özel karakterleri URL encode et
-DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD'))")
-
 cat > .env << EOF
-# MySQL Database Configuration
-DATABASE_URL=mysql+pymysql://$DB_USER:$DB_PASSWORD_ENCODED@$DB_HOST:3306/$DB_NAME?charset=utf8mb4
-DB_HOST=$DB_HOST
-DB_PORT=3306
+# PostgreSQL Database Configuration (Local VPS)
+DATABASE_URL=postgresql://$DB_USER:$DB_PASSWORD@localhost:5432/$DB_NAME
+DB_HOST=localhost
+DB_PORT=5432
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
