@@ -31,15 +31,24 @@ echo -e "${NC}"
 echo -e "${YELLOW}📝 Kurulum Bilgileri${NC}"
 echo "=================================="
 read -p "GitHub kullanıcı adınız: " GITHUB_USER
-read -p "Database şifresi (qruser için): " DB_PASSWORD
-read -p "Domain adınız (yoksa boş bırakın): " DOMAIN
+echo ""
+echo -e "${YELLOW}MySQL Database Bilgileri (Web Hosting):${NC}"
+read -p "MySQL Host (örn: 212.68.34.228): " DB_HOST
+read -p "MySQL Database Adı: " DB_NAME
+read -p "MySQL Kullanıcı Adı: " DB_USER
+read -p "MySQL Şifresi: " DB_PASSWORD
+echo ""
+read -p "Domain adınız (örn: anefuye.com.tr): " DOMAIN
 read -p "Admin email: " ADMIN_EMAIL
 
 # Bilgileri onayla
 echo ""
 echo -e "${YELLOW}Aşağıdaki bilgilerle kurulum yapılacak:${NC}"
 echo "GitHub User: $GITHUB_USER"
-echo "Database Password: ********"
+echo "MySQL Host: $DB_HOST"
+echo "MySQL Database: $DB_NAME"
+echo "MySQL User: $DB_USER"
+echo "MySQL Password: ********"
 echo "Domain: ${DOMAIN:-IP adresi kullanılacak}"
 echo "Admin Email: $ADMIN_EMAIL"
 echo ""
@@ -58,7 +67,7 @@ sudo apt update && sudo apt upgrade -y
 
 # 2. Gerekli paketleri yükle
 echo -e "${YELLOW}📦 Gerekli paketler yükleniyor...${NC}"
-sudo apt install -y python3 python3-venv python3-pip nginx git curl build-essential libssl-dev libffi-dev python3-dev postgresql postgresql-contrib
+sudo apt install -y python3 python3-venv python3-pip nginx git curl build-essential libssl-dev libffi-dev python3-dev mysql-client libmysqlclient-dev
 
 # 3. Node.js kurulumu
 echo -e "${YELLOW}📦 Node.js kuruluyor...${NC}"
@@ -69,14 +78,16 @@ sudo apt install -y nodejs
 echo -e "${YELLOW}📦 PM2 kuruluyor...${NC}"
 sudo npm install -g pm2
 
-# 5. PostgreSQL setup
-echo -e "${YELLOW}🗄️  PostgreSQL ayarlanıyor...${NC}"
-sudo -u postgres psql << EOF
-CREATE DATABASE qrvirtualcard;
-CREATE USER qruser WITH PASSWORD '$DB_PASSWORD';
-GRANT ALL PRIVILEGES ON DATABASE qrvirtualcard TO qruser;
-\q
-EOF
+# 5. MySQL bağlantı testi
+echo -e "${YELLOW}🗄️  MySQL bağlantısı test ediliyor...${NC}"
+echo "MySQL sunucunuza bağlanılıyor: $DB_HOST"
+if mysql -h "$DB_HOST" -u "$DB_USER" -p"$DB_PASSWORD" -e "USE $DB_NAME;" 2>/dev/null; then
+    echo -e "${GREEN}✅ MySQL bağlantısı başarılı!${NC}"
+else
+    echo -e "${RED}❌ MySQL bağlantısı başarısız!${NC}"
+    echo -e "${YELLOW}Lütfen MySQL bağlantı bilgilerinizi kontrol edin.${NC}"
+    exit 1
+fi
 
 # 6. Proje dizini oluştur ve klonla
 echo -e "${YELLOW}📂 Proje klonlanıyor...${NC}"
@@ -100,21 +111,38 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # .env dosyası oluştur
+echo -e "${YELLOW}🔧 .env dosyası oluşturuluyor...${NC}"
 cat > .env << EOF
-DATABASE_URL=postgresql://qruser:$DB_PASSWORD@localhost:5432/qrvirtualcard
+# MySQL Database Configuration
+DATABASE_URL=mysql+pymysql://$DB_USER:$DB_PASSWORD@$DB_HOST:3306/$DB_NAME?charset=utf8mb4
+DB_HOST=$DB_HOST
+DB_PORT=3306
+DB_NAME=$DB_NAME
+DB_USER=$DB_USER
+DB_PASSWORD=$DB_PASSWORD
+
+# Security Keys
 SECRET_KEY=$(openssl rand -hex 32)
 JWT_SECRET_KEY=$(openssl rand -hex 32)
+
+# CORS Configuration
 ALLOWED_ORIGINS=http://localhost:3000,http://$(hostname -I | awk '{print $1}')
+
+# Environment
 ENVIRONMENT=production
 DEBUG=False
+
+# Server Configuration
 HOST=0.0.0.0
 PORT=8000
+
+# Admin Configuration
 ADMIN_EMAIL=$ADMIN_EMAIL
 EOF
 
 # Domain varsa ekle
 if [ ! -z "$DOMAIN" ]; then
-    echo "ALLOWED_ORIGINS=http://localhost:3000,http://$(hostname -I | awk '{print $1}'),https://$DOMAIN,http://$DOMAIN" >> .env
+    sed -i "s|ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=http://localhost:3000,http://$(hostname -I | awk '{print $1}'),https://$DOMAIN,http://$DOMAIN|g" .env
 fi
 
 # Database oluştur
