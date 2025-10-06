@@ -174,6 +174,15 @@ export default function AdminPage() {
     profilePhoto: ''
   });
 
+  // Set Turkish locale for date inputs
+  useEffect(() => {
+    // This forces the browser to use Turkish locale for date inputs
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = 'tr';
+      document.documentElement.setAttribute('lang', 'tr');
+    }
+  }, []);
+
   // Business form data
   const [businessFormData, setBusinessFormData] = useState({
     name: '',
@@ -1333,28 +1342,89 @@ export default function AdminPage() {
               <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 flex flex-col shadow-xl border border-white/20">
                 <div className="grid grid-cols-4 gap-6 flex-1">
                   {/* Profile Photo */}
-                  <div className="col-span-4 space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Profil Resmi
-                    </label>
-                    <div className="flex items-center space-x-6">
-                      {formData.profilePhoto && (
-                        <div className="relative">
-                          <img
-                            src={formData.profilePhoto}
-                            alt="Profil Önizleme"
-                            className="w-20 h-20 rounded-xl object-cover border-2 border-white shadow-lg"
-                          />
+                  <div className="col-span-4">
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl p-6 hover:border-purple-300 transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
                         </div>
-                      )}
-                      <div className="flex-1">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleMemberPhotoChange}
-                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                        />
-                        <p className="text-xs text-gray-500 mt-1">PNG, JPG veya GIF (Maks. 5MB)</p>
+                        <div>
+                          <h4 className="text-base font-bold text-gray-800">Üye Profil Resmi</h4>
+                          <p className="text-xs text-gray-600">Üyenin profil fotoğrafını yükleyin</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-6">
+                        {formData.profilePhoto ? (
+                          <div className="relative group">
+                            <div className="relative">
+                              <img
+                                src={formData.profilePhoto}
+                                alt="Profil Önizleme"
+                                className="w-28 h-28 rounded-2xl object-cover border-4 border-white shadow-2xl ring-4 ring-purple-100"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setFormData(prev => ({ ...prev, profilePhoto: '' }))}
+                                  className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transform hover:scale-110 transition-all duration-200 shadow-lg"
+                                  title="Resmi İptal Et"
+                                >
+                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-28 h-28 border-4 border-dashed border-purple-300 rounded-2xl flex items-center justify-center bg-white/60">
+                            <div className="text-center">
+                              <svg className="w-10 h-10 text-purple-400 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <p className="text-xs text-purple-600 font-medium">Resim Seç</p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex-1">
+                          <label className="cursor-pointer">
+                            <div className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 inline-flex items-center gap-3">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                              </svg>
+                              Fotoğraf Yükle
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleMemberPhotoChange}
+                              className="hidden"
+                            />
+                          </label>
+                          <div className="mt-3 space-y-1.5">
+                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                              <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              PNG, JPG veya GIF • Maksimum 5MB
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-600">
+                              <svg className="w-3.5 h-3.5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Profil resmi opsiyoneldir
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1418,6 +1488,7 @@ export default function AdminPage() {
                       value={formData.dateOfBirth}
                       onChange={handleInputChange}
                       max={today}
+                      lang="tr"
                       className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
@@ -1864,29 +1935,93 @@ export default function AdminPage() {
                     <h3 className="text-xl font-bold text-gray-900 mb-6">Profil Güncelleme</h3>
 
                     {/* Profile Photo Update */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
-                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Profil Resmi</h4>
-                      <div className="flex items-center space-x-6">
-                        {settingsFormData.profilePhoto && (
-                          <div className="relative">
-                            <img
-                              src={settingsFormData.profilePhoto}
-                              alt="Profil Önizleme"
-                              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                            />
+                    <div className="bg-gradient-to-br from-gray-50 to-blue-50 border-2 border-gray-200 rounded-2xl p-8 hover:border-blue-300 transition-all duration-300">
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-800">Profil Resmi</h4>
+                          <p className="text-xs text-gray-600">Profilinizi kişiselleştirin</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-8">
+                        {settingsFormData.profilePhoto ? (
+                          <div className="relative group">
+                            <div className="relative">
+                              <img
+                                src={settingsFormData.profilePhoto}
+                                alt="Profil Önizleme"
+                                className="w-32 h-32 rounded-2xl object-cover border-4 border-white shadow-2xl ring-4 ring-blue-100"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl flex items-center justify-center">
+                                <button
+                                  type="button"
+                                  onClick={() => setSettingsFormData(prev => ({ ...prev, profilePhoto: '' }))}
+                                  className="w-10 h-10 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transform hover:scale-110 transition-all duration-200 shadow-lg"
+                                  title="Resmi Kaldır"
+                                >
+                                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center shadow-lg">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="w-32 h-32 border-4 border-dashed border-gray-300 rounded-2xl flex items-center justify-center bg-white/50">
+                            <div className="text-center">
+                              <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                              <p className="text-xs text-gray-500">Resim Yok</p>
+                            </div>
                           </div>
                         )}
+                        
                         <div className="flex-1">
-                          <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Yeni Profil Resmi Yükle
+                          <label className="cursor-pointer">
+                            <div className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 inline-flex items-center gap-3">
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                              </svg>
+                              Resim Yükle
+                            </div>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleProfilePhotoChange}
+                              className="hidden"
+                            />
                           </label>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleProfilePhotoChange}
-                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
-                          />
-                          <p className="text-xs text-gray-500 mt-1">PNG, JPG veya GIF (Maks. 5MB)</p>
+                          <div className="mt-4 space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              PNG, JPG veya GIF formatı
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                              Maksimum 5MB boyut
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Kare resimler en iyi sonucu verir
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
