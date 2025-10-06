@@ -25,6 +25,7 @@ export default function MemberPage() {
   const [qrType, setQrType] = useState('standard'); // 'standard' veya 'nfc'
   const [nfcWriteStatus, setNfcWriteStatus] = useState('');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [adminProfilePhoto, setAdminProfilePhoto] = useState(null);
 
   // Authentication kontrolü
   useEffect(() => {
@@ -36,6 +37,30 @@ export default function MemberPage() {
       return;
     }
   }, [status, router]);
+
+  // Fetch admin profile photo separately
+  useEffect(() => {
+    if (session?.user?.id && session?.user?.hasProfilePhoto) {
+      const getApiUrl = () => {
+        if (typeof window === 'undefined') {
+          return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
+        }
+        return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
+      };
+
+      fetch(`${getApiUrl()}/api/auth/me?user_id=${session.user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user?.image) {
+            console.log('✅ MEMBER PAGE - Admin profile photo loaded');
+            setAdminProfilePhoto(data.user.image);
+          }
+        })
+        .catch(err => {
+          console.error('❌ MEMBER PAGE - Failed to fetch admin profile photo:', err);
+        });
+    }
+  }, [session?.user?.id, session?.user?.hasProfilePhoto]);
 
   // NFC yazma işlemleri MAUI uygulaması üzerinden yapılır
   const writeToNFC = async () => {
@@ -683,10 +708,10 @@ export default function MemberPage() {
             {session?.user && (
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-700">Hoş geldiniz, {session.user.name}</span>
-                {/* User Profile Photo - Admin's photo from users.image */}
-                {session.user.image ? (
+                {/* User Profile Photo - Admin's photo fetched separately */}
+                {adminProfilePhoto ? (
                   <img
-                    src={`data:image/jpeg;base64,${session.user.image}`}
+                    src={`data:image/jpeg;base64,${adminProfilePhoto}`}
                     alt={session.user.name}
                     className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg"
                   />

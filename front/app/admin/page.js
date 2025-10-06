@@ -158,7 +158,7 @@ const NfcReadingChart = () => {
 };
 
 export default function AdminPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -720,11 +720,12 @@ export default function AdminPage() {
           return;
         }
         
-        // Session'ı yeniden yükle (profil resmi güncellendiğinde sidebar'da görünsün)
+        // Session'ı güncelle (profil resmi güncellendiğinde sidebar'da görünsün)
         if (updateData.profilePhoto) {
-          alert('🔄 Profil resmi güncellendi! Değişiklikleri görmek için çıkış yapıp tekrar giriş yapın.');
-          // Çıkış yap ve tekrar giriş sayfasına yönlendir
-          signOut({ callbackUrl: '/auth/signin' });
+          console.log('🔄 Updating session with new profile photo flag');
+          await update({ hasProfilePhoto: true });
+          // Sayfayı yenile ki sidebar yeni resmi çeksin
+          window.location.reload();
         }
       } else {
         alert(`❌ Hata: ${result.detail || 'Bilinmeyen hata'}`);

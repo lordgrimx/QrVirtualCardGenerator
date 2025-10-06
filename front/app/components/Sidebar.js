@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,17 +8,34 @@ import Link from 'next/link';
 export default function Sidebar({ activeMenu, setActiveMenu }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoLoading, setPhotoLoading] = useState(false);
   const { data: session } = useSession();
 
-  // Debug: Session image durumunu kontrol et
-  console.log('🔷 SIDEBAR - Session User Image:', session?.user?.image ? 'MEVCUT ✅' : 'YOK ❌');
-  console.log('🔷 SIDEBAR - Session User:', {
-    name: session?.user?.name,
-    email: session?.user?.email,
-    role: session?.user?.role,
-    hasImage: !!session?.user?.image,
-    imageLength: session?.user?.image?.length || 0
-  });
+  // Fetch profile photo separately from session
+  useEffect(() => {
+    if (session?.user?.id && session?.user?.hasProfilePhoto) {
+      setPhotoLoading(true);
+      console.log('🔷 SIDEBAR - Fetching profile photo for user:', session.user.id);
+      
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me?user_id=${session.user.id}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.user?.image) {
+            console.log('✅ SIDEBAR - Profile photo loaded:', data.user.image.length, 'chars');
+            setProfilePhoto(data.user.image);
+          } else {
+            console.log('⚠️ SIDEBAR - No profile photo in response');
+          }
+        })
+        .catch(err => {
+          console.error('❌ SIDEBAR - Failed to fetch profile photo:', err);
+        })
+        .finally(() => {
+          setPhotoLoading(false);
+        });
+    }
+  }, [session?.user?.id, session?.user?.hasProfilePhoto]);
 
   const menuItems = [
     {
@@ -171,15 +188,14 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
         {session?.user && (
           <div className="space-y-3">
             <div className={`p-3 bg-red-50 rounded-lg ${sidebarCollapsed ? 'flex justify-center' : 'flex items-center gap-3'}`}>
-              {/* Admin profile photo from users.image table */}
-              {session.user.image && !imageError ? (
+              {/* Admin profile photo - fetched separately to avoid JWT size limit */}
+              {profilePhoto && !imageError ? (
                 <img
-                  src={`data:image/jpeg;base64,${session.user.image}`}
+                  src={`data:image/jpeg;base64,${profilePhoto}`}
                   alt={session.user.name}
                   className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
                   onError={(e) => {
                     console.error('🔴 SIDEBAR - Image load error, falling back to initials');
-                    console.error('🔴 Image src length:', e.target.src?.length || 0);
                     setImageError(true);
                   }}
                 />

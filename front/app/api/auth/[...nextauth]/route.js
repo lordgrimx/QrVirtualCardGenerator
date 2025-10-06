@@ -73,18 +73,19 @@ const handler = NextAuth({
             data = { success: false, message: `JSON parse hatası: ${e.message}` }
           }
 
-          if (response.ok && data.success && data.user) {
+        if (response.ok && data.success && data.user) {
             console.log('✅ Login successful for:', data.user.email)
             console.log('🖼️ User image from backend:', data.user.image ? `EXISTS (${data.user.image?.length} chars)` : 'NULL/UNDEFINED')
             console.log('📦 Full user data:', data.user)
+            // NOT STORING IMAGE IN JWT - it makes headers too large!
             return {
               id: data.user.id.toString(),
               name: data.user.name,
               email: data.user.email,
               role: data.user.role,
-              image: data.user.image || null,
+              hasProfilePhoto: !!data.user.image, // Only store boolean flag
             }
-          }
+        }
 
           console.error('❌ Login failed:', data.message || 'Unknown error')
           return null
@@ -110,34 +111,34 @@ const handler = NextAuth({
     maxAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async jwt({ token, user, account, trigger, session }) {
-      console.log('🔐 JWT Callback - User:', user ? 'Present' : 'None')
-      if (user) {
-        token.role = user.role
-        token.image = user.image
-        console.log('🔐 JWT Token updated with role:', user.role)
-        console.log('🖼️ JWT Token image:', user.image ? `SET (${user.image?.length} chars)` : 'NULL')
-      }
-      // Update token when session is updated (e.g., profile photo change)
-      if (trigger === "update" && session?.image) {
-        token.image = session.image
-        console.log('🔄 JWT Token image updated from session')
-      }
-      console.log('🔐 JWT Token final state:', { hasImage: !!token.image, imageLength: token.image?.length || 0 })
-      return token
-    },
+        async jwt({ token, user, account, trigger, session }) {
+          console.log('🔐 JWT Callback - User:', user ? 'Present' : 'None')
+          if (user) {
+            token.role = user.role
+            token.hasProfilePhoto = user.hasProfilePhoto
+            console.log('🔐 JWT Token updated with role:', user.role)
+            console.log('🖼️ JWT Token hasProfilePhoto:', user.hasProfilePhoto)
+          }
+          // Update token when session is updated (e.g., profile photo change)
+          if (trigger === "update" && session?.hasProfilePhoto !== undefined) {
+            token.hasProfilePhoto = session.hasProfilePhoto
+            console.log('🔄 JWT Token hasProfilePhoto updated from session')
+          }
+          console.log('🔐 JWT Token final state:', { hasProfilePhoto: !!token.hasProfilePhoto })
+          return token
+        },
     async session({ session, token }) {
       console.log('🔐 Session Callback - Token:', token ? 'Present' : 'None')
       session.user.id = token.sub
       session.user.role = token.role
-      session.user.image = token.image || null
+      session.user.hasProfilePhoto = token.hasProfilePhoto || false
       console.log('🔐 Session created for user:', session.user.email)
-      console.log('🖼️ Session image:', session.user.image ? `SET (${session.user.image?.length} chars)` : 'NULL')
+      console.log('🖼️ Session hasProfilePhoto:', session.user.hasProfilePhoto)
       console.log('📦 Final session.user:', {
         id: session.user.id,
         email: session.user.email,
         role: session.user.role,
-        hasImage: !!session.user.image
+        hasProfilePhoto: session.user.hasProfilePhoto
       })
       return session
     },
