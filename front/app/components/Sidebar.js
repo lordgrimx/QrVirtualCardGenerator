@@ -7,7 +7,18 @@ import Link from 'next/link';
 
 export default function Sidebar({ activeMenu, setActiveMenu }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const { data: session } = useSession();
+
+  // Debug: Session image durumunu kontrol et
+  console.log('🔷 SIDEBAR - Session User Image:', session?.user?.image ? 'MEVCUT ✅' : 'YOK ❌');
+  console.log('🔷 SIDEBAR - Session User:', {
+    name: session?.user?.name,
+    email: session?.user?.email,
+    role: session?.user?.role,
+    hasImage: !!session?.user?.image,
+    imageLength: session?.user?.image?.length || 0
+  });
 
   const menuItems = [
     {
@@ -159,26 +170,25 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
       <div className="p-4 border-t border-gray-200/50">
         {session?.user && (
           <div className="space-y-3">
-            {!sidebarCollapsed && (
-              <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                {/* Admin profile photo from users.image table */}
-                {session.user.image ? (
-                  <img
-                    src={`data:image/jpeg;base64,${session.user.image}`}
-                    alt={session.user.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
-                    onError={(e) => {
-                      console.error('Image load error, falling back to initials');
-                      e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
-                    }}
-                  />
-                ) : null}
-                {!session.user.image && (
-                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                    {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
-                  </div>
-                )}
+            <div className={`p-3 bg-red-50 rounded-lg ${sidebarCollapsed ? 'flex justify-center' : 'flex items-center gap-3'}`}>
+              {/* Admin profile photo from users.image table */}
+              {session.user.image && !imageError ? (
+                <img
+                  src={`data:image/jpeg;base64,${session.user.image}`}
+                  alt={session.user.name}
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                  onError={(e) => {
+                    console.error('🔴 SIDEBAR - Image load error, falling back to initials');
+                    console.error('🔴 Image src length:', e.target.src?.length || 0);
+                    setImageError(true);
+                  }}
+                />
+              ) : (
+                <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
+                </div>
+              )}
+              {!sidebarCollapsed && (
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {session.user.name}
@@ -187,8 +197,8 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
                     {session.user.role === 'admin' ? 'Yönetici' : 'Kullanıcı'}
                   </p>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             
             <div className="flex gap-2">
               <Link
