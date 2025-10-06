@@ -202,7 +202,10 @@ fi
 
 # Database oluştur
 python database.py
-alembic upgrade head
+
+# Alembic migration history'yi işaretle (database.py zaten tabloları oluşturdu)
+# Migration'ı "already applied" olarak işaretle
+alembic stamp head
 
 # Logs dizini
 mkdir -p logs
