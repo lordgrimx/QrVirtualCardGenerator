@@ -1670,10 +1670,11 @@ export default function AdminPage() {
                               <img
                                 src={`data:image/png;base64,${member.profilePhoto}`}
                                 alt={member.fullName}
-                                className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-lg"
+                                className="w-12 h-12 rounded-xl object-cover object-center border-2 border-white shadow-lg flex-shrink-0"
+                                style={{ aspectRatio: '1 / 1' }}
                               />
                             ) : (
-                              <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
+                              <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0">
                                 <span className="text-white font-bold text-lg">
                                   {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
                                 </span>

@@ -713,10 +713,11 @@ export default function MemberPage() {
                   <img
                     src={`data:image/jpeg;base64,${adminProfilePhoto}`}
                     alt={session.user.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg"
+                    className="w-10 h-10 rounded-full object-cover object-center border-2 border-white shadow-lg flex-shrink-0"
+                    style={{ aspectRatio: '1 / 1' }}
                   />
                 ) : (
-                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
                     {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
                   </div>
                 )}
@@ -782,10 +783,11 @@ export default function MemberPage() {
                             <img
                               src={getProfilePhotoSrc()}
                               alt={userInfo.name}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg relative z-20"
+                              className="w-12 h-12 rounded-full object-cover object-center border-2 border-white shadow-lg relative z-20 flex-shrink-0"
+                              style={{ aspectRatio: '1 / 1' }}
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white shadow-lg relative z-20">
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white shadow-lg relative z-20 flex-shrink-0">
                               <span className="text-sm font-bold text-white">{getInitials(userInfo.name)}</span>
                             </div>
                           )}

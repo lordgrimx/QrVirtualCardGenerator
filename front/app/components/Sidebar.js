@@ -193,7 +193,8 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
                 <img
                   src={`data:image/jpeg;base64,${profilePhoto}`}
                   alt={session.user.name}
-                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                  className="w-10 h-10 rounded-full object-cover object-center border-2 border-white shadow-md flex-shrink-0"
+                  style={{ aspectRatio: '1 / 1' }}
                   onError={(e) => {
                     console.error('🔴 SIDEBAR - Image load error, falling back to initials');
                     setImageError(true);
