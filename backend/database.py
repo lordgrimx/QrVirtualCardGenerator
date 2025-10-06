@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Boolean, Float, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, declarative_base
 from datetime import datetime, timedelta
 import os
 from dotenv import load_dotenv
@@ -26,6 +25,22 @@ if not DATABASE_URL:
 
 # Create SQLAlchemy engine
 # Pool ayarları: optimize edilmiş havuz, pre_ping ile bağlantı sağlığı kontrolü, recycle ile uzun bağlantıları yenile
+
+# Database türüne göre connect_args ayarla
+connect_args = {}
+if DATABASE_URL and 'postgresql' in DATABASE_URL:
+    # PostgreSQL için
+    connect_args = {
+        'connect_timeout': 10,  # 10 saniye connection timeout
+    }
+elif DATABASE_URL and 'mysql' in DATABASE_URL:
+    # MySQL için
+    connect_args = {
+        'connect_timeout': 10,  # 10 saniye connection timeout
+        'read_timeout': 10,     # 10 saniye read timeout
+        'write_timeout': 10     # 10 saniye write timeout
+    }
+
 engine = create_engine(
     DATABASE_URL,
     echo=False,
@@ -33,11 +48,7 @@ engine = create_engine(
     pool_size=10,  # Arttırıldı: 5 -> 10
     max_overflow=20,  # Arttırıldı: 10 -> 20
     pool_recycle=300,  # 5 dakikada bir bağlantıları yenile
-    connect_args={
-        'connect_timeout': 10,  # 10 saniye connection timeout
-        'read_timeout': 10,     # 10 saniye read timeout
-        'write_timeout': 10     # 10 saniye write timeout
-    }
+    connect_args=connect_args
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
