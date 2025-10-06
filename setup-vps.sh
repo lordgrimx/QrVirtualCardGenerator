@@ -58,7 +58,7 @@ sudo apt update && sudo apt upgrade -y
 
 # 2. Gerekli paketleri yükle
 echo -e "${YELLOW}📦 Gerekli paketler yükleniyor...${NC}"
-sudo apt install -y python3.12 python3.12-venv python3-pip nginx git curl build-essential libssl-dev libffi-dev python3-dev postgresql postgresql-contrib
+sudo apt install -y python3 python3-venv python3-pip nginx git curl build-essential libssl-dev libffi-dev python3-dev postgresql postgresql-contrib
 
 # 3. Node.js kurulumu
 echo -e "${YELLOW}📦 Node.js kuruluyor...${NC}"
@@ -91,7 +91,7 @@ git clone -b vps-deployment https://github.com/$GITHUB_USER/QrVirtualCardGenerat
 echo -e "${YELLOW}🐍 Backend kuruluyor...${NC}"
 cd /var/www/qrvirtualcard/backend
 
-python3.12 -m venv venv
+python3 -m venv venv
 source venv/bin/activate
 
 pip install --upgrade pip
