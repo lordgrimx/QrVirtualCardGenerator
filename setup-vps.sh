@@ -211,45 +211,68 @@ alembic stamp head
 mkdir -p logs
 mkdir -p uploads
 
-# 8. Frontend kurulumu
-echo -e "${YELLOW}⚛️  Frontend kuruluyor...${NC}"
-cd /var/www/qrvirtualcard/front
+echo -e "${GREEN}✅ Backend kurulumu tamamlandı!${NC}"
 
-npm install
-
-# .env.local oluştur
-if [ ! -z "$DOMAIN" ]; then
-    cat > .env.local << EOF
-NEXT_PUBLIC_API_URL=https://$DOMAIN/api
-EOF
-else
-    cat > .env.local << EOF
-NEXT_PUBLIC_API_URL=http://$(hostname -I | awk '{print $1}')/api
-EOF
-fi
-
-npm run build
-
-# 9. PM2 ile servisleri başlat
-echo -e "${YELLOW}🔄 Servisler başlatılıyor...${NC}"
+# 8. PM2 ile backend'i başlat
+echo -e "${YELLOW}🔄 Backend servisi başlatılıyor...${NC}"
 cd /var/www/qrvirtualcard/backend
 pm2 start ecosystem.config.js
-
-cd /var/www/qrvirtualcard/front
-pm2 start npm --name "frontend" -- start
 
 pm2 startup
 pm2 save
 
-# 10. Nginx kurulumu
-echo -e "${YELLOW}🌐 Nginx ayarlanıyor...${NC}"
-sudo cp /var/www/qrvirtualcard/backend/nginx.conf /etc/nginx/sites-available/qrvirtualcard
+# 9. Nginx kurulumu (Sadece Backend API için)
+echo -e "${YELLOW}🌐 Nginx ayarlanıyor (Backend API)...${NC}"
+
+# Basit Nginx konfigürasyonu oluştur (sadece backend API için)
+sudo cat > /etc/nginx/sites-available/qrvirtualcard << 'NGINX_EOF'
+server {
+    listen 80;
+    server_name SERVER_NAME_PLACEHOLDER;
+
+    client_max_body_size 10M;
+
+    # Logging
+    access_log /var/log/nginx/qrvirtualcard_access.log;
+    error_log /var/log/nginx/qrvirtualcard_error.log;
+
+    # Backend API
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Static files (uploads)
+    location /uploads/ {
+        alias /var/www/qrvirtualcard/backend/uploads/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/json application/javascript;
+}
+NGINX_EOF
 
 # Domain veya IP ayarla
 if [ ! -z "$DOMAIN" ]; then
-    sudo sed -i "s/yourdomain.com/$DOMAIN/g" /etc/nginx/sites-available/qrvirtualcard
+    sudo sed -i "s/SERVER_NAME_PLACEHOLDER/$DOMAIN www.$DOMAIN/g" /etc/nginx/sites-available/qrvirtualcard
 else
-    sudo sed -i "s/server_name yourdomain.com www.yourdomain.com;/server_name $(hostname -I | awk '{print $1}');/g" /etc/nginx/sites-available/qrvirtualcard
+    sudo sed -i "s/SERVER_NAME_PLACEHOLDER/$(hostname -I | awk '{print $1}')/g" /etc/nginx/sites-available/qrvirtualcard
 fi
 
 sudo ln -s /etc/nginx/sites-available/qrvirtualcard /etc/nginx/sites-enabled/
@@ -259,7 +282,9 @@ sudo nginx -t
 sudo systemctl restart nginx
 sudo systemctl enable nginx
 
-# 11. Firewall
+echo -e "${GREEN}✅ Nginx başarıyla yapılandırıldı!${NC}"
+
+# 10. Firewall
 echo -e "${YELLOW}🔒 Firewall ayarlanıyor...${NC}"
 sudo apt install -y ufw
 sudo ufw default deny incoming
@@ -267,6 +292,8 @@ sudo ufw default allow outgoing
 sudo ufw allow ssh
 sudo ufw allow 'Nginx Full'
 sudo ufw --force enable
+
+echo -e "${GREEN}✅ Firewall başarıyla yapılandırıldı!${NC}"
 
 # Deploy script'i çalıştırılabilir yap
 chmod +x /var/www/qrvirtualcard/deploy.sh
@@ -283,21 +310,25 @@ echo -e "${GREEN}═════════════════════
 echo -e "${GREEN}✅ Kurulum başarıyla tamamlandı!${NC}"
 echo -e "${GREEN}════════════════════════════════════════${NC}"
 echo ""
-echo -e "${BLUE}📱 Erişim Bilgileri:${NC}"
+echo -e "${BLUE}📱 Backend API Erişim Bilgileri:${NC}"
 if [ ! -z "$DOMAIN" ]; then
-    echo "   Frontend: https://$DOMAIN"
-    echo "   Backend API: https://$DOMAIN/api"
-    echo "   API Docs: https://$DOMAIN/api/docs"
+    echo "   Backend API: http://$DOMAIN"
+    echo "   API Docs: http://$DOMAIN/docs"
+    echo "   Health Check: http://$DOMAIN/health"
 else
-    echo "   Frontend: http://$(hostname -I | awk '{print $1}')"
-    echo "   Backend API: http://$(hostname -I | awk '{print $1}')/api"
-    echo "   API Docs: http://$(hostname -I | awk '{print $1}')/api/docs"
+    echo "   Backend API: http://$(hostname -I | awk '{print $1}')"
+    echo "   API Docs: http://$(hostname -I | awk '{print $1}')/docs"
+    echo "   Health Check: http://$(hostname -I | awk '{print $1}')/health"
 fi
+echo ""
+echo -e "${BLUE}🔐 Admin Giriş Bilgileri:${NC}"
+echo "   Email: admin@anef.org.tr"
+echo "   Password: anef2025"
 echo ""
 echo -e "${BLUE}📋 Faydalı Komutlar:${NC}"
 echo "   PM2 durumu: pm2 status"
 echo "   Backend logs: pm2 logs backend"
-echo "   Frontend logs: pm2 logs frontend"
+echo "   Backend restart: pm2 restart backend"
 echo "   Güncelleme: cd /var/www/qrvirtualcard && ./deploy.sh"
 echo ""
 if [ ! -z "$DOMAIN" ]; then
