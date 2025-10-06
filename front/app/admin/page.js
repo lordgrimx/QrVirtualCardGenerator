@@ -688,12 +688,22 @@ export default function AdminPage() {
 
       if (response.ok) {
         alert('✅ Profil başarıyla güncellendi!');
+        
+        // Session'ı yeniden yükle (profil resmi güncellendiğinde sidebar'da görünsün)
+        if (updateData.profilePhoto) {
+          // Sayfayı yenile ki session güncellensin
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        }
+        
         // Reset form
         setSettingsFormData({
           currentPassword: '',
           newEmail: '',
           newPassword: '',
-          confirmPassword: ''
+          confirmPassword: '',
+          profilePhoto: ''
         });
 
         // If email was changed, user might need to re-login

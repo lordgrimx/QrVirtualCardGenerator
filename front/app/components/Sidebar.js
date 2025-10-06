@@ -161,9 +161,17 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
           <div className="space-y-3">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
-                <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                  {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
-                </div>
+                {session.user.image ? (
+                  <img
+                    src={`data:image/jpeg;base64,${session.user.image}`}
+                    alt={session.user.name}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {session.user.name}

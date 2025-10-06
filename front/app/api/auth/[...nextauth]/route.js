@@ -80,6 +80,7 @@ const handler = NextAuth({
               name: data.user.name,
               email: data.user.email,
               role: data.user.role,
+              image: data.user.image || null,
             }
           }
 
@@ -107,11 +108,16 @@ const handler = NextAuth({
     maxAge: 24 * 60 * 60, // 24 hours
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user, account, trigger, session }) {
       console.log('🔐 JWT Callback - User:', user ? 'Present' : 'None')
       if (user) {
         token.role = user.role
+        token.image = user.image
         console.log('🔐 JWT Token updated with role:', user.role)
+      }
+      // Update token when session is updated (e.g., profile photo change)
+      if (trigger === "update" && session?.image) {
+        token.image = session.image
       }
       return token
     },
@@ -119,6 +125,7 @@ const handler = NextAuth({
       console.log('🔐 Session Callback - Token:', token ? 'Present' : 'None')
       session.user.id = token.sub
       session.user.role = token.role
+      session.user.image = token.image || null
       console.log('🔐 Session created for user:', session.user.email)
       return session
     },

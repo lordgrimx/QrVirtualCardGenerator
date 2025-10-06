@@ -366,6 +366,7 @@ class UserResponse(BaseModel):
     role: str
     is_active: bool
     created_at: datetime
+    image: Optional[str] = None  # Base64 encoded profile photo
 
     class Config:
         from_attributes = True
@@ -677,7 +678,8 @@ async def login(credentials: UserLogin, request: Request, db: Session = Depends(
             email=user.email,
             role=user.role,
             is_active=user.is_active,
-            created_at=user.created_at
+            created_at=user.created_at,
+            image=user.image
         )
         
         login_response = LoginResponse(
@@ -730,7 +732,8 @@ async def get_current_user(user_id: int, db: Session = Depends(get_db)):
             email=user.email,
             role=user.role,
             is_active=user.is_active,
-            created_at=user.created_at
+            created_at=user.created_at,
+            image=user.image
         )
         
         return {

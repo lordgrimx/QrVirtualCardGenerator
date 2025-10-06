@@ -742,9 +742,23 @@ export default function MemberPage() {
                     {/* Card Header */}
                     <div className="relative z-10 h-full flex flex-col">
                       <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-white rounded"></div>
-                          <span className="text-sm font-semibold">ANEF</span>
+                        <div className="flex items-center gap-3">
+                          {/* Profile Photo or Initials */}
+                          {getProfilePhotoSrc() ? (
+                            <img
+                              src={getProfilePhotoSrc()}
+                              alt={userInfo.name}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                              <span className="text-sm font-bold text-white">{getInitials(userInfo.name)}</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-white rounded"></div>
+                            <span className="text-sm font-semibold">ANEF</span>
+                          </div>
                         </div>
                         <div className="text-xs opacity-80">ÜYE</div>
                       </div>
