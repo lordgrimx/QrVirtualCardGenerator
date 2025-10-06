@@ -110,6 +110,13 @@ echo -e "${GREEN}✅ PostgreSQL başarıyla yapılandırıldı!${NC}"
 # 6. Proje dizini oluştur ve klonla
 echo -e "${YELLOW}📂 Proje klonlanıyor...${NC}"
 echo -e "${YELLOW}Not: Repository public olmalıdır veya SSH key ile erişim sağlanmalıdır${NC}"
+
+# Eski dizini varsa temizle
+if [ -d "/var/www/qrvirtualcard" ]; then
+    echo -e "${YELLOW}⚠️  Eski kurulum bulundu, temizleniyor...${NC}"
+    sudo rm -rf /var/www/qrvirtualcard
+fi
+
 cd /var/www
 sudo mkdir -p qrvirtualcard
 sudo chown -R $USER:$USER qrvirtualcard
@@ -117,6 +124,14 @@ cd qrvirtualcard
 
 # Public repo olduğu için authentication gerektirmez
 git clone -b vps-deployment https://github.com/$GITHUB_USER/QrVirtualCardGenerator.git .
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Git clone başarısız!${NC}"
+    echo -e "${YELLOW}Repository public mi? GitHub kullanıcı adı doğru mu?${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Proje başarıyla klonlandı!${NC}"
 
 # 7. Backend kurulumu
 echo -e "${YELLOW}🐍 Backend kuruluyor...${NC}"
