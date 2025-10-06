@@ -161,13 +161,20 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
           <div className="space-y-3">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-3 p-3 bg-red-50 rounded-lg">
+                {/* Admin profile photo from users.image table */}
                 {session.user.image ? (
                   <img
                     src={`data:image/jpeg;base64,${session.user.image}`}
                     alt={session.user.name}
                     className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md"
+                    onError={(e) => {
+                      console.error('Image load error, falling back to initials');
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
                   />
-                ) : (
+                ) : null}
+                {!session.user.image && (
                   <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
                     {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
                   </div>

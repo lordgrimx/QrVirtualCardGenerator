@@ -183,6 +183,20 @@ export default function AdminPage() {
     }
   }, []);
 
+  // Debug session image
+  useEffect(() => {
+    if (session?.user) {
+      console.log('🖼️ Session User Image:', session.user.image ? 'MEVCUT' : 'YOK');
+      console.log('👤 Session User:', {
+        name: session.user.name,
+        email: session.user.email,
+        role: session.user.role,
+        hasImage: !!session.user.image,
+        imageLength: session.user.image?.length || 0
+      });
+    }
+  }, [session]);
+
   // Business form data
   const [businessFormData, setBusinessFormData] = useState({
     name: '',

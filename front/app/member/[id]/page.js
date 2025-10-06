@@ -683,9 +683,18 @@ export default function MemberPage() {
             {session?.user && (
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-700">Hoş geldiniz, {session.user.name}</span>
-                <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
-                  {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
-                </div>
+                {/* User Profile Photo - Admin's photo from users.image */}
+                {session.user.image ? (
+                  <img
+                    src={`data:image/jpeg;base64,${session.user.image}`}
+                    alt={session.user.name}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-lg"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                    {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
+                  </div>
+                )}
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1 rounded hover:bg-gray-100"
@@ -743,15 +752,15 @@ export default function MemberPage() {
                     <div className="relative z-10 h-full flex flex-col">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          {/* Profile Photo or Initials */}
+                          {/* Profile Photo or Initials - Member's photo from members.profile_photo */}
                           {getProfilePhotoSrc() ? (
                             <img
                               src={getProfilePhotoSrc()}
                               alt={userInfo.name}
-                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+                              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg relative z-20"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white shadow-lg">
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center border-2 border-white shadow-lg relative z-20">
                               <span className="text-sm font-bold text-white">{getInitials(userInfo.name)}</span>
                             </div>
                           )}
@@ -764,7 +773,7 @@ export default function MemberPage() {
                       </div>
                       
                                       {/* QR Code */}
-                <div className="absolute top-0 right-0 bg-white p-4 rounded-lg shadow-lg group">
+                <div className="absolute top-0 right-0 bg-white p-4 rounded-lg shadow-lg group z-10">
                   <div className="relative">
                     <QRCodeCanvas 
                       value={qrData}
