@@ -80,11 +80,13 @@ EOF
 
 # 6. Proje dizini oluştur ve klonla
 echo -e "${YELLOW}📂 Proje klonlanıyor...${NC}"
+echo -e "${YELLOW}Not: Repository public olmalıdır veya SSH key ile erişim sağlanmalıdır${NC}"
 cd /var/www
 sudo mkdir -p qrvirtualcard
 sudo chown -R $USER:$USER qrvirtualcard
 cd qrvirtualcard
 
+# Public repo olduğu için authentication gerektirmez
 git clone -b vps-deployment https://github.com/$GITHUB_USER/QrVirtualCardGenerator.git .
 
 # 7. Backend kurulumu
