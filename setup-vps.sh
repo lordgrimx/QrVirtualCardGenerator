@@ -112,16 +112,26 @@ pip install -r requirements.txt
 
 # .env dosyası oluştur
 echo -e "${YELLOW}🔧 .env dosyası oluşturuluyor...${NC}"
+
+# Şifredeki özel karakterleri URL encode et
+DB_PASSWORD_ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$DB_PASSWORD'))")
+
 cat > .env << EOF
 # MySQL Database Configuration
-DATABASE_URL=mysql+pymysql://$DB_USER:$DB_PASSWORD@$DB_HOST:3306/$DB_NAME?charset=utf8mb4
+DATABASE_URL=mysql+pymysql://$DB_USER:$DB_PASSWORD_ENCODED@$DB_HOST:3306/$DB_NAME?charset=utf8mb4
 DB_HOST=$DB_HOST
 DB_PORT=3306
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
 DB_PASSWORD=$DB_PASSWORD
 
-# Security Keys
+# Server Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+HOST=0.0.0.0
+PORT=8000
+
+# Security Keys (Otomatik oluşturuluyor)
 SECRET_KEY=$(openssl rand -hex 32)
 JWT_SECRET_KEY=$(openssl rand -hex 32)
 
@@ -132,17 +142,32 @@ ALLOWED_ORIGINS=http://localhost:3000,http://$(hostname -I | awk '{print $1}')
 ENVIRONMENT=production
 DEBUG=False
 
-# Server Configuration
-HOST=0.0.0.0
-PORT=8000
-
 # Admin Configuration
 ADMIN_EMAIL=$ADMIN_EMAIL
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change_this_password
+
+# NFC Configuration
+NFC_ENABLED=true
+
+# Session Configuration
+SESSION_TIMEOUT=3600
+
+# File Upload
+MAX_FILE_SIZE=5242880
+UPLOAD_DIR=/var/www/qrvirtualcard/backend/uploads
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FILE=/var/www/qrvirtualcard/backend/logs/app.log
 EOF
 
 # Domain varsa ekle
 if [ ! -z "$DOMAIN" ]; then
-    sed -i "s|ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=http://localhost:3000,http://$(hostname -I | awk '{print $1}'),https://$DOMAIN,http://$DOMAIN|g" .env
+    sed -i "s|ALLOWED_ORIGINS=.*|ALLOWED_ORIGINS=http://localhost:3000,http://$(hostname -I | awk '{print $1}'),https://$DOMAIN,http://$DOMAIN,https://www.$DOMAIN,http://www.$DOMAIN,https://qr-virtual-card-generator.vercel.app|g" .env
+    sed -i "s|FRONTEND_URL=.*|FRONTEND_URL=https://$DOMAIN|g" .env
+else
+    echo "FRONTEND_URL=http://$(hostname -I | awk '{print $1}')" >> .env
 fi
 
 # Database oluştur
