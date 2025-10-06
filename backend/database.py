@@ -340,20 +340,6 @@ def create_default_admin():
         else:
             print("ℹ️  ANEF admin user already exists")
             
-        # Also create old admin for compatibility
-        old_admin = db.query(User).filter(User.email == "admin@qrvirtualcard.com").first()
-        if not old_admin:
-            old_admin = User(
-                name="Admin User",
-                email="admin@qrvirtualcard.com",
-                password_hash=hash_password("admin123"),
-                role="admin",
-                is_active=True,
-                email_verified=datetime.utcnow()
-            )
-            db.add(old_admin)
-            print("✅ Compatibility admin user created!")
-            
         db.commit()
         
     except Exception as e:
