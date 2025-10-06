@@ -701,15 +701,8 @@ export default function AdminPage() {
       const result = await response.json();
 
       if (response.ok) {
+        console.log('✅ Profile update response:', result);
         alert('✅ Profil başarıyla güncellendi!');
-        
-        // Session'ı yeniden yükle (profil resmi güncellendiğinde sidebar'da görünsün)
-        if (updateData.profilePhoto) {
-          // Sayfayı yenile ki session güncellensin
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
-        }
         
         // Reset form
         setSettingsFormData({
@@ -723,6 +716,14 @@ export default function AdminPage() {
         // If email was changed, user might need to re-login
         if (updateData.email) {
           alert('📧 Email adresi değiştirildi. Lütfen yeni email ile tekrar giriş yapın.');
+          signOut({ callbackUrl: '/auth/signin' });
+          return;
+        }
+        
+        // Session'ı yeniden yükle (profil resmi güncellendiğinde sidebar'da görünsün)
+        if (updateData.profilePhoto) {
+          alert('🔄 Profil resmi güncellendi! Değişiklikleri görmek için çıkış yapıp tekrar giriş yapın.');
+          // Çıkış yap ve tekrar giriş sayfasına yönlendir
           signOut({ callbackUrl: '/auth/signin' });
         }
       } else {

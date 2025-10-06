@@ -75,6 +75,8 @@ const handler = NextAuth({
 
           if (response.ok && data.success && data.user) {
             console.log('✅ Login successful for:', data.user.email)
+            console.log('🖼️ User image from backend:', data.user.image ? `EXISTS (${data.user.image?.length} chars)` : 'NULL/UNDEFINED')
+            console.log('📦 Full user data:', data.user)
             return {
               id: data.user.id.toString(),
               name: data.user.name,
@@ -114,11 +116,14 @@ const handler = NextAuth({
         token.role = user.role
         token.image = user.image
         console.log('🔐 JWT Token updated with role:', user.role)
+        console.log('🖼️ JWT Token image:', user.image ? `SET (${user.image?.length} chars)` : 'NULL')
       }
       // Update token when session is updated (e.g., profile photo change)
       if (trigger === "update" && session?.image) {
         token.image = session.image
+        console.log('🔄 JWT Token image updated from session')
       }
+      console.log('🔐 JWT Token final state:', { hasImage: !!token.image, imageLength: token.image?.length || 0 })
       return token
     },
     async session({ session, token }) {
@@ -127,6 +132,13 @@ const handler = NextAuth({
       session.user.role = token.role
       session.user.image = token.image || null
       console.log('🔐 Session created for user:', session.user.email)
+      console.log('🖼️ Session image:', session.user.image ? `SET (${session.user.image?.length} chars)` : 'NULL')
+      console.log('📦 Final session.user:', {
+        id: session.user.id,
+        email: session.user.email,
+        role: session.user.role,
+        hasImage: !!session.user.image
+      })
       return session
     },
     async signIn({ user, account, profile }) {
