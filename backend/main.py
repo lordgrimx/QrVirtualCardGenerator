@@ -746,7 +746,7 @@ async def update_profile(update_data: UpdateProfileRequest, db: Session = Depend
     """Update admin profile (email and/or password)"""
     try:
         # Admin kullanıcısını bul (hardcoded email ile)
-        admin_email = "admin@qrvirtualcard.com"
+        admin_email = "admin@anef.org.tr"
         user = db.query(DBUser).filter(DBUser.email == admin_email).first()
         
         if not user:

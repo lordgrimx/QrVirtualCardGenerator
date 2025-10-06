@@ -321,24 +321,24 @@ def create_default_admin():
     db = SessionLocal()
     try:
         # Check if admin user already exists
-        admin_user = db.query(User).filter(User.email == "admin@elfed.org.tr").first()
+        admin_user = db.query(User).filter(User.email == "admin@anef.org.tr").first()
         
         if not admin_user:
-            # Create default admin user for ELFED
+            # Create default admin user for ANEF
             admin_user = User(
-                name="ELFED Admin",
-                email="admin@elfed.org.tr",
-                password_hash=hash_password("elfed2024"),  # ELFED password
+                name="ANEF Admin",
+                email="admin@anef.org.tr",
+                password_hash=hash_password("anef2025"),  # ANEF password
                 role="admin",
                 is_active=True,
                 email_verified=datetime.utcnow()
             )
             db.add(admin_user)
-            print("✅ ELFED admin user created successfully!")
-            print("📧 Email: admin@elfed.org.tr")
-            print("🔑 Password: elfed2024")
+            print("✅ ANEF admin user created successfully!")
+            print("📧 Email: admin@anef.org.tr")
+            print("🔑 Password: anef2025")
         else:
-            print("ℹ️  ELFED admin user already exists")
+            print("ℹ️  ANEF admin user already exists")
             
         # Also create old admin for compatibility
         old_admin = db.query(User).filter(User.email == "admin@qrvirtualcard.com").first()
