@@ -326,6 +326,7 @@ class MemberCreate(BaseModel):
     membershipType: str
     role: str
     status: str = "active"
+    profilePhoto: Optional[str] = None  # Base64 encoded image
 
 class MemberUpdate(BaseModel):
     fullName: Optional[str] = None
@@ -337,6 +338,7 @@ class MemberUpdate(BaseModel):
     membershipType: Optional[str] = None
     role: Optional[str] = None
     status: Optional[str] = None
+    profilePhoto: Optional[str] = None  # Base64 encoded image
 
 # Profile Photo Models
 class ProfilePhotoUpload(BaseModel):
@@ -377,6 +379,7 @@ class UpdateProfileRequest(BaseModel):
     email: Optional[str] = None
     currentPassword: Optional[str] = None
     newPassword: Optional[str] = None
+    profilePhoto: Optional[str] = None  # Base64 encoded image
 
 # Business Models
 class BusinessCreate(BaseModel):
@@ -776,6 +779,21 @@ async def update_profile(update_data: UpdateProfileRequest, db: Session = Depend
             # Şifreyi güncelle
             user.password_hash = hash_password(update_data.newPassword)
         
+        # Profil resmi güncelleme
+        if update_data.profilePhoto:
+            profile_photo = update_data.profilePhoto
+            # Data URL prefix varsa kaldır
+            if profile_photo.startswith('data:image'):
+                profile_photo = profile_photo.split(',')[1] if ',' in profile_photo else profile_photo
+            
+            # Base64 validation
+            try:
+                import base64
+                base64.b64decode(profile_photo)
+                user.image = profile_photo
+            except Exception:
+                raise HTTPException(status_code=400, detail="Geçersiz resim formatı")
+        
         user.updated_at = datetime.utcnow()
         db.commit()
         db.refresh(user)
@@ -1090,6 +1108,21 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
         while db.query(DBMember).filter(DBMember.card_number == card_number).first():
             card_number = generate_card_number()
         
+        # Process profile photo if provided
+        profile_photo = None
+        if member.profilePhoto:
+            profile_photo = member.profilePhoto
+            # Data URL prefix varsa kaldır
+            if profile_photo.startswith('data:image'):
+                profile_photo = profile_photo.split(',')[1] if ',' in profile_photo else profile_photo
+            
+            # Base64 validation
+            try:
+                import base64
+                base64.b64decode(profile_photo)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Geçersiz resim formatı")
+        
         # Create new member
         db_member = DBMember(
             full_name=member.fullName,
@@ -1102,7 +1135,8 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
             emergency_contact=member.emergencyContact,
             membership_type=member.membershipType,
             role=member.role,
-            status=member.status
+            status=member.status,
+            profile_photo=profile_photo
         )
         
         db.add(db_member)
@@ -1321,6 +1355,21 @@ async def update_member(member_id: int, member: MemberUpdate, db: Session = Depe
             db_member.role = value
         elif field == "status":
             db_member.status = value
+        elif field == "profilePhoto":
+            # Process profile photo
+            profile_photo = value
+            # Data URL prefix varsa kaldır
+            if profile_photo and profile_photo.startswith('data:image'):
+                profile_photo = profile_photo.split(',')[1] if ',' in profile_photo else profile_photo
+            
+            # Base64 validation
+            if profile_photo:
+                try:
+                    import base64
+                    base64.b64decode(profile_photo)
+                    db_member.profile_photo = profile_photo
+                except Exception:
+                    raise HTTPException(status_code=400, detail="Geçersiz resim formatı")
     
     db_member.updated_at = datetime.utcnow()
     db.commit()

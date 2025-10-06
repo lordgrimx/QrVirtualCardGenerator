@@ -170,7 +170,8 @@ export default function AdminPage() {
     emergencyContact: '',
     membershipType: '',
     role: '',
-    status: 'active'
+    status: 'active',
+    profilePhoto: ''
   });
 
   // Business form data
@@ -210,7 +211,8 @@ export default function AdminPage() {
     currentPassword: '',
     newEmail: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    profilePhoto: ''
   });
 
   // Dashboard state
@@ -380,6 +382,26 @@ export default function AdminPage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleMemberPhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Resim boyutu 5MB\'dan küçük olmalıdır');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({
+          ...prev,
+          profilePhoto: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Business form handlers
@@ -585,6 +607,26 @@ export default function AdminPage() {
     }));
   };
 
+  const handleProfilePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Resim boyutu 5MB\'dan küçük olmalıdır');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSettingsFormData(prev => ({
+          ...prev,
+          profilePhoto: reader.result
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSettingsSubmit = async (e) => {
     e.preventDefault();
     
@@ -613,6 +655,10 @@ export default function AdminPage() {
       if (settingsFormData.newPassword) {
         updateData.currentPassword = settingsFormData.currentPassword;
         updateData.newPassword = settingsFormData.newPassword;
+      }
+
+      if (settingsFormData.profilePhoto) {
+        updateData.profilePhoto = settingsFormData.profilePhoto;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -737,7 +783,8 @@ export default function AdminPage() {
           emergencyContact: '',
           membershipType: '',
           role: '',
-          status: 'active'
+          status: 'active',
+          profilePhoto: ''
         });
         // Refresh members list if we're on that tab
         if (activeMenu === 'showMembers') {
@@ -790,19 +837,19 @@ export default function AdminPage() {
                 )}
               </div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 via-red-800 to-orange-600 bg-clip-text text-transparent">
-                {activeMenu === 'addMember' ? 'Add New Member' : 
-                 activeMenu === 'showMembers' ? 'All Members' : 
+                {activeMenu === 'addMember' ? 'Yeni Üye Ekle' : 
+                 activeMenu === 'showMembers' ? 'Tüm Üyeler' : 
                  activeMenu === 'dashboard' ? 'Dashboard' : 
                  activeMenu === 'businessRegistration' ? 'İşletme Kayıt' :
-                 'Settings'}
+                 'Ayarlar'}
               </h1>
             </div>
             <p className="text-gray-600 ml-14">
-              {activeMenu === 'addMember' ? 'Create a new membership card with auto-generated ID and card number' : 
-               activeMenu === 'showMembers' ? 'View and manage all registered members' : 
-               activeMenu === 'dashboard' ? 'Overview of system statistics' : 
+              {activeMenu === 'addMember' ? 'Otomatik ID ve kart numarası ile yeni üyelik kartı oluşturun' : 
+               activeMenu === 'showMembers' ? 'Kayıtlı tüm üyeleri görüntüleyin ve yönetin' : 
+               activeMenu === 'dashboard' ? 'Sistem istatistiklerine genel bakış' : 
                activeMenu === 'businessRegistration' ? 'İşletme kaydı yapın ve event\'ler oluşturun' :
-               'System configuration and preferences'}
+               'Sistem yapılandırması ve tercihler'}
             </p>
           </div>
 
@@ -1285,17 +1332,44 @@ export default function AdminPage() {
             <form onSubmit={handleSubmit} className="flex-1 flex flex-col">
               <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-8 flex-1 flex flex-col shadow-xl border border-white/20">
                 <div className="grid grid-cols-4 gap-6 flex-1">
+                  {/* Profile Photo */}
+                  <div className="col-span-4 space-y-2">
+                    <label className="block text-sm font-semibold text-gray-800 mb-2">
+                      Profil Resmi
+                    </label>
+                    <div className="flex items-center space-x-6">
+                      {formData.profilePhoto && (
+                        <div className="relative">
+                          <img
+                            src={formData.profilePhoto}
+                            alt="Profil Önizleme"
+                            className="w-20 h-20 rounded-xl object-cover border-2 border-white shadow-lg"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleMemberPhotoChange}
+                          className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">PNG, JPG veya GIF (Maks. 5MB)</p>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Full Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Full Name (Ad Soyad)
+                      Ad Soyad
                     </label>
                     <input
                       type="text"
                       name="fullName"
                       value={formData.fullName}
                       onChange={handleInputChange}
-                      placeholder="Enter full name"
+                      placeholder="Ad soyad girin"
                       className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
@@ -1304,14 +1378,14 @@ export default function AdminPage() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Email Address (E-posta)
+                      E-posta
                     </label>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="Enter email address"
+                      placeholder="E-posta adresini girin"
                       className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
@@ -1320,7 +1394,7 @@ export default function AdminPage() {
                   {/* Phone Number */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Phone Number (Telefon)
+                      Telefon
                     </label>
                     <input
                       type="tel"
@@ -1336,7 +1410,7 @@ export default function AdminPage() {
                   {/* Date of Birth */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Date of Birth (Doğum Tarihi)
+                      Doğum Tarihi
                     </label>
                     <input
                       type="date"
@@ -1352,7 +1426,7 @@ export default function AdminPage() {
                   {/* Membership Type */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Membership Type (Üyelik Tipi)
+                      Üyelik Tipi
                     </label>
                     <select
                       name="membershipType"
@@ -1361,18 +1435,18 @@ export default function AdminPage() {
                       className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     >
-                      <option value="">Select membership type</option>
-                      <option value="standard">Standard</option>
+                      <option value="">Üyelik tipini seçin</option>
+                      <option value="standard">Standart</option>
                       <option value="premium">Premium</option>
                       <option value="vip">VIP</option>
-                      <option value="corporate">Corporate</option>
+                      <option value="corporate">Kurumsal</option>
                     </select>
                   </div>
 
                   {/* Role */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Role (Rol)
+                      Rol
                     </label>
                     <select
                       name="role"
@@ -1381,18 +1455,18 @@ export default function AdminPage() {
                       className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     >
-                      <option value="">Select role</option>
-                      <option value="member">Member</option>
-                      <option value="volunteer">Volunteer</option>
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
+                      <option value="">Rol seçin</option>
+                      <option value="member">Üye</option>
+                      <option value="volunteer">Gönüllü</option>
+                      <option value="staff">Personel</option>
+                      <option value="admin">Yönetici</option>
                     </select>
                   </div>
 
                   {/* Status */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Status (Durum)
+                      Durum
                     </label>
                     <select
                       name="status"
@@ -1400,16 +1474,16 @@ export default function AdminPage() {
                       onChange={handleInputChange}
                       className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
-                      <option value="active">Active</option>
-                      <option value="pending">Pending</option>
-                      <option value="suspended">Suspended</option>
+                      <option value="active">Aktif</option>
+                      <option value="pending">Beklemede</option>
+                      <option value="suspended">Askıda</option>
                     </select>
                   </div>
 
                   {/* Emergency Contact */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Emergency Contact
+                      Acil Durum İletişim
                     </label>
                     <input
                       type="tel"
@@ -1425,13 +1499,13 @@ export default function AdminPage() {
                   {/* Address - Full Width */}
                   <div className="col-span-4 space-y-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Address (Adres)
+                      Adres
                     </label>
                     <textarea
                       name="address"
                       value={formData.address}
                       onChange={handleInputChange}
-                      placeholder="Enter full address"
+                      placeholder="Tam adresi girin"
                       rows={3}
                       className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
                       required
@@ -1448,7 +1522,7 @@ export default function AdminPage() {
                     <div className="w-5 h-5 bg-white/20 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-sm"></div>
                     </div>
-                    Create Member Card
+                    Üyelik Kartı Oluştur
                   </button>
                 </div>
               </div>
@@ -1495,11 +1569,19 @@ export default function AdminPage() {
                           onClick={() => window.open(`/member/${member.id}`, '_blank')}
                         >
                           <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
-                              <span className="text-white font-bold text-lg">
-                                {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                              </span>
-                            </div>
+                            {member.profilePhoto ? (
+                              <img
+                                src={`data:image/png;base64,${member.profilePhoto}`}
+                                alt={member.fullName}
+                                className="w-12 h-12 rounded-xl object-cover border-2 border-white shadow-lg"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-gradient-to-r from-red-600 to-orange-600 rounded-xl flex items-center justify-center">
+                                <span className="text-white font-bold text-lg">
+                                  {member.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                                </span>
+                              </div>
+                            )}
                             <div>
                               <h3 className="font-bold text-gray-900">{member.fullName}</h3>
                               <p className="text-sm text-gray-600">{member.membershipId}</p>
@@ -1780,6 +1862,34 @@ export default function AdminPage() {
                   {/* Update Form */}
                   <form onSubmit={handleSettingsSubmit} className="space-y-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-6">Profil Güncelleme</h3>
+
+                    {/* Profile Photo Update */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+                      <h4 className="text-lg font-semibold text-gray-800 mb-4">Profil Resmi</h4>
+                      <div className="flex items-center space-x-6">
+                        {settingsFormData.profilePhoto && (
+                          <div className="relative">
+                            <img
+                              src={settingsFormData.profilePhoto}
+                              alt="Profil Önizleme"
+                              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
+                            Yeni Profil Resmi Yükle
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProfilePhotoChange}
+                            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-700 hover:file:bg-red-100"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">PNG, JPG veya GIF (Maks. 5MB)</p>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* Email Update */}
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
