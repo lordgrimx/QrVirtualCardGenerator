@@ -1204,6 +1204,7 @@ async def get_all_members(db: Session = Depends(get_db)):
                 "membershipType": member.membership_type,
                 "role": member.role,
                 "status": member.status,
+                "profilePhoto": member.profile_photo,  # Profil fotoğrafını ekle
                 "createdAt": member.created_at,
                 "updatedAt": member.updated_at,
                 "secureQrCode": None,
@@ -1300,6 +1301,7 @@ async def get_member_by_membership_id(membership_id: str, db: Session = Depends(
         "membershipType": member.membership_type,
         "role": member.role,
         "status": member.status,
+        "profilePhoto": member.profile_photo,  # Profil fotoğrafını ekle
         "createdAt": member.created_at,
         "updatedAt": member.updated_at
     }
