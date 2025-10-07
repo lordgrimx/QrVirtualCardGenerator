@@ -13,7 +13,7 @@
     "dev:ssl": "HTTPS=true SSL_CRT_FILE=./cert.pem SSL_KEY_FILE=./key.pem next dev --port 3000",
     "build": "next build",
     "start": "next start",
-    "start:https": "next start --experimental-https",
+    "start:cpanel": "NODE_OPTIONS='--max-old-space-size=256' NEXT_TELEMETRY_DISABLED=1 node server.js",
     "lint": "next lint"
   },
   "dependencies": {

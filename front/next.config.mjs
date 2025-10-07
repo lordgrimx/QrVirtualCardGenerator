@@ -36,20 +36,36 @@ const nextConfig = {
     // Vercel'de external image optimization sorunları için
     unoptimized: process.env.NODE_ENV === 'production',
   },
-  // HTTPS development server
+  // HTTPS ve güvenlik headers
   async headers() {
     return [
       {
-        source: '/(.*)',
+        source: '/:path*',
         headers: [
           {
             key: 'X-Frame-Options',
             value: 'DENY',
           },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: 'upgrade-insecure-requests',
+          },
         ],
       },
     ];
-  }
+  },
+  // Production için asset yolu (SSL için)
+  assetPrefix: process.env.NODE_ENV === 'production' && process.env.VERCEL !== '1' 
+    ? 'https://anefuye.com.tr' 
+    : undefined
 };
 
 export default nextConfig;

@@ -1,0 +1,17 @@
+# Ana domain'i qrgen klasörüne yönlendirme
+# Bu dosyayı cPanel'de public_html/.htaccess olarak kaydedin
+# (Sadece ana domain'i qrgen klasörüne yönlendirmek isterseniz)
+
+RewriteEngine On
+
+# HTTPS yönlendirmesi
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Ana domain'i qrgen klasörüne yönlendir
+RewriteCond %{HTTP_HOST} ^(www\.)?anefuye\.com\.tr$ [NC]
+RewriteCond %{REQUEST_URI} !^/qrgen/
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ /qrgen/$1 [L]
+

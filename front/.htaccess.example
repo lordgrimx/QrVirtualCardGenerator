@@ -1,0 +1,41 @@
+# cPanel Node.js Application Configuration - Ana Domain
+# Bu dosyayı .htaccess olarak kopyalayın ve KULLANICI_ADINIZ'ı değiştirin
+# Ana domain için: public_html klasörüne yerleştirin
+
+# Node.js app için Passenger konfigürasyonu
+PassengerEnabled On
+PassengerAppRoot /home/KULLANICI_ADINIZ/public_html
+PassengerAppType node
+PassengerStartupFile server.js
+
+# Node.js version path (cPanel'deki path'inize göre güncelleyin)
+# cPanel Terminal'de şu komutu çalıştırarak path'i bulabilirsiniz: which node
+PassengerNodejs /home/KULLANICI_ADINIZ/nodevenv/public_html/18/bin/node
+
+# Environment
+SetEnv NODE_ENV production
+
+# HTTPS yönlendirmesi (SSL sertifikanız varsa aktif edin)
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Cache static assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType image/jpg "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+  ExpiresByType application/woff2 "access plus 1 year"
+</IfModule>
+
+# Gzip compression
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css
+  AddOutputFilterByType DEFLATE application/javascript application/json
+</IfModule>
+
