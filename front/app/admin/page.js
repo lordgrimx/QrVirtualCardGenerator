@@ -19,11 +19,11 @@ const NfcReadingChart = () => {
         // Dinamik API URL (mobil erişim için)
         const getApiUrl = () => {
           if (typeof window === 'undefined') {
-            return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
+            return process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr';
           }
           const envUrl = process.env.NEXT_PUBLIC_API_URL;
           if (envUrl) return envUrl;
-          return 'https://qrvirtualcardgenerator.onrender.com';
+          return 'https://backend.anefuye.com.tr';
         };
 
         const response = await fetch(`${getApiUrl()}/api/nfc/reading-history?days=7`);
@@ -101,17 +101,26 @@ const NfcReadingChart = () => {
             <div key={index} className="flex flex-col items-center flex-1 group">
               {/* Bar */}
               <div className="relative w-full max-w-16 mb-2" style={{ height: '240px' }}>
-                <div className="absolute bottom-0 w-full bg-gray-200 rounded-t-lg" style={{ height: '240px' }}>
-                  {/* Failed readings (red) */}
-                  <div 
-                    className="absolute bottom-0 w-full bg-red-500 rounded-t-lg opacity-80 hover:opacity-100 transition-opacity"
-                    style={{ height: `${totalHeight}%` }}
-                  />
-                  {/* Successful readings (green) */}
-                  <div 
-                    className="absolute bottom-0 w-full bg-red-500 rounded-t-lg opacity-90 hover:opacity-100 transition-opacity"
-                    style={{ height: `${successfulHeight}%` }}
-                  />
+                <div className="absolute bottom-0 w-full rounded-t-lg overflow-hidden" style={{ height: '240px' }}>
+                  {/* Stacked bar chart */}
+                  <div className="absolute bottom-0 w-full flex flex-col" style={{ height: `${totalHeight}%` }}>
+                    {/* Failed readings (red) - bottom layer */}
+                    {day.failed > 0 && (
+                      <div 
+                        className="w-full bg-red-500 opacity-80 hover:opacity-100 transition-opacity"
+                        style={{ height: `${(day.failed / (day.successful + day.failed)) * 100}%` }}
+                        title={`Başarısız: ${day.failed}`}
+                      />
+                    )}
+                    {/* Successful readings (green) - top layer */}
+                    {day.successful > 0 && (
+                      <div 
+                        className="w-full bg-green-500 opacity-90 hover:opacity-100 transition-opacity rounded-t-lg"
+                        style={{ height: `${(day.successful / (day.successful + day.failed)) * 100}%` }}
+                        title={`Başarılı: ${day.successful}`}
+                      />
+                    )}
+                  </div>
                 </div>
                 
                 {/* Tooltip */}
@@ -133,24 +142,24 @@ const NfcReadingChart = () => {
       </div>
       
       {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-4 mt-6 p-4 bg-gray-50 rounded-xl">
+      <div className="grid grid-cols-3 gap-2 md:gap-4 mt-4 md:mt-6 p-3 md:p-4 bg-gray-50 rounded-xl">
         <div className="text-center">
-          <div className="text-2xl font-bold text-green-600">
+          <div className="text-lg md:text-2xl font-bold text-green-600">
             {chartData.reduce((sum, day) => sum + day.successful, 0)}
           </div>
-          <div className="text-sm text-gray-600">Toplam Başarılı</div>
+          <div className="text-xs md:text-sm text-gray-600">Toplam Başarılı</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-red-600">
+          <div className="text-lg md:text-2xl font-bold text-red-600">
             {chartData.reduce((sum, day) => sum + day.failed, 0)}
           </div>
-          <div className="text-sm text-gray-600">Toplam Başarısız</div>
+          <div className="text-xs md:text-sm text-gray-600">Toplam Başarısız</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">
+          <div className="text-lg md:text-2xl font-bold text-blue-600">
             {chartData.reduce((sum, day) => sum + day.successful + day.failed, 0)}
           </div>
-          <div className="text-sm text-gray-600">Genel Toplam</div>
+          <div className="text-xs md:text-sm text-gray-600">Genel Toplam</div>
         </div>
       </div>
     </div>
@@ -306,13 +315,13 @@ export default function AdminPage() {
   // Dinamik API URL tespiti (mobil erişim için)
   const getApiUrl = () => {
     if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
+      return process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr';
     }
-    // Production Vercel → Render backend
+    // Production Vercel → ANEF backend
     const envUrl = process.env.NEXT_PUBLIC_API_URL;
     if (envUrl) return envUrl;
-    // Fallback to Render backend
-    return 'https://qrvirtualcardgenerator.onrender.com';
+    // Fallback to ANEF backend
+    return 'https://backend.anefuye.com.tr';
   };
 
   // Fetch all members from database
@@ -1727,12 +1736,12 @@ export default function AdminPage() {
 
           {/* Dashboard Content */}
           {activeMenu === 'dashboard' && (
-            <div className="flex-1 p-8 space-y-8">
+            <div className="flex-1 p-4 md:p-8 space-y-4 md:space-y-8">
               {/* NFC Okuma Grafiği */}
-              <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white/70 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0 mb-4 md:mb-6">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center gap-2 md:gap-3">
                       <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -1740,9 +1749,9 @@ export default function AdminPage() {
                       </div>
                       Günlük NFC Okuma İstatistikleri
                     </h2>
-                    <p className="text-gray-600">Son 7 günlük NFC kart okuma geçmişi</p>
+                    <p className="text-sm md:text-base text-gray-600">Son 7 günlük NFC kart okuma geçmişi</p>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-gray-600">
                     <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                     <span>Başarılı</span>
                     <div className="w-3 h-3 bg-red-500 rounded-full ml-4"></div>
@@ -1751,7 +1760,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Chart Area */}
-                <div className="h-80 relative">
+                <div className="h-64 md:h-80 relative">
                   <NfcReadingChart />
                 </div>
               </div>

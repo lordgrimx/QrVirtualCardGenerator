@@ -17,8 +17,11 @@
             <svc:IsNotNullOrEmptyConverter x:Key="IsNotNullOrEmptyConverter" />
             <svc:BoolToColorConverter x:Key="BoolToColorConverter" />
             <svc:OnlineModeLabelConverter x:Key="OnlineModeLabelConverter" />
-             <svc:ByteArrayToStringConverter x:Key="ByteArrayToStringConverter" />
-             <svc:ByteArrayToHexConverter x:Key="ByteArrayToHexConverter" />
+            <svc:ByteArrayToStringConverter x:Key="ByteArrayToStringConverter" />
+            <svc:ByteArrayToHexConverter x:Key="ByteArrayToHexConverter" />
+            <svc:BoolToConnectionColorConverter x:Key="BoolToConnectionColorConverter" />
+            <svc:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <svc:BoolToReadingStatusConverter x:Key="BoolToReadingStatusConverter" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

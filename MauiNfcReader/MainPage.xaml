@@ -15,8 +15,9 @@
         <Rectangle Grid.RowSpan="2">
             <Rectangle.Fill>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FEF2F2" Offset="0.0" />
-                    <GradientStop Color="#FFF7ED" Offset="1.0" />
+                    <GradientStop Color="#FEFCE8" Offset="0.0" />
+                    <GradientStop Color="#FEF3C7" Offset="0.5" />
+                    <GradientStop Color="#FED7AA" Offset="1.0" />
                 </LinearGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
@@ -25,40 +26,40 @@
         <ScrollView Grid.Row="0" Padding="16">
             <VerticalStackLayout Spacing="20">
                 
-                <!-- Header with ELFED Logo -->
+                <!-- Header with ANEF Logo -->
                 <Frame BackgroundColor="White" 
                        Padding="20,16" 
                        HasShadow="True" 
                        CornerRadius="16"
-                       Opacity="0.9">
+                       Opacity="0.95">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         
-                        <!-- ELFED Logo -->
+                        <!-- ANEF Logo -->
                         <Image Grid.Column="0"
-                               Source="elfedlogo.png"
-                               WidthRequest="50"
-                               HeightRequest="50"
+                               Source="aneflogo.jpg"
+                               WidthRequest="60"
+                               HeightRequest="60"
                                Aspect="AspectFit"
                                VerticalOptions="Center"
-                               Margin="0,0,12,0"/>
+                               Margin="0,0,16,0"/>
                         
                         <!-- Header Text -->
                         <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                            <Label FontSize="24" 
+                            <Label FontSize="26" 
                                    FontAttributes="Bold" 
                                    HorizontalOptions="Start">
                                 <Label.FormattedText>
                                     <FormattedString>
-                                        <Span Text="ELFED " TextColor="#DC2626"/>
+                                        <Span Text="ANEF " TextColor="#7C2D12"/>
                                         <Span Text="NFC Okuyucu" TextColor="#111827"/>
                                     </FormattedString>
                                 </Label.FormattedText>
                             </Label>
-                            <Label Text="Elazığ Dernekler Federasyonu" 
+                            <Label Text="Anadolu Elazığlılar Federasyonu" 
                                    FontSize="14" 
                                    TextColor="#6B7280" 
                                    HorizontalOptions="Start" />
@@ -106,17 +107,18 @@
                     
                     <!-- Connect Backend Button -->
                     <Button x:Name="ConnectBackendBtn"
-                            Text="Backend'e Bağlan"
+                            Text="🌐 Backend'e Bağlan"
                             FontSize="16"
                             FontAttributes="Bold"
-                            HeightRequest="56"
+                            HeightRequest="60"
                             CornerRadius="16"
                             Clicked="OnConnectBackendClicked"
-                            HorizontalOptions="Fill">
+                            HorizontalOptions="Fill"
+                            Shadow="{Shadow Brush=#7C2D12, Offset='0,4', Radius=8, Opacity=0.3}">
                         <Button.Background>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                <GradientStop Color="#DC2626" Offset="0.0" />
-                                <GradientStop Color="#EA580C" Offset="1.0" />
+                                <GradientStop Color="#7C2D12" Offset="0.0" />
+                                <GradientStop Color="#92400E" Offset="1.0" />
                             </LinearGradientBrush>
                         </Button.Background>
                         <Button.TextColor>White</Button.TextColor>
@@ -127,13 +129,14 @@
                             FontSize="16"
                             FontAttributes="Bold"
                             BackgroundColor="White"
-                            TextColor="#111827"
-                            HeightRequest="56"
+                            TextColor="#7C2D12"
+                            HeightRequest="60"
                             CornerRadius="16"
                             Clicked="OnStartClicked"
                             HorizontalOptions="Fill"
-                            BorderColor="#E5E7EB"
-                            BorderWidth="1">
+                            BorderColor="#7C2D12"
+                            BorderWidth="2"
+                            Shadow="{Shadow Brush=#E5E7EB, Offset='0,2', Radius=6, Opacity=0.2}">
                         <Button.Text>📡 NFC Okuyucuyu Başlat</Button.Text>
                     </Button>
                     
@@ -159,14 +162,14 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Frame Grid.Column="0" 
-                                       BackgroundColor="#DC2626" 
-                                       WidthRequest="32" 
-                                       HeightRequest="32" 
-                                       CornerRadius="16" 
+                                       BackgroundColor="#7C2D12" 
+                                       WidthRequest="36" 
+                                       HeightRequest="36" 
+                                       CornerRadius="18" 
                                        Padding="0"
-                                       HasShadow="False">
+                                       HasShadow="True">
                                     <Label Text="💻" 
-                                           FontSize="16" 
+                                           FontSize="18" 
                                            HorizontalOptions="Center" 
                                            VerticalOptions="Center" />
                                 </Frame>
@@ -187,14 +190,14 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Frame Grid.Column="0" 
-                                       BackgroundColor="#EA580C" 
-                                       WidthRequest="32" 
-                                       HeightRequest="32" 
-                                       CornerRadius="16" 
+                                       BackgroundColor="#92400E" 
+                                       WidthRequest="36" 
+                                       HeightRequest="36" 
+                                       CornerRadius="18" 
                                        Padding="0"
-                                       HasShadow="False">
+                                       HasShadow="True">
                                     <Label Text="📱" 
-                                           FontSize="16" 
+                                           FontSize="18" 
                                            HorizontalOptions="Center" 
                                            VerticalOptions="Center" />
                                 </Frame>
@@ -215,14 +218,14 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Frame Grid.Column="0" 
-                                       BackgroundColor="#F97316" 
-                                       WidthRequest="32" 
-                                       HeightRequest="32" 
-                                       CornerRadius="16" 
+                                       BackgroundColor="#B45309" 
+                                       WidthRequest="36" 
+                                       HeightRequest="36" 
+                                       CornerRadius="18" 
                                        Padding="0"
-                                       HasShadow="False">
+                                       HasShadow="True">
                                     <Label Text="🔒" 
-                                           FontSize="16" 
+                                           FontSize="18" 
                                            HorizontalOptions="Center" 
                                            VerticalOptions="Center" />
                                 </Frame>
@@ -243,14 +246,14 @@
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
                                 <Frame Grid.Column="0" 
-                                       BackgroundColor="#DC2626" 
-                                       WidthRequest="32" 
-                                       HeightRequest="32" 
-                                       CornerRadius="16" 
+                                       BackgroundColor="#D97706" 
+                                       WidthRequest="36" 
+                                       HeightRequest="36" 
+                                       CornerRadius="18" 
                                        Padding="0"
-                                       HasShadow="False">
+                                       HasShadow="True">
                                     <Label Text="⚡" 
-                                           FontSize="16" 
+                                           FontSize="18" 
                                            HorizontalOptions="Center" 
                                            VerticalOptions="Center" />
                                 </Frame>
@@ -275,55 +278,56 @@
         <Frame Grid.Row="1" 
                BackgroundColor="White" 
                HasShadow="True" 
-               Padding="16,12" 
-               CornerRadius="24,24,0,0"
-               Opacity="0.95">
+               Padding="20,16" 
+               CornerRadius="28,28,0,0"
+               Opacity="0.98">
             <HorizontalStackLayout Spacing="0" HorizontalOptions="FillAndExpand">
                 
                 <!-- Home -->
-                <Button BackgroundColor="Transparent" 
-                        Text="🏠"
-                        FontSize="24" 
-                        TextColor="#DC2626"
-                        Padding="12" 
-                        HorizontalOptions="FillAndExpand"
-                        Clicked="OnHomeClicked" />
-                
-                <!-- Search -->
-                <Button BackgroundColor="Transparent" 
-                        Text="🔍" 
-                        FontSize="24" 
-                        TextColor="#6B7280" 
-                        Padding="12" 
-                        HorizontalOptions="FillAndExpand"
-                        Clicked="OnSearchClicked" />
-                
-                <!-- Add -->
-                <Button BackgroundColor="Transparent" 
-                        Text="➕" 
-                        FontSize="24" 
-                        TextColor="#6B7280" 
-                        Padding="12" 
-                        HorizontalOptions="FillAndExpand"
-                        Clicked="OnAddClicked" />
+                <VerticalStackLayout HorizontalOptions="FillAndExpand" Spacing="4">
+                    <Button BackgroundColor="Transparent" 
+                            Text="🏠"
+                            FontSize="28" 
+                            TextColor="#7C2D12"
+                            Padding="8" 
+                            HorizontalOptions="Center"
+                            Clicked="OnHomeClicked" />
+                    <Label Text="Ana Sayfa" 
+                           FontSize="10" 
+                           TextColor="#7C2D12" 
+                           FontAttributes="Bold"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
                 
                 <!-- Settings -->
-                <Button BackgroundColor="Transparent" 
-                        Text="⚙️" 
-                        FontSize="24" 
-                        TextColor="#6B7280" 
-                        Padding="12" 
-                        HorizontalOptions="FillAndExpand"
-                        Clicked="OnBookmarkClicked" />
+                <VerticalStackLayout HorizontalOptions="FillAndExpand" Spacing="4">
+                    <Button BackgroundColor="Transparent" 
+                            Text="⚙️" 
+                            FontSize="28" 
+                            TextColor="#6B7280" 
+                            Padding="8" 
+                            HorizontalOptions="Center"
+                            Clicked="OnBookmarkClicked" />
+                    <Label Text="Ayarlar" 
+                           FontSize="10" 
+                           TextColor="#6B7280"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
                 
                 <!-- User -->
-                <Button BackgroundColor="Transparent" 
-                        Text="👤" 
-                        FontSize="24" 
-                        TextColor="#6B7280" 
-                        Padding="12" 
-                        HorizontalOptions="FillAndExpand"
-                        Clicked="OnUserClicked" />
+                <VerticalStackLayout HorizontalOptions="FillAndExpand" Spacing="4">
+                    <Button BackgroundColor="Transparent" 
+                            Text="👤" 
+                            FontSize="28" 
+                            TextColor="#6B7280" 
+                            Padding="8" 
+                            HorizontalOptions="Center"
+                            Clicked="OnUserClicked" />
+                    <Label Text="Profil" 
+                           FontSize="10" 
+                           TextColor="#6B7280"
+                           HorizontalOptions="Center" />
+                </VerticalStackLayout>
                 
             </HorizontalStackLayout>
         </Frame>

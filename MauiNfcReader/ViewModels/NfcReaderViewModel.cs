@@ -497,47 +497,92 @@ public partial class NfcReaderViewModel : ObservableObject
 
     private static async Task ShowMemberInfoPopupAsync(QrVerificationResult result, string mode)
     {
-        var page = Shell.Current?.CurrentPage;
-        if (page == null) return;
-        var vm = new Views.MemberInfoPopupViewModel
+        try
         {
-            Name = result.Name,
-            MembershipId = result.MembershipId,
-            MemberId = result.MemberId,
-            Status = result.Status,
-            Valid = result.Valid,
-            Mode = mode
-        };
-        var popup = new Views.MemberInfoPopup(vm);
-        await page.ShowPopupAsync(popup);
+            // NavigationPage kullanıldığı için Shell.Current yerine Application.Current.MainPage kullan
+            var page = Application.Current?.MainPage;
+            
+            // Eğer NavigationPage ise, CurrentPage'i al
+            if (page is NavigationPage navPage)
+            {
+                page = navPage.CurrentPage;
+            }
+            
+            if (page == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ShowMemberInfoPopupAsync: page is null");
+                return;
+            }
+            
+            var vm = new Views.MemberInfoPopupViewModel
+            {
+                Name = result.Name,
+                MembershipId = result.MembershipId,
+                MemberId = result.MemberId,
+                Status = result.Status,
+                Valid = result.Valid,
+                Mode = mode
+            };
+            var popup = new Views.MemberInfoPopup(vm);
+            System.Diagnostics.Debug.WriteLine($"ShowMemberInfoPopupAsync (QR): Popup oluşturuldu, gösteriliyor...");
+            await page.ShowPopupAsync(popup);
+            System.Diagnostics.Debug.WriteLine($"ShowMemberInfoPopupAsync (QR): Popup gösterildi");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ShowMemberInfoPopupAsync (QR) HATA: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
     }
 
     private static async Task ShowNfcMemberInfoPopupAsync(NfcDecryptResult result, string mode)
     {
-        var page = Shell.Current?.CurrentPage;
-        if (page == null) return;
-        
-        var vm = new Views.MemberInfoPopupViewModel
+        try
         {
-            Name = result.Member?.FullName ?? result.Member?.Name ?? "Bilinmeyen",
-            MembershipId = result.Member?.MembershipId ?? "N/A",
-            MemberId = result.Member?.MembershipId ?? "N/A",
-            Status = result.Member?.Status ?? "Bilinmeyen",
-            Valid = result.Valid,
-            Mode = mode,
-            // NFC-specific ek bilgiler
-            Email = result.Member?.Email,
-            PhoneNumber = result.Member?.PhoneNumber,
-            Role = result.Member?.Role,
-            MembershipType = result.Member?.MembershipType,
-            ExpirationDate = result.Member?.ExpirationDate,
-            JoinDate = result.Member?.JoinDate,
-            FromDatabase = result.Member?.FromDatabase ?? false,
-            VerificationTime = result.VerificationTime
-        };
-        
-        var popup = new Views.MemberInfoPopup(vm);
-        await page.ShowPopupAsync(popup);
+            // NavigationPage kullanıldığı için Shell.Current yerine Application.Current.MainPage kullan
+            var page = Application.Current?.MainPage;
+            
+            // Eğer NavigationPage ise, CurrentPage'i al
+            if (page is NavigationPage navPage)
+            {
+                page = navPage.CurrentPage;
+            }
+            
+            if (page == null)
+            {
+                System.Diagnostics.Debug.WriteLine("ShowNfcMemberInfoPopupAsync: page is null");
+                return;
+            }
+            
+            var vm = new Views.MemberInfoPopupViewModel
+            {
+                Name = result.Member?.FullName ?? result.Member?.Name ?? "Bilinmeyen",
+                MembershipId = result.Member?.MembershipId ?? "N/A",
+                MemberId = result.Member?.MembershipId ?? "N/A",
+                Status = result.Member?.Status ?? "Bilinmeyen",
+                Valid = result.Valid,
+                Mode = mode,
+                // NFC-specific ek bilgiler
+                Email = result.Member?.Email,
+                PhoneNumber = result.Member?.PhoneNumber,
+                Role = result.Member?.Role,
+                MembershipType = result.Member?.MembershipType,
+                ExpirationDate = result.Member?.ExpirationDate,
+                JoinDate = result.Member?.JoinDate,
+                FromDatabase = result.Member?.FromDatabase ?? false,
+                VerificationTime = result.VerificationTime
+            };
+            
+            var popup = new Views.MemberInfoPopup(vm);
+            System.Diagnostics.Debug.WriteLine($"ShowNfcMemberInfoPopupAsync: Popup oluşturuldu, gösteriliyor...");
+            await page.ShowPopupAsync(popup);
+            System.Diagnostics.Debug.WriteLine($"ShowNfcMemberInfoPopupAsync: Popup gösterildi");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"ShowNfcMemberInfoPopupAsync HATA: {ex.Message}");
+            System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
     }
 
     private static async Task ShowAlertAsync(string title, string message)

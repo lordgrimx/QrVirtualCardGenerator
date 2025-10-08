@@ -16,7 +16,7 @@ export async function GET() {
     tests: {}
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com'
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr'
   console.log('🔍 Backend test başlıyor...')
   console.log('🔍 API URL:', apiUrl)
 

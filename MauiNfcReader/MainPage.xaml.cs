@@ -121,25 +121,52 @@ public partial class MainPage : ContentPage
 
     private async void OnSearchClicked(object? sender, EventArgs e)
     {
-        _logger?.LogInformation("Search butonu tıklandı");
-        await DisplayAlert("Search", "Arama özelliği yakında gelecek!", "Tamam");
+        try
+        {
+            _logger?.LogInformation("Search butonu tıklandı - Üye arama sayfasına yönlendiriliyor");
+            var memberSearchPage = _serviceProvider.GetRequiredService<MemberSearchPage>();
+            await Navigation.PushAsync(memberSearchPage);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Üye arama sayfası açma hatası");
+            await DisplayAlert("Hata", $"Sayfa açılamadı: {ex.Message}", "Tamam");
+        }
     }
 
     private async void OnAddClicked(object? sender, EventArgs e)
     {
         _logger?.LogInformation("Add butonu tıklandı");
-        await DisplayAlert("Add", "Ekleme özelliği yakında gelecek!", "Tamam");
+        await DisplayAlert("Hızlı Eylem", "NFC okuyucuyu başlatmak için ana sayfadaki butonu kullanın!", "Tamam");
     }
 
     private async void OnBookmarkClicked(object? sender, EventArgs e)
     {
-        _logger?.LogInformation("Bookmark butonu tıklandı");
-        await DisplayAlert("Bookmarks", "Yer işaretleri yakında gelecek!", "Tamam");
+        try
+        {
+            _logger?.LogInformation("Settings butonu tıklandı - Ayarlar sayfasına yönlendiriliyor");
+            var settingsPage = _serviceProvider.GetRequiredService<SettingsPage>();
+            await Navigation.PushAsync(settingsPage);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Ayarlar sayfası açma hatası");
+            await DisplayAlert("Hata", $"Sayfa açılamadı: {ex.Message}", "Tamam");
+        }
     }
 
     private async void OnUserClicked(object? sender, EventArgs e)
     {
-        _logger?.LogInformation("User butonu tıklandı");
-        await DisplayAlert("User", "Kullanıcı profili yakında gelecek!", "Tamam");
+        try
+        {
+            _logger?.LogInformation("User butonu tıklandı - Profil sayfasına yönlendiriliyor");
+            var profilePage = _serviceProvider.GetRequiredService<ProfilePage>();
+            await Navigation.PushAsync(profilePage);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Profil sayfası açma hatası");
+            await DisplayAlert("Hata", $"Sayfa açılamadı: {ex.Message}", "Tamam");
+        }
     }
 }

@@ -43,9 +43,9 @@ export default function MemberPage() {
     if (session?.user?.id && session?.user?.hasProfilePhoto) {
       const getApiUrl = () => {
         if (typeof window === 'undefined') {
-          return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
+          return process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr';
         }
-        return process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com';
+        return process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr';
       };
 
       fetch(`${getApiUrl()}/api/auth/me?user_id=${session.user.id}`)
@@ -682,48 +682,48 @@ export default function MemberPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-10 py-4">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 px-4 md:px-10 py-3 md:py-4">
         <div className="flex items-center justify-between max-w-[1280px] mx-auto">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
+          <a href="/" className="flex items-center gap-2 md:gap-4 hover:opacity-80 transition-opacity">
             <Image 
               src="/anef-logo.png" 
               alt="ANEF Logo" 
-              width={48} 
-              height={48} 
-              className="rounded-lg object-contain"
+              width={40} 
+              height={40} 
+              className="rounded-lg object-contain md:w-12 md:h-12"
               priority
             />
-            <div>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
+            <div className="hidden sm:block">
+              <h1 className="text-base md:text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
                 ANEF
               </h1>
-              <p className="text-xs text-gray-600">Elazığ Dernekler Federasyonu</p>
+              <p className="text-xs text-gray-600">Anadolu Elazığlılar Dernekler Federasyonu</p>
             </div>
           </a>
           
           {/* Navigation */}
-          <nav className="flex items-center gap-6">
-            <a href="/admin" className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors">Ana Sayfa</a>
+          <nav className="flex items-center gap-2 md:gap-6">
+            <a href="/admin" className="text-xs md:text-sm font-medium text-gray-900 hover:text-red-600 transition-colors px-2 md:px-0">Ana Sayfa</a>
             {session?.user && (
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-700">Hoş geldiniz, {session.user.name}</span>
+              <div className="flex items-center gap-2 md:gap-4">
+                <span className="hidden md:inline text-sm text-gray-700">Hoş geldiniz, {session.user.name}</span>
                 {/* User Profile Photo - Admin's photo fetched separately */}
                 {adminProfilePhoto ? (
                   <img
                     src={`data:image/jpeg;base64,${adminProfilePhoto}`}
                     alt={session.user.name}
-                    className="w-10 h-10 rounded-full object-cover object-center border-2 border-white shadow-lg flex-shrink-0"
+                    className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover object-center border-2 border-white shadow-lg flex-shrink-0"
                     style={{ aspectRatio: '1 / 1' }}
                   />
                 ) : (
-                  <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm flex-shrink-0">
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-xs md:text-sm flex-shrink-0">
                     {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
                   </div>
                 )}
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
-                  className="text-sm text-gray-600 hover:text-gray-900 transition-colors px-3 py-1 rounded hover:bg-gray-100"
+                  className="text-xs md:text-sm text-gray-600 hover:text-gray-900 transition-colors px-2 md:px-3 py-1 rounded hover:bg-gray-100"
                 >
                   Çıkış
                 </button>
@@ -734,17 +734,17 @@ export default function MemberPage() {
       </header>
 
       {/* Member ID Info Banner */}
-      <div className="bg-red-50 border-b border-red-200 px-10 py-3">
-        <div className="max-w-[1280px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-red-700">Üye ID:</span>
-            <span className="text-sm font-semibold text-red-900">{memberId}</span>
-            <span className="text-sm text-red-600">•</span>
-            <span className="text-sm text-red-700">Üyelik ID:</span>
-            <span className="text-sm font-semibold text-red-900">{userInfo.memberId}</span>
+      <div className="bg-red-50 border-b border-red-200 px-4 md:px-10 py-3">
+        <div className="max-w-[1280px] mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3 text-xs md:text-sm">
+            <span className="text-red-700">Üye ID:</span>
+            <span className="font-semibold text-red-900">{memberId}</span>
+            <span className="text-red-600">•</span>
+            <span className="text-red-700">Üyelik ID:</span>
+            <span className="font-semibold text-red-900">{userInfo.memberId}</span>
           </div>
           {error && (
-            <span className="text-sm text-orange-600 bg-orange-100 px-3 py-1 rounded-full">
+            <span className="text-xs md:text-sm text-orange-600 bg-orange-100 px-2 md:px-3 py-1 rounded-full">
               Varsayılan veriler gösteriliyor
             </span>
           )}
@@ -752,18 +752,18 @@ export default function MemberPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex max-w-[1280px] mx-auto p-6 gap-6">
+      <main className="flex flex-col lg:flex-row max-w-[1280px] mx-auto p-4 md:p-6 gap-4 md:gap-6">
         {/* Left Panel - Membership Card */}
-        <div className="flex-1 max-w-[868px]">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">Membership ID</h2>
+        <div className="flex-1 lg:max-w-[868px] w-full">
+          <div className="mb-4 md:mb-8">
+            <h2 className="text-xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-8">Membership ID</h2>
           </div>
 
           {/* Card Container */}
-          <div className="bg-gray-50 rounded-xl p-6 mb-6">
-            <div className="flex gap-6">
+          <div className="bg-gray-50 rounded-xl p-4 md:p-6 mb-4 md:mb-6">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
               {/* Card Preview */}
-              <div className="w-[418px] h-[231px] relative perspective-1000 overflow-hidden">
+              <div className="w-full max-w-[418px] aspect-[418/231] mx-auto md:mx-0 relative perspective-1000 overflow-hidden">
                 <div className={`w-full h-full transition-transform duration-700 transform-style-preserve-3d relative ${
                   activeTab === 'back' ? 'rotate-y-180' : ''
                 }`}>
@@ -1051,9 +1051,9 @@ export default function MemberPage() {
         </div>
 
         {/* Right Panel - Profile Information */}
-        <div className="w-[360px]">
-          <div className="mb-6">
-            <h3 className="text-xl font-bold text-gray-900">Profil Bilgileri</h3>
+        <div className="w-full lg:w-[360px]">
+          <div className="mb-4 md:mb-6">
+            <h3 className="text-lg md:text-xl font-bold text-gray-900">Profil Bilgileri</h3>
           </div>
 
           {/* Profile Photo Section */}

@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:MauiNfcReader.ViewModels"
              x:Class="MauiNfcReader.Views.NfcReaderPage"
+             x:DataType="vm:NfcReaderViewModel"
              Title="NFC Kart Okuyucu"
-             BackgroundColor="#FEF2F2">
+             BackgroundColor="#F9FAFB">
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <!-- Background Gradient -->
-        <Rectangle Grid.RowSpan="3">
+        <Rectangle Grid.RowSpan="2">
             <Rectangle.Fill>
                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-                    <GradientStop Color="#FEF2F2" Offset="0.0" />
-                    <GradientStop Color="#FFF7ED" Offset="1.0" />
+                    <GradientStop Color="#FEFCE8" Offset="0.0" />
+                    <GradientStop Color="#FEF3C7" Offset="0.5" />
+                    <GradientStop Color="#FED7AA" Offset="1.0" />
                 </LinearGradientBrush>
             </Rectangle.Fill>
         </Rectangle>
@@ -28,7 +30,7 @@
                Padding="20,16" 
                HasShadow="True" 
                CornerRadius="0,0,24,24"
-               Opacity="0.95"
+               Opacity="0.98"
                Margin="0,0,0,16">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -40,17 +42,17 @@
                 <!-- Back Button -->
                 <Button Grid.Column="0"
                         Text="←"
-                        FontSize="24"
+                        FontSize="28"
                         BackgroundColor="Transparent"
-                        TextColor="#DC2626"
+                        TextColor="#7C2D12"
                         Padding="8"
                         VerticalOptions="Center"
                         Clicked="OnBackClicked"/>
                 
                 <!-- Title -->
                 <Label Grid.Column="1"
-                       Text="NFC Kart Okuyucu" 
-                       FontSize="20" 
+                       Text="📡 NFC Okuyucu" 
+                       FontSize="22" 
                        FontAttributes="Bold" 
                        TextColor="#111827"
                        VerticalOptions="Center"
@@ -59,123 +61,297 @@
                 <!-- Status Indicator -->
                 <Grid Grid.Column="2" VerticalOptions="Center">
                     <Ellipse x:Name="StatusIndicator"
-                             Fill="#10B981"
-                             WidthRequest="12"
-                             HeightRequest="12"/>
+                             Fill="{Binding IsConnected, Converter={StaticResource BoolToConnectionColorConverter}}"
+                             WidthRequest="14"
+                             HeightRequest="14"/>
                 </Grid>
             </Grid>
         </Frame>
 
         <!-- Main Content -->
-        <ScrollView Grid.Row="1" Padding="16,0">
+        <ScrollView Grid.Row="1" Padding="16,0,16,16">
             <VerticalStackLayout Spacing="20">
                 
-                <!-- NFC Status Card -->
+                <!-- Mode Toggle (Windows Only) -->
                 <Frame BackgroundColor="White" 
-                       Padding="24" 
+                       Padding="8" 
                        HasShadow="True" 
-                       CornerRadius="20"
-                       Opacity="0.95">
-                    <VerticalStackLayout Spacing="20">
+                       CornerRadius="16"
+                       Opacity="0.98"
+                       HorizontalOptions="Center">
+                    <Frame.IsVisible>
+                        <OnPlatform x:TypeArguments="x:Boolean">
+                            <On Platform="Android" Value="False"/>
+                            <On Platform="iOS" Value="False"/>
+                            <On Platform="WinUI" Value="True"/>
+                        </OnPlatform>
+                    </Frame.IsVisible>
+                    <Grid ColumnSpacing="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                        </Grid.ColumnDefinitions>
                         
-                        <!-- NFC Animation Area -->
-                        <Frame BackgroundColor="#FEF2F2"
-                               WidthRequest="120"
-                               HeightRequest="120"
-                               CornerRadius="60"
+                        <!-- Read Mode Button -->
+                        <Frame Grid.Column="0" 
+                               x:Name="ReadModeFrame"
+                               BackgroundColor="#7C2D12"
                                Padding="0"
-                               HorizontalOptions="Center"
+                               CornerRadius="12"
                                HasShadow="False">
-                            <Grid>
-                                <!-- NFC Icon with Animation -->
-                                <Label Text="📡"
-                                       FontSize="48"
-                                       HorizontalOptions="Center"
-                                       VerticalOptions="Center"
-                                       x:Name="NfcIcon"/>
-                                
-                                <!-- Pulse Animation Circle -->
-                                <Ellipse x:Name="PulseCircle"
-                                         Stroke="#DC2626"
-                                         StrokeThickness="2"
-                                         Fill="Transparent"
-                                         WidthRequest="80"
-                                         HeightRequest="80"
-                                         HorizontalOptions="Center"
-                                         VerticalOptions="Center"
-                                         Opacity="0.6"/>
-                            </Grid>
+                            <Button Text="📖 NFC Oku"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    TextColor="White"
+                                    BackgroundColor="Transparent"
+                                    HeightRequest="40"
+                                    Clicked="OnReadModeClicked"/>
                         </Frame>
                         
-                        <!-- Status Text -->
-                        <VerticalStackLayout Spacing="8">
-                            <Label x:Name="NfcStatusLabel"
-                                   Text="NFC Okuyucu Hazır"
-                                   FontSize="18"
-                                   FontAttributes="Bold"
-                                   TextColor="#111827"
-                                   HorizontalOptions="Center" />
-                            <Label x:Name="NfcSubStatusLabel"
-                                   Text="Kartınızı okuyucuya yaklaştırın"
-                                   FontSize="14"
-                                   TextColor="#6B7280"
-                                   HorizontalOptions="Center" />
-                        </VerticalStackLayout>
-                        
-                        <!-- Action Buttons -->
-                        <VerticalStackLayout Spacing="12">
-                            <Button x:Name="StartReadingBtn"
-                                    Text="📡 Okumaya Başla"
-                                    FontSize="16"
+                        <!-- Write Mode Button -->
+                        <Frame Grid.Column="1" 
+                               x:Name="WriteModeFrame"
+                               BackgroundColor="Transparent"
+                               Padding="0"
+                               CornerRadius="12"
+                               HasShadow="False">
+                            <Button Text="✍️ NFC Yaz"
+                                    FontSize="14"
                                     FontAttributes="Bold"
-                                    HeightRequest="52"
-                                    CornerRadius="16"
-                                    Clicked="OnStartReadingClicked"
-                                    HorizontalOptions="Fill">
-                                <Button.Background>
-                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#DC2626" Offset="0.0" />
-                                        <GradientStop Color="#EA580C" Offset="1.0" />
-                                    </LinearGradientBrush>
-                                </Button.Background>
-                                <Button.TextColor>White</Button.TextColor>
-                            </Button>
-                            
-                            <Button x:Name="StopReadingBtn"
-                                    Text="⏹️ Okumayı Durdur"
-                                    FontSize="16"
-                                    FontAttributes="Bold"
-                                    BackgroundColor="White"
-                                    TextColor="#EF4444"
-                                    HeightRequest="52"
-                                    CornerRadius="16"
-                                    BorderColor="#FEE2E2"
-                                    BorderWidth="1"
-                                    Clicked="OnStopReadingClicked"
-                                    HorizontalOptions="Fill"
-                                    IsVisible="False" />
-                        </VerticalStackLayout>
-                    </VerticalStackLayout>
+                                    TextColor="#6B7280"
+                                    BackgroundColor="Transparent"
+                                    HeightRequest="40"
+                                    Clicked="OnWriteModeClicked"/>
+                        </Frame>
+                    </Grid>
                 </Frame>
-
-                <!-- Last Read Card Info (Initially Hidden) -->
-                <Frame x:Name="LastReadCard" 
-                       BackgroundColor="White" 
+                
+                <!-- NFC Reader Selection Card -->
+                <Frame BackgroundColor="White" 
                        Padding="20" 
                        HasShadow="True" 
                        CornerRadius="16"
-                       Opacity="0.95"
-                       IsVisible="False">
+                       Opacity="0.98">
                     <VerticalStackLayout Spacing="16">
-                        <Label Text="Son Okunan Kart" 
+                        <HorizontalStackLayout Spacing="12">
+                            <Label Text="🔌" FontSize="24" VerticalOptions="Center"/>
+                            <Label Text="NFC Okuyucu Cihazı" 
+                                   FontSize="18" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#111827"
+                                   VerticalOptions="Center" />
+                        </HorizontalStackLayout>
+
+                        <!-- Reader Picker -->
+                        <VerticalStackLayout Spacing="8">
+                            <Label Text="Bağlı Cihazlar" 
+                                   FontSize="14" 
+                                   TextColor="#6B7280" />
+                            
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Picker x:Name="ReaderPicker"
+                                        Grid.Column="0"
+                                        Title="NFC okuyucu seçin"
+                                        ItemsSource="{Binding AvailableReaders}"
+                                        SelectedItem="{Binding SelectedReader, Mode=TwoWay}"
+                                        FontSize="14"
+                                        TextColor="#111827"
+                                        BackgroundColor="#F9FAFB"
+                                        SelectedIndexChanged="OnReaderSelected"/>
+
+                                <Button Grid.Column="1"
+                                        Text="🔄"
+                                        FontSize="20"
+                                        BackgroundColor="#F3F4F6"
+                                        TextColor="#7C2D12"
+                                        CornerRadius="12"
+                                        Padding="12"
+                                        Margin="8,0,0,0"
+                                        Command="{Binding RefreshReadersCommand}"
+                                        ToolTipProperties.Text="Okuyucuları yenile"/>
+                            </Grid>
+                        </VerticalStackLayout>
+
+                        <!-- Reader Status -->
+                        <Frame BackgroundColor="#F9FAFB" 
+                               Padding="12" 
+                               CornerRadius="12"
+                               HasShadow="False">
+                            <HorizontalStackLayout Spacing="12">
+                                <BoxView x:Name="ReaderStatusDot"
+                                         WidthRequest="16"
+                                         HeightRequest="16"
+                                         CornerRadius="8"
+                                         Color="#9CA3AF"
+                                         VerticalOptions="Center" />
+                                <Label x:Name="ReaderStatusLabel"
+                                       Text="{Binding StatusMessage}"
+                                       FontSize="14"
+                                       TextColor="#6B7280"
+                                       VerticalOptions="Center"
+                                       HorizontalOptions="FillAndExpand" />
+                            </HorizontalStackLayout>
+                        </Frame>
+
+                        <!-- Connection Buttons -->
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Column="0"
+                                    Text="🔌 Bağlan"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    BackgroundColor="#7C2D12"
+                                    TextColor="White"
+                                    CornerRadius="12"
+                                    HeightRequest="44"
+                                    Command="{Binding ConnectCommand}"
+                                    IsEnabled="{Binding SelectedReader, Converter={StaticResource IsNotNullConverter}}"/>
+
+                            <Button Grid.Column="1"
+                                    Text="⚠️ Bağlantıyı Kes"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    BackgroundColor="#F3F4F6"
+                                    TextColor="#DC2626"
+                                    CornerRadius="12"
+                                    HeightRequest="44"
+                                    Command="{Binding DisconnectCommand}"
+                                    IsEnabled="{Binding IsConnected}"/>
+                        </Grid>
+
+                        <!-- Auto Detection Status -->
+                        <HorizontalStackLayout Spacing="8" x:Name="AutoDetectStatus" IsVisible="False">
+                            <ActivityIndicator IsRunning="True" 
+                                             Color="#7C2D12" 
+                                             WidthRequest="16" 
+                                             HeightRequest="16"/>
+                            <Label Text="USB cihazları otomatik algılanıyor..." 
+                                   FontSize="12" 
+                                   TextColor="#7C2D12"
+                                   VerticalOptions="Center"/>
+                        </HorizontalStackLayout>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Reading Section -->
+                <VerticalStackLayout x:Name="ReadingSection" Spacing="20">
+                    <VerticalStackLayout.IsVisible>
+                        <OnPlatform x:TypeArguments="x:Boolean">
+                            <On Platform="Android" Value="True"/>
+                            <On Platform="iOS" Value="True"/>
+                            <On Platform="WinUI" Value="True"/>
+                        </OnPlatform>
+                    </VerticalStackLayout.IsVisible>
+                
+                <!-- NFC Reading Card -->
+                <Frame BackgroundColor="White" 
+                       Padding="24" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.98">
+                    <VerticalStackLayout Spacing="20">
+                        
+                        <!-- NFC Animation Area -->
+                        <Frame BackgroundColor="#FEF3C7"
+                               WidthRequest="140"
+                               HeightRequest="140"
+                               CornerRadius="70"
+                               Padding="0"
+                               HorizontalOptions="Center"
+                               HasShadow="True">
+                            <Grid>
+                                <Label Text="📡"
+                                       FontSize="64"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                                
+                                <!-- Pulse Animation (future) -->
+                                <Ellipse x:Name="PulseCircle"
+                                         Stroke="#7C2D12"
+                                         StrokeThickness="3"
+                                         IsVisible="{Binding IsReading}"
+                                         Opacity="0.6"
+                                         WidthRequest="120"
+                                         HeightRequest="120"
+                                         HorizontalOptions="Center"
+                                         VerticalOptions="Center"/>
+                            </Grid>
+                        </Frame>
+
+                        <!-- Status Text -->
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Label Text="{Binding IsReading, Converter={StaticResource BoolToReadingStatusConverter}}"
+                                   FontSize="24" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#111827"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Kartınızı okuyucuya yaklaştırın"
+                                   FontSize="14" 
+                                   TextColor="#6B7280"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+
+                        <!-- Read Button -->
+                        <Button x:Name="ReadCardBtn"
+                                Text="📖 Kart Oku"
+                                FontSize="18"
+                                FontAttributes="Bold"
+                                HeightRequest="56"
+                                CornerRadius="16"
+                                Command="{Binding ReadCardCommand}"
+                                IsEnabled="{Binding IsConnected}"
+                                HorizontalOptions="Fill">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#7C2D12" Offset="0.0" />
+                                    <GradientStop Color="#92400E" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <Button.TextColor>White</Button.TextColor>
+                        </Button>
+
+                        <!-- Warning if not connected -->
+                        <Frame BackgroundColor="#FEF3C7" 
+                               Padding="12" 
+                               CornerRadius="12"
+                               HasShadow="False"
+                               IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+                            <HorizontalStackLayout Spacing="8">
+                                <Label Text="⚠️" FontSize="16" VerticalOptions="Center"/>
+                                <Label Text="NFC okuyucu bağlı değil! Lütfen önce bir okuyucu seçip bağlantı kurun."
+                                       FontSize="12"
+                                       TextColor="#92400E"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="WordWrap"/>
+                            </HorizontalStackLayout>
+                        </Frame>
+                    </VerticalStackLayout>
+                </Frame>
+
+                <!-- Last Read Card -->
+                <Frame BackgroundColor="White" 
+                       Padding="20" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.98"
+                       IsVisible="{Binding LastReadCard, Converter={StaticResource IsNotNullConverter}}">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="✅ Son Okunan Kart" 
                                FontSize="18" 
                                FontAttributes="Bold" 
                                TextColor="#111827" />
                         
-                        <!-- Card Info Grid -->
-                        <Grid RowSpacing="12" ColumnSpacing="16">
+                        <Grid ColumnSpacing="12" RowSpacing="8">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
@@ -184,163 +360,263 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
+
+                            <Label Grid.Row="0" Grid.Column="0" Text="UID:" FontSize="14" TextColor="#6B7280"/>
+                            <Label Grid.Row="0" Grid.Column="1" Text="{Binding LastReadCard.UidHex}" FontSize="14" FontAttributes="Bold" TextColor="#111827"/>
                             
-                            <!-- UID -->
-                            <Label Grid.Row="0" Grid.Column="0" 
-                                   Text="UID:" 
-                                   FontAttributes="Bold"
-                                   TextColor="#374151" />
-                            <Label Grid.Row="0" Grid.Column="1" 
-                                   x:Name="UidLabel"
-                                   Text="-" 
-                                   TextColor="#111827"
-                                   FontFamily="Courier" />
+                            <Label Grid.Row="1" Grid.Column="0" Text="Tür:" FontSize="14" TextColor="#6B7280"/>
+                            <Label Grid.Row="1" Grid.Column="1" Text="{Binding LastReadCard.CardType}" FontSize="14" FontAttributes="Bold" TextColor="#111827"/>
                             
-                            <!-- Card Type -->
-                            <Label Grid.Row="1" Grid.Column="0" 
-                                   Text="Kart Türü:" 
-                                   FontAttributes="Bold"
-                                   TextColor="#374151" />
-                            <Label Grid.Row="1" Grid.Column="1" 
-                                   x:Name="CardTypeLabel"
-                                   Text="-" 
-                                   TextColor="#111827" />
-                            
-                            <!-- Member ID -->
-                            <Label Grid.Row="2" Grid.Column="0" 
-                                   Text="Üye ID:" 
-                                   FontAttributes="Bold"
-                                   TextColor="#374151" />
-                            <Label Grid.Row="2" Grid.Column="1" 
-                                   x:Name="MemberIdLabel"
-                                   Text="-" 
-                                   TextColor="#111827" />
-                            
-                            <!-- Read Time -->
-                            <Label Grid.Row="3" Grid.Column="0" 
-                                   Text="Okuma Zamanı:" 
-                                   FontAttributes="Bold"
-                                   TextColor="#374151" />
-                            <Label Grid.Row="3" Grid.Column="1" 
-                                   x:Name="ReadTimeLabel"
-                                   Text="-" 
-                                   TextColor="#6B7280"
-                                   FontSize="12" />
+                            <Label Grid.Row="2" Grid.Column="0" Text="Zaman:" FontSize="14" TextColor="#6B7280"/>
+                            <Label Grid.Row="2" Grid.Column="1" Text="{Binding LastReadCard.ReadAt, StringFormat='{0:HH:mm:ss}'}" FontSize="14" FontAttributes="Bold" TextColor="#111827"/>
                         </Grid>
-                        
-                        <!-- Verify Button -->
-                        <Button x:Name="VerifyMemberBtn"
-                                Text="🔍 Üye Bilgilerini Görüntüle"
+
+                        <Button Text="🔍 Üye Bilgilerini Görüntüle"
                                 FontSize="14"
-                                FontAttributes="Bold"
                                 BackgroundColor="#F3F4F6"
-                                TextColor="#374151"
-                                HeightRequest="44"
+                                TextColor="#7C2D12"
                                 CornerRadius="12"
-                                Clicked="OnVerifyMemberClicked"
-                                HorizontalOptions="Fill" />
+                                HeightRequest="44"
+                                Command="{Binding VerifyQrCommand}"/>
                     </VerticalStackLayout>
                 </Frame>
 
-                <!-- Settings Card -->
+                <!-- Quick Settings -->
                 <Frame BackgroundColor="White" 
                        Padding="20" 
                        HasShadow="True" 
                        CornerRadius="16"
-                       Opacity="0.95">
-                    <VerticalStackLayout Spacing="16">
-                        <Label Text="Ayarlar" 
+                       Opacity="0.98">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="⚙️ Hızlı Ayarlar" 
                                FontSize="18" 
                                FontAttributes="Bold" 
                                TextColor="#111827" />
                         
-                        <!-- Settings Options -->
-                        <VerticalStackLayout Spacing="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             
-                            <!-- Auto Read Toggle -->
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <VerticalStackLayout Grid.Column="0">
-                                    <Label Text="Otomatik Okuma" 
-                                           FontSize="14" 
-                                           FontAttributes="Bold"
-                                           TextColor="#111827" />
-                                    <Label Text="Kart algılandığında otomatik oku" 
-                                           FontSize="12" 
-                                           TextColor="#6B7280" />
-                                </VerticalStackLayout>
-                                
-                                <Switch Grid.Column="1" 
-                                        x:Name="AutoReadSwitch"
-                                        IsToggled="True"
-                                        OnColor="#DC2626"
-                                        ThumbColor="White"
-                                        Toggled="OnAutoReadToggled"/>
-                            </Grid>
+                            <Label Grid.Column="0" 
+                                   Text="Otomatik kart okuma" 
+                                   FontSize="14" 
+                                   TextColor="#6B7280"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Column="1" 
+                                    IsToggled="True"
+                                    OnColor="#7C2D12"/>
+                        </Grid>
+
+                        <BoxView HeightRequest="1" Color="#E5E7EB"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
                             
-                            <!-- Sound Toggle -->
+                            <Label Grid.Column="0" 
+                                   Text="Ses bildirimleri" 
+                                   FontSize="14" 
+                                   TextColor="#6B7280"
+                                   VerticalOptions="Center"/>
+                            <Switch Grid.Column="1" 
+                                    IsToggled="True"
+                                    OnColor="#7C2D12"/>
+                        </Grid>
+                    </VerticalStackLayout>
+                </Frame>
+                
+                </VerticalStackLayout>
+                <!-- End of Reading Section -->
+
+                <!-- Writing Section (Windows Only) -->
+                <VerticalStackLayout x:Name="WritingSection" Spacing="20" IsVisible="False">
+                    <VerticalStackLayout.IsVisible>
+                        <OnPlatform x:TypeArguments="x:Boolean">
+                            <On Platform="Android" Value="False"/>
+                            <On Platform="iOS" Value="False"/>
+                            <On Platform="WinUI" Value="False"/>
+                        </OnPlatform>
+                    </VerticalStackLayout.IsVisible>
+                
+                <!-- NFC Writing Card -->
+                <Frame BackgroundColor="White" 
+                       Padding="24" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.98">
+                    <VerticalStackLayout Spacing="20">
+                        
+                        <!-- Write Icon Area -->
+                        <Frame BackgroundColor="#FEF3C7"
+                               WidthRequest="140"
+                               HeightRequest="140"
+                               CornerRadius="70"
+                               Padding="0"
+                               HorizontalOptions="Center"
+                               HasShadow="True">
                             <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
+                                <Label Text="✍️"
+                                       FontSize="64"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
                                 
-                                <VerticalStackLayout Grid.Column="0">
-                                    <Label Text="Ses Efektleri" 
-                                           FontSize="14" 
-                                           FontAttributes="Bold"
-                                           TextColor="#111827" />
-                                    <Label Text="Başarılı okumada ses çal" 
-                                           FontSize="12" 
-                                           TextColor="#6B7280" />
-                                </VerticalStackLayout>
-                                
-                                <Switch Grid.Column="1" 
-                                        x:Name="SoundSwitch"
-                                        IsToggled="True"
-                                        OnColor="#DC2626"
-                                        ThumbColor="White"
-                                        Toggled="OnSoundToggled"/>
+                                <!-- Pulse Animation (future) -->
+                                <Ellipse x:Name="WritePulseCircle"
+                                         Stroke="#7C2D12"
+                                         StrokeThickness="3"
+                                         IsVisible="False"
+                                         Opacity="0.6"
+                                         WidthRequest="120"
+                                         HeightRequest="120"
+                                         HorizontalOptions="Center"
+                                         VerticalOptions="Center"/>
                             </Grid>
+                        </Frame>
+
+                        <!-- Status Text -->
+                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
+                            <Label Text="NFC Karta Veri Yaz"
+                                   FontSize="24" 
+                                   FontAttributes="Bold" 
+                                   TextColor="#111827"
+                                   HorizontalOptions="Center"/>
+                            <Label Text="Kart bilgilerini girin ve yazma butonuna basın"
+                                   FontSize="14" 
+                                   TextColor="#6B7280"
+                                   HorizontalOptions="Center"/>
+                        </VerticalStackLayout>
+                        
+                        <!-- Write Form -->
+                        <VerticalStackLayout Spacing="16">
+                            
+                            <!-- Member ID -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Üye Numarası" 
+                                       FontSize="14" 
+                                       TextColor="#6B7280" 
+                                       FontAttributes="Bold"/>
+                                <Entry x:Name="MemberIdEntry"
+                                       Placeholder="Örn: 12345"
+                                       FontSize="14"
+                                       BackgroundColor="#F9FAFB"
+                                       TextColor="#111827"
+                                       PlaceholderColor="#9CA3AF"/>
+                            </VerticalStackLayout>
+                            
+                            <!-- Member Name -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Üye Adı Soyadı" 
+                                       FontSize="14" 
+                                       TextColor="#6B7280" 
+                                       FontAttributes="Bold"/>
+                                <Entry x:Name="MemberNameEntry"
+                                       Placeholder="Örn: Ahmet Yılmaz"
+                                       FontSize="14"
+                                       BackgroundColor="#F9FAFB"
+                                       TextColor="#111827"
+                                       PlaceholderColor="#9CA3AF"/>
+                            </VerticalStackLayout>
+                            
+                            <!-- Email -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="E-posta (Opsiyonel)" 
+                                       FontSize="14" 
+                                       TextColor="#6B7280" 
+                                       FontAttributes="Bold"/>
+                                <Entry x:Name="EmailEntry"
+                                       Placeholder="ornek@email.com"
+                                       Keyboard="Email"
+                                       FontSize="14"
+                                       BackgroundColor="#F9FAFB"
+                                       TextColor="#111827"
+                                       PlaceholderColor="#9CA3AF"/>
+                            </VerticalStackLayout>
+                            
+                            <!-- Phone -->
+                            <VerticalStackLayout Spacing="8">
+                                <Label Text="Telefon (Opsiyonel)" 
+                                       FontSize="14" 
+                                       TextColor="#6B7280" 
+                                       FontAttributes="Bold"/>
+                                <Entry x:Name="PhoneEntry"
+                                       Placeholder="+90 555 123 4567"
+                                       Keyboard="Telephone"
+                                       FontSize="14"
+                                       BackgroundColor="#F9FAFB"
+                                       TextColor="#111827"
+                                       PlaceholderColor="#9CA3AF"/>
+                            </VerticalStackLayout>
                             
                         </VerticalStackLayout>
+
+                        <!-- Write Button -->
+                        <Button x:Name="WriteCardBtn"
+                                Text="✍️ Karta Yaz"
+                                FontSize="18"
+                                FontAttributes="Bold"
+                                HeightRequest="56"
+                                CornerRadius="16"
+                                Clicked="OnWriteCardClicked"
+                                IsEnabled="{Binding IsConnected}"
+                                HorizontalOptions="Fill">
+                            <Button.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="#7C2D12" Offset="0.0" />
+                                    <GradientStop Color="#92400E" Offset="1.0" />
+                                </LinearGradientBrush>
+                            </Button.Background>
+                            <Button.TextColor>White</Button.TextColor>
+                        </Button>
+
+                        <!-- Warning if not connected -->
+                        <Frame BackgroundColor="#FEF3C7" 
+                               Padding="12" 
+                               CornerRadius="12"
+                               HasShadow="False"
+                               IsVisible="{Binding IsConnected, Converter={StaticResource InverseBoolConverter}}">
+                            <HorizontalStackLayout Spacing="8">
+                                <Label Text="⚠️" FontSize="16" VerticalOptions="Center"/>
+                                <Label Text="NFC okuyucu bağlı değil! Lütfen önce bir okuyucu seçip bağlantı kurun."
+                                       FontSize="12"
+                                       TextColor="#92400E"
+                                       VerticalOptions="Center"
+                                       LineBreakMode="WordWrap"/>
+                            </HorizontalStackLayout>
+                        </Frame>
                     </VerticalStackLayout>
                 </Frame>
 
+                <!-- Last Write Status Card -->
+                <Frame BackgroundColor="White" 
+                       Padding="20" 
+                       HasShadow="True" 
+                       CornerRadius="16"
+                       Opacity="0.98"
+                       x:Name="LastWriteStatusFrame"
+                       IsVisible="False">
+                    <VerticalStackLayout Spacing="12">
+                        <Label Text="✅ Yazma Başarılı" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="#111827"
+                               x:Name="WriteStatusLabel" />
+                        
+                        <Label x:Name="WriteStatusMessage"
+                               Text="Veri başarıyla karta yazıldı!" 
+                               FontSize="14" 
+                               TextColor="#6B7280" />
+                    </VerticalStackLayout>
+                </Frame>
+                
+                </VerticalStackLayout>
+                <!-- End of Writing Section -->
+
             </VerticalStackLayout>
         </ScrollView>
-
-        <!-- Bottom Action Bar -->
-        <Frame Grid.Row="2" 
-               BackgroundColor="White" 
-               HasShadow="True" 
-               Padding="16" 
-               CornerRadius="24,24,0,0"
-               Opacity="0.95">
-            <HorizontalStackLayout Spacing="12" HorizontalOptions="Center">
-                <Button Text="🏠 Ana Sayfa"
-                        FontSize="14"
-                        BackgroundColor="Transparent"
-                        TextColor="#6B7280"
-                        Clicked="OnHomeClicked" />
-                
-                <Button Text="👥 Üye Ara"
-                        FontSize="14"
-                        BackgroundColor="Transparent"
-                        TextColor="#6B7280"
-                        Clicked="OnSearchMemberClicked" />
-                
-                <Button Text="⚙️ Ayarlar"
-                        FontSize="14"
-                        BackgroundColor="Transparent"
-                        TextColor="#6B7280"
-                        Clicked="OnSettingsClicked" />
-            </HorizontalStackLayout>
-        </Frame>
 
     </Grid>
 

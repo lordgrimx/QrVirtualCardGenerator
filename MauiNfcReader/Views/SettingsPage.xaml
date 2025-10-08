@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="MauiNfcReader.Views.SettingsPage"
+             Title="Ayarlar"
+             BackgroundColor="#F9FAFB">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="24">
+            
+            <!-- Header -->
+            <VerticalStackLayout Spacing="8">
+                <Label Text="⚙️ Ayarlar" 
+                       FontSize="32" 
+                       FontAttributes="Bold" 
+                       TextColor="#111827" />
+                <Label Text="Uygulama tercihlerinizi yönetin" 
+                       FontSize="16" 
+                       TextColor="#6B7280" />
+            </VerticalStackLayout>
+
+            <!-- Backend Ayarları -->
+            <Frame BackgroundColor="White" 
+                   Padding="20" 
+                   HasShadow="True" 
+                   CornerRadius="16">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="🌐 Backend Bağlantısı" 
+                           FontSize="20" 
+                           FontAttributes="Bold" 
+                           TextColor="#111827" />
+                    
+                    <VerticalStackLayout Spacing="8">
+                        <Label Text="Backend URL" 
+                               FontSize="14" 
+                               TextColor="#6B7280" />
+                        <Entry x:Name="BackendUrlEntry"
+                               Placeholder="https://backend.anefuye.com.tr"
+                               FontSize="14"
+                               BackgroundColor="#F9FAFB"
+                               TextColor="#111827" />
+                    </VerticalStackLayout>
+
+                    <Button Text="Bağlantıyı Test Et"
+                            FontSize="14"
+                            FontAttributes="Bold"
+                            BackgroundColor="#7C2D12"
+                            TextColor="White"
+                            CornerRadius="12"
+                            Clicked="OnTestConnectionClicked" />
+
+                    <HorizontalStackLayout Spacing="12">
+                        <BoxView x:Name="ConnectionStatusDot"
+                                 WidthRequest="16"
+                                 HeightRequest="16"
+                                 CornerRadius="8"
+                                 Color="#9CA3AF" />
+                        <Label x:Name="ConnectionStatusLabel"
+                               Text="Bağlantı durumu bekleniyor"
+                               FontSize="14"
+                               TextColor="#6B7280"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- NFC Ayarları -->
+            <Frame BackgroundColor="White" 
+                   Padding="20" 
+                   HasShadow="True" 
+                   CornerRadius="16">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="📡 NFC Ayarları" 
+                           FontSize="20" 
+                           FontAttributes="Bold" 
+                           TextColor="#111827" />
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Otomatik okuma" 
+                                   FontSize="16" 
+                                   TextColor="#111827" />
+                            <Label Text="Kart yaklaştırıldığında otomatik oku" 
+                                   FontSize="12" 
+                                   TextColor="#6B7280" />
+                        </VerticalStackLayout>
+                        
+                        <Switch Grid.Column="1" 
+                                x:Name="AutoReadSwitch"
+                                IsToggled="True"
+                                OnColor="#7C2D12"
+                                VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#E5E7EB" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Sesli bildirim" 
+                                   FontSize="16" 
+                                   TextColor="#111827" />
+                            <Label Text="Okuma sonucunda ses çal" 
+                                   FontSize="12" 
+                                   TextColor="#6B7280" />
+                        </VerticalStackLayout>
+                        
+                        <Switch Grid.Column="1" 
+                                x:Name="SoundSwitch"
+                                IsToggled="True"
+                                OnColor="#7C2D12"
+                                VerticalOptions="Center" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#E5E7EB" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <VerticalStackLayout Grid.Column="0" Spacing="4">
+                            <Label Text="Offline mod" 
+                                   FontSize="16" 
+                                   TextColor="#111827" />
+                            <Label Text="İnternetsiz doğrulama yap" 
+                                   FontSize="12" 
+                                   TextColor="#6B7280" />
+                        </VerticalStackLayout>
+                        
+                        <Switch Grid.Column="1" 
+                                x:Name="OfflineModeSwitch"
+                                IsToggled="True"
+                                OnColor="#7C2D12"
+                                VerticalOptions="Center" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Uygulama Bilgileri -->
+            <Frame BackgroundColor="White" 
+                   Padding="20" 
+                   HasShadow="True" 
+                   CornerRadius="16">
+                <VerticalStackLayout Spacing="16">
+                    <Label Text="ℹ️ Uygulama Bilgileri" 
+                           FontSize="20" 
+                           FontAttributes="Bold" 
+                           TextColor="#111827" />
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Label Grid.Column="0" 
+                               Text="Versiyon" 
+                               FontSize="14" 
+                               TextColor="#6B7280" />
+                        <Label Grid.Column="1" 
+                               Text="1.0.0" 
+                               FontSize="14" 
+                               FontAttributes="Bold"
+                               TextColor="#111827" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#E5E7EB" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <Label Grid.Column="0" 
+                               Text="Platform" 
+                               FontSize="14" 
+                               TextColor="#6B7280" />
+                        <Label Grid.Column="1" 
+                               x:Name="PlatformLabel"
+                               Text="Windows" 
+                               FontSize="14" 
+                               FontAttributes="Bold"
+                               TextColor="#111827" />
+                    </Grid>
+
+                    <BoxView HeightRequest="1" Color="#E5E7EB" />
+
+                    <Button Text="Önbelleği Temizle"
+                            FontSize="14"
+                            BackgroundColor="#F3F4F6"
+                            TextColor="#111827"
+                            CornerRadius="12"
+                            Clicked="OnClearCacheClicked" />
+
+                    <Button Text="Ayarları Sıfırla"
+                            FontSize="14"
+                            BackgroundColor="#FEE2E2"
+                            TextColor="#DC2626"
+                            CornerRadius="12"
+                            Clicked="OnResetSettingsClicked" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Hakkında -->
+            <Frame BackgroundColor="#7C2D12" 
+                   Padding="20" 
+                   HasShadow="True" 
+                   CornerRadius="16">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="🏛️ ANEF Hakkında" 
+                           FontSize="20" 
+                           FontAttributes="Bold" 
+                           TextColor="White" />
+                    <Label Text="Anadolu Elazığlılar Federasyonu üyelerinin kimlik doğrulama ve yönetim sistemi. NFC teknolojisi ile güvenli ve hızlı üye tanıma." 
+                           FontSize="14" 
+                           TextColor="#FDE68A"
+                           LineHeight="1.5" />
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>
+

@@ -13,15 +13,17 @@ public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()
 	{
-		var builder = MauiApp.CreateBuilder();
-		builder
-			.UseMauiApp<App>()
-			.UseMauiCommunityToolkit()
-			.ConfigureFonts(fonts =>
-			{
-				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-				fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
-			});
+		try
+		{
+			var builder = MauiApp.CreateBuilder();
+			builder
+				.UseMauiApp<App>()
+				.UseMauiCommunityToolkit()
+				.ConfigureFonts(fonts =>
+				{
+					fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+					fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+				});
 
 		// Services Registration
 		builder.Services.AddSingleton<ICryptoService, CryptoService>();
@@ -60,7 +62,15 @@ public static class MauiProgram
 				sp.GetRequiredService<IBackendApiService>()
 			)
 		);
-		builder.Services.AddTransient<NfcReaderPage>();
+		builder.Services.AddTransient<NfcReaderPage>(sp => 
+			new NfcReaderPage(
+				sp.GetRequiredService<ILogger<NfcReaderPage>>(),
+				sp.GetRequiredService<NfcReaderViewModel>()
+			)
+		);
+		builder.Services.AddTransient<MemberSearchPage>();
+		builder.Services.AddTransient<SettingsPage>();
+		builder.Services.AddTransient<ProfilePage>();
 		builder.Services.AddTransient<Views.MemberSearchPopup>();
 		builder.Services.AddTransient<Views.MemberInfoPopup>();
 
@@ -118,6 +128,15 @@ public static class MauiProgram
         });
 #endif
 
-		return builder.Build();
+			return builder.Build();
+		}
+		catch (Exception ex)
+		{
+			System.Diagnostics.Debug.WriteLine($"MauiProgram başlatma hatası: {ex}");
+			// En basit MAUI app oluştur - hata mesajı göstermek için
+			var fallbackBuilder = MauiApp.CreateBuilder();
+			fallbackBuilder.UseMauiApp<Application>();
+			return fallbackBuilder.Build();
+		}
 	}
 }

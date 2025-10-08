@@ -59,6 +59,11 @@ allowed_origins = [
     frontend_url,
     # Vercel deployment URL
     "https://qr-virtual-card-generator.vercel.app",
+    # ANEF domain'leri (yeni production domain)
+    "https://anefuye.com.tr",
+    "https://www.anefuye.com.tr",
+    "http://anefuye.com.tr",
+    "http://www.anefuye.com.tr",
     # Eski domain'ler (backward compatibility)
     "https://sabrialperenkaya.com.tr",
     "https://www.sabrialperenkaya.com.tr",

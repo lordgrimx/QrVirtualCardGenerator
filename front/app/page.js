@@ -4,11 +4,12 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     // Redirect admin users to admin panel
@@ -41,7 +42,7 @@ export default function HomePage() {
                 <h1 className="text-xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
                   ANEF
                 </h1>
-                <p className="text-xs text-gray-600">Elazığ Dernekler Federasyonu</p>
+                <p className="text-xs text-gray-600">Anadolu Elazığlılar Dernekler Federasyonu</p>
               </div>
             </div>
 
@@ -100,13 +101,102 @@ export default function HomePage() {
             </nav>
 
             {/* Mobile Menu Button */}
-            <button className="md:hidden p-2 text-gray-600 hover:text-gray-900">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <nav className="px-4 py-4 space-y-3">
+              <a 
+                href="#hakkimizda" 
+                className="block text-gray-700 hover:text-red-600 transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Hakkımızda
+              </a>
+              <a 
+                href="#haberler" 
+                className="block text-gray-700 hover:text-red-600 transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Haberler
+              </a>
+              <a 
+                href="#faaliyetler" 
+                className="block text-gray-700 hover:text-red-600 transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Faaliyetler
+              </a>
+              <a 
+                href="#iletisim" 
+                className="block text-gray-700 hover:text-red-600 transition-colors font-medium py-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                İletişim
+              </a>
+              
+              {session ? (
+                <div className="pt-3 border-t border-gray-200 space-y-3">
+                  <div className="text-gray-700 text-sm py-2">
+                    Hoş geldiniz, {session.user.name}
+                  </div>
+                  {session.user.role === 'admin' ? (
+                    <Link
+                      href="/admin"
+                      className="block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm text-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Yönetim Paneli
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/dashboard"
+                      className="block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm text-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Panel
+                    </Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="block w-full px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors text-sm text-center"
+                  >
+                    Çıkış
+                  </button>
+                </div>
+              ) : (
+                <div className="pt-3 border-t border-gray-200">
+                  <Link
+                    href="/auth/signin"
+                    className="block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm text-center"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Yönetici Girişi
+                  </Link>
+                </div>
+              )}
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Main Content */}
@@ -119,11 +209,11 @@ export default function HomePage() {
                 ANEF
               </h1>
               <h2 className="text-2xl md:text-3xl font-semibold text-gray-800 mb-4">
-                Elazığ Dernekler Federasyonu
+                Anadolu Elazığlılar Dernekler Federasyonu
               </h2>
               <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
                 Kültürel yozlaşmanın arttığı kentlerde yaşıyor; değerlerimizden koparak adeta yalnızlaşıyoruz.
-                Elazığlıların birbirine tutunarak var olma, Türkiye ve Küresel Dünyada yer alma 
+                Anadolu Elazığlıların birbirine tutunarak var olma, Türkiye ve Küresel Dünyada yer alma 
                 ve sosyal dayanışmayı artıracak üst örgütlenme ihtiyacından ANEF doğmuştur.
               </p>
               
@@ -155,7 +245,7 @@ export default function HomePage() {
                 ANEF Faaliyetleri
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Elazığ kültürünü yaşatmak ve sosyal dayanışmayı güçlendirmek için çalışıyoruz
+                Anadolu Elazığ kültürünü yaşatmak ve sosyal dayanışmayı güçlendirmek için çalışıyoruz
               </p>
             </div>
 
@@ -170,7 +260,7 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Haberler & Etkinlikler</h3>
                 <p className="text-gray-600">
                   Güncel haberlerimiz, etkinliklerimiz ve sosyal aktivitelerimizle 
-                  Elazığ topluluğunu bir arada tutuyoruz.
+                  Anadolu Elazığ topluluğunu bir arada tutuyoruz.
                 </p>
               </div>
 
@@ -183,7 +273,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4">Sosyal Dayanışma</h3>
                 <p className="text-gray-600">
-                  Elazığlıların birbirine tutunarak var olması, 
+                  Anadolu Elazığlıların birbirine tutunarak var olması, 
                   sosyal dayanışmayı artıracak üst örgütlenme sağlıyoruz.
                 </p>
               </div>
@@ -225,7 +315,7 @@ export default function HomePage() {
                   <div className="text-sm text-red-600 font-semibold mb-2">04 Ağustos 2025</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">Elazığ Valimizi Ağırladık</h3>
                   <p className="text-gray-600 mb-4">
-                    Elazığ Valisi Sayın Numan Hatipoğlu, Elazığ Dernekler Federasyonu'nu ziyaret etti. 
+                    Elazığ Valisi Sayın Numan Hatipoğlu, Anadolu Elazığlılar Dernekler Federasyonu'nu ziyaret etti. 
                     Akgün Otel'de düzenlenen yemekli programda...
                   </p>
                   <a href="#" className="text-red-600 font-semibold hover:text-red-700">
@@ -257,7 +347,7 @@ export default function HomePage() {
                   <div className="text-sm text-red-600 font-semibold mb-2">Etkinlik</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-3">3. Geleneksel Kahvaltı</h3>
                   <p className="text-gray-600 mb-4">
-                    Geleneksel kahvaltı etkinliğimizde Elazığlı dostlarımızla bir araya geldik. 
+                    Geleneksel kahvaltı etkinliğimizde Anadolu Elazığlı dostlarımızla bir araya geldik. 
                     Kültürel değerlerimizi yaşattığımız güzel bir etkinlik...
                   </p>
                   <a href="#" className="text-red-600 font-semibold hover:text-red-700">
@@ -293,11 +383,11 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
                 <h3 className="font-bold text-gray-900 mb-2">Eğitimciler Buluştu</h3>
-                <p className="text-gray-600 text-sm">Eğitim alanında çalışan Elazığlılar bir araya geldi</p>
+                <p className="text-gray-600 text-sm">Eğitim alanında çalışan Anadolu Elazığlılar bir araya geldi</p>
               </div>
               
               <div className="bg-white rounded-xl shadow-lg p-6 text-center hover:shadow-xl transition-shadow">
-                <h3 className="font-bold text-gray-900 mb-2">Elazığlı Doktorlar Kahvaltısı</h3>
+                <h3 className="font-bold text-gray-900 mb-2">Anadolu Elazığlı Doktorlar Kahvaltısı</h3>
                 <p className="text-gray-600 text-sm">Sağlık sektöründeki dostlarımızla buluştuk</p>
               </div>
               
@@ -321,7 +411,7 @@ export default function HomePage() {
               ANEF'e Katılın
             </h2>
             <p className="text-xl text-red-100 mb-8">
-              Elazığ kültürünü yaşatmak ve sosyal dayanışmaya katkıda bulunmak için bize katılın
+              Anadolu Elazığ kültürünü yaşatmak ve sosyal dayanışmaya katkıda bulunmak için bize katılın
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a
@@ -359,34 +449,34 @@ export default function HomePage() {
                 />
                 <div>
                   <h3 className="text-xl font-bold text-white">ANEF</h3>
-                  <p className="text-gray-400 text-sm">Elazığ Dernekler Federasyonu</p>
+                  <p className="text-gray-400 text-sm">Anadolu Elazığlılar Dernekler Federasyonu</p>
                 </div>
               </div>
               <p className="text-gray-300 mb-6">
-                Elazığlıların birbirine tutunarak var olma, Türkiye ve Küresel Dünyada yer alma 
+                Anadolu Elazığlıların birbirine tutunarak var olma, Türkiye ve Küresel Dünyada yer alma 
                 ve sosyal dayanışmayı artıracak üst örgütlenme ihtiyacından doğduk.
               </p>
               
               {/* Sosyal Medya */}
-              <div className="flex gap-4">
-                <a href="https://www.facebook.com/elazigfederasyonu" target="_blank" className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors">
+              <div className="flex flex-wrap gap-4">
+                <a href="https://www.facebook.com/p/Anadolu-Elaz%C4%B1%C4%9Fl%C4%B1lar-Federasyonu-61575862882563/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors" aria-label="Facebook">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                   </svg>
                 </a>
-                <a href="https://www.instagram.com/anef_elazigfederasyonu/" target="_blank" className="w-10 h-10 bg-pink-600 rounded-lg flex items-center justify-center hover:bg-pink-700 transition-colors">
+                <a href="https://www.instagram.com/anefresmi/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-pink-600 rounded-lg flex items-center justify-center hover:bg-pink-700 transition-colors" aria-label="Instagram">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 6.621 5.367 11.988 11.988 11.988c6.62 0 11.987-5.367 11.987-11.988C24.004 5.367 18.637.001 12.017.001zM8.449 16.988c-1.297 0-2.348-1.051-2.348-2.348s1.051-2.348 2.348-2.348 2.348 1.051 2.348 2.348-1.051 2.348-2.348 2.348zm7.718 0c-1.297 0-2.348-1.051-2.348-2.348s1.051-2.348 2.348-2.348 2.348 1.051 2.348 2.348-1.051 2.348-2.348 2.348z"/>
+                    <path d="M12 0C8.74 0 8.333.015 7.053.072 5.775.132 4.905.333 4.14.63c-.789.306-1.459.717-2.126 1.384S.935 3.35.63 4.14C.333 4.905.131 5.775.072 7.053.012 8.333 0 8.74 0 12s.015 3.667.072 4.947c.06 1.277.261 2.148.558 2.913.306.788.717 1.459 1.384 2.126.667.666 1.336 1.079 2.126 1.384.766.296 1.636.499 2.913.558C8.333 23.988 8.74 24 12 24s3.667-.015 4.947-.072c1.277-.06 2.148-.262 2.913-.558.788-.306 1.459-.718 2.126-1.384.666-.667 1.079-1.335 1.384-2.126.296-.765.499-1.636.558-2.913.06-1.28.072-1.687.072-4.947s-.015-3.667-.072-4.947c-.06-1.277-.262-2.149-.558-2.913-.306-.789-.718-1.459-1.384-2.126C21.319 1.347 20.651.935 19.86.63c-.765-.297-1.636-.499-2.913-.558C15.667.012 15.26 0 12 0zm0 2.16c3.203 0 3.585.016 4.85.071 1.17.055 1.805.249 2.227.415.562.217.96.477 1.382.896.419.42.679.819.896 1.381.164.422.36 1.057.413 2.227.057 1.266.07 1.646.07 4.85s-.015 3.585-.074 4.85c-.061 1.17-.256 1.805-.421 2.227-.224.562-.479.96-.899 1.382-.419.419-.824.679-1.38.896-.42.164-1.065.36-2.235.413-1.274.057-1.649.07-4.859.07-3.211 0-3.586-.015-4.859-.074-1.171-.061-1.816-.256-2.236-.421-.569-.224-.96-.479-1.379-.899-.421-.419-.69-.824-.9-1.38-.165-.42-.359-1.065-.42-2.235-.045-1.26-.061-1.649-.061-4.844 0-3.196.016-3.586.061-4.861.061-1.17.255-1.814.42-2.234.21-.57.479-.96.9-1.381.419-.419.81-.689 1.379-.898.42-.166 1.051-.361 2.221-.421 1.275-.045 1.65-.06 4.859-.06l.045.03zm0 3.678c-3.405 0-6.162 2.76-6.162 6.162 0 3.405 2.76 6.162 6.162 6.162 3.405 0 6.162-2.76 6.162-6.162 0-3.405-2.76-6.162-6.162-6.162zM12 16c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4zm7.846-10.405c0 .795-.646 1.44-1.44 1.44-.795 0-1.44-.646-1.44-1.44 0-.794.646-1.439 1.44-1.439.793-.001 1.44.645 1.44 1.439z"/>
                   </svg>
                 </a>
-                <a href="https://twitter.com/anef23" target="_blank" className="w-10 h-10 bg-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-500 transition-colors">
+                <a href="https://anef.org.tr" target="_blank" rel="noopener noreferrer" className="w-10 h-10 bg-gray-700 rounded-lg flex items-center justify-center hover:bg-gray-800 transition-colors" aria-label="Website">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                    <path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm9.885 11.441c-2.575-.422-4.943-.445-7.103-.073-.244-.563-.497-1.125-.767-1.68 2.31-1 4.165-2.358 5.548-4.082 1.35 1.594 2.197 3.619 2.322 5.835zm-3.842-7.282c-1.205 1.554-2.868 2.783-4.986 3.68-1.016-1.861-2.178-3.676-3.488-5.438.779-.197 1.591-.314 2.431-.314 2.275 0 4.368.779 6.043 2.072zM8.265 2.183c1.334 1.784 2.525 3.626 3.569 5.519-2.484.874-5.174 1.358-8.078 1.451.545-3.104 2.539-5.686 5.509-6.97zm-6.219 9.318c3.055 0 5.935-.474 8.636-1.422.247.564.488 1.127.713 1.691-2.137.695-4.034 1.82-5.658 3.37-1.623 1.551-2.82 3.424-3.572 5.619-1.556-1.722-2.502-3.994-2.502-6.494 0-1.293.309-2.512.856-3.6zm1.819 8.278c.662-2.014 1.726-3.678 3.183-4.982 1.458-1.305 3.223-2.216 5.281-2.73.244.699.473 1.402.684 2.109-2.505 1.027-4.506 2.764-5.982 5.194-1.476 2.43-2.315 5.167-2.516 8.205-.729-.456-1.385-.999-1.956-1.616-.571-.617-1.046-1.306-1.425-2.064-.379-.758-.664-1.569-.865-2.43-.201-.862-.307-1.761-.307-2.693 0-.931.103-1.831.307-2.693zm9.518 11.076c-.123-2.809.795-5.343 2.753-7.598 1.958-2.255 4.548-3.753 7.759-4.494.069.458.108.928.108 1.406 0 5.514-3.727 10.162-8.82 11.686z"/>
                   </svg>
                 </a>
-                <a href="https://www.youtube.com/channel/UC8qVo2f8tdOQsx2y1Xmg2Mg" target="_blank" className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center hover:bg-red-700 transition-colors">
+                <a href="mailto:anadoluelaziglilarfederasyonu@gmail.com" className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center hover:bg-green-700 transition-colors" aria-label="Email">
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    <path d="M0 3v18h24v-18h-24zm6.623 7.929l-4.623 5.712v-9.458l4.623 3.746zm-4.141-5.929h19.035l-9.517 7.713-9.518-7.713zm5.694 7.188l3.824 3.099 3.83-3.104 5.612 6.817h-18.779l5.513-6.812zm9.208-1.264l4.616-3.741v9.348l-4.616-5.607z"/>
                   </svg>
                 </a>
               </div>
@@ -409,11 +499,19 @@ export default function HomePage() {
             <div>
               <h4 className="font-bold text-lg mb-4">İletişim</h4>
               <div className="space-y-2 text-gray-300">
-                <p>Elazığ Dernekler Federasyonu</p>
+                <p>Anadolu Elazığlılar Federasyonu</p>
                 <p>Elazığ, Türkiye</p>
                 <p className="mt-4">
                   <span className="text-red-400">E-posta:</span><br />
-                  info@anef.org.tr
+                  <a href="mailto:anadoluelaziglilarfederasyonu@gmail.com" className="hover:text-white transition-colors">
+                    anadoluelaziglilarfederasyonu@gmail.com
+                  </a>
+                </p>
+                <p className="mt-4">
+                  <span className="text-red-400">Web:</span><br />
+                  <a href="https://anef.org.tr" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+                    anef.org.tr
+                  </a>
                 </p>
               </div>
             </div>
@@ -421,7 +519,7 @@ export default function HomePage() {
 
           <div className="border-t border-gray-700 mt-12 pt-8 text-center">
             <p className="text-gray-400">
-              © 2024 ANEF - Elazığ Dernekler Federasyonu. Tüm hakları saklıdır.
+              © 2024 ANEF - Anadolu Elazığlılar Dernekler Federasyonu. Tüm hakları saklıdır.
             </p>
           </div>
         </div>

@@ -5,8 +5,6 @@ const nextConfig = {
   experimental: {
     // Next.js 14 için uygun experimental özellikler
     optimizePackageImports: ['react-icons'],
-    // Static generation timeout'u artır
-    staticPageGenerationTimeout: 120,
     // ISR revalidation timeout'u artır  
     isrFlushToDisk: false,
   },
@@ -15,9 +13,9 @@ const nextConfig = {
       exclude: ['error', 'warn']
     } : false,
   },
-  // Ortam değişkenleri: .env öncelikli, yoksa Render backend'e düş
+  // Ortam değişkenleri: .env öncelikli, yoksa yeni backend'e düş
   env: {
-    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'https://qrvirtualcardgenerator.onrender.com',
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? 'https://backend.anefuye.com.tr',
   },
   // Harici görseller için izinler (ANEF logosu)
   images: {

@@ -49,7 +49,7 @@ public class BackendApiService : IBackendApiService
             else
             {
                 // 3) Önceden kaydedilmiş tercih ya da son çare default
-                _baseUrl = Preferences.Default.Get("BackendBaseUrl", "https://qrvirtualcardgenerator.onrender.com");
+                _baseUrl = Preferences.Default.Get("BackendBaseUrl", "https://backend.anefuye.com.tr");
             }
         }
     }

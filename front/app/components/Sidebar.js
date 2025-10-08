@@ -18,7 +18,7 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
       setPhotoLoading(true);
       console.log('🔷 SIDEBAR - Fetching profile photo for user:', session.user.id);
       
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/me?user_id=${session.user.id}`)
+      fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr'}/api/auth/me?user_id=${session.user.id}`)
         .then(res => res.json())
         .then(data => {
           if (data.success && data.user?.image) {
@@ -96,23 +96,23 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
 
   return (
     <div className={`bg-white/90 backdrop-blur-sm border-r border-gray-200/50 shadow-xl transition-all duration-300 flex flex-col h-screen sticky top-0 ${
-      sidebarCollapsed ? 'w-20' : 'w-80'
+      sidebarCollapsed ? 'w-20 md:w-24' : 'w-64 md:w-80'
     }`}>
       {/* Header */}
-      <div className="p-6 border-b border-gray-200/50">
+      <div className="p-4 md:p-6 border-b border-gray-200/50">
         <div className="flex items-center justify-between">
           {!sidebarCollapsed && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 md:gap-3">
               <Image 
                 src="/anef-logo.png" 
                 alt="ANEF Logo" 
-                width={40} 
-                height={40} 
-                className="rounded-lg object-contain"
+                width={36} 
+                height={36} 
+                className="rounded-lg object-contain md:w-10 md:h-10"
                 priority
               />
               <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
+                <h1 className="text-base md:text-lg font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
                   ANEF
                 </h1>
                 <p className="text-xs text-gray-600">Yönetim Paneli</p>
@@ -121,11 +121,11 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1.5 md:p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             title={sidebarCollapsed ? 'Genişlet' : 'Daralt'}
           >
             <svg 
-              className={`w-5 h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} 
+              className={`w-4 h-4 md:w-5 md:h-5 transition-transform ${sidebarCollapsed ? 'rotate-180' : ''}`} 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -137,7 +137,7 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
       </div>
 
       {/* Navigation Menu */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-2 md:p-4 space-y-1 md:space-y-2 overflow-y-auto">
         {filteredMenuItems.map((item) => {
           const isActive = activeMenu === item.id;
           
@@ -146,35 +146,35 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
               {item.href ? (
                 <Link
                   href={item.href}
-                  className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                  className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2 md:gap-3'} px-2 md:px-4 py-2 md:py-3 rounded-xl cursor-pointer transition-all duration-200 ${
                     isActive 
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                       : 'text-gray-700 hover:bg-red-50 hover:text-red-900'
                   }`}
                 >
-                  {item.icon}
+                  <div className="w-5 h-5">{item.icon}</div>
                   {!sidebarCollapsed && (
-                    <span className="font-medium">{item.label}</span>
+                    <span className="font-medium text-sm md:text-base">{item.label}</span>
                   )}
                 </Link>
               ) : (
                 <div 
-                  className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-3'} px-4 py-3 rounded-xl cursor-pointer transition-all duration-200 ${
+                  className={`flex items-center ${sidebarCollapsed ? 'justify-center' : 'gap-2 md:gap-3'} px-2 md:px-4 py-2 md:py-3 rounded-xl cursor-pointer transition-all duration-200 ${
                     isActive 
                       ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25' 
                       : 'text-gray-700 hover:bg-red-50 hover:text-red-900'
                   }`}
                   onClick={() => setActiveMenu(item.id)}
                 >
-                  {item.icon}
+                  <div className="w-5 h-5">{item.icon}</div>
                   {!sidebarCollapsed && (
-                    <span className="font-medium">{item.label}</span>
+                    <span className="font-medium text-sm md:text-base">{item.label}</span>
                   )}
                 </div>
               )}
               
               {sidebarCollapsed && (
-                <div className="absolute left-20 bg-gray-900 text-white px-2 py-1 rounded text-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                <div className="absolute left-20 md:left-24 bg-gray-900 text-white px-2 py-1 rounded text-xs md:text-sm opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                   {item.label}
                 </div>
               )}
@@ -184,16 +184,16 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
       </nav>
 
       {/* User Info & Logout */}
-      <div className="p-4 border-t border-gray-200/50">
+      <div className="p-2 md:p-4 border-t border-gray-200/50">
         {session?.user && (
-          <div className="space-y-3">
-            <div className={`p-3 bg-red-50 rounded-lg ${sidebarCollapsed ? 'flex justify-center' : 'flex items-center gap-3'}`}>
+          <div className="space-y-2 md:space-y-3">
+            <div className={`p-2 md:p-3 bg-red-50 rounded-lg ${sidebarCollapsed ? 'flex justify-center' : 'flex items-center gap-2 md:gap-3'}`}>
               {/* Admin profile photo - fetched separately to avoid JWT size limit */}
               {profilePhoto && !imageError ? (
                 <img
                   src={`data:image/jpeg;base64,${profilePhoto}`}
                   alt={session.user.name}
-                  className="w-10 h-10 rounded-full object-cover object-center border-2 border-white shadow-md flex-shrink-0"
+                  className="w-8 h-8 md:w-10 md:h-10 rounded-full object-cover object-center border-2 border-white shadow-md flex-shrink-0"
                   style={{ aspectRatio: '1 / 1' }}
                   onError={(e) => {
                     console.error('🔴 SIDEBAR - Image load error, falling back to initials');
@@ -201,13 +201,13 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
                   }}
                 />
               ) : (
-                <div className="w-10 h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+                <div className="w-8 h-8 md:w-10 md:h-10 bg-gradient-to-r from-red-600 to-orange-600 rounded-full flex items-center justify-center text-white font-medium text-xs md:text-sm">
                   {session.user.name ? session.user.name.split(' ').map(n => n[0]).join('') : 'U'}
                 </div>
               )}
               {!sidebarCollapsed && (
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
+                  <p className="text-xs md:text-sm font-medium text-gray-900 truncate">
                     {session.user.name}
                   </p>
                   <p className="text-xs text-red-600 font-medium">
@@ -217,27 +217,27 @@ export default function Sidebar({ activeMenu, setActiveMenu }) {
               )}
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-1 md:gap-2">
               <Link
                 href="/"
-                className={`${sidebarCollapsed ? 'flex-1' : 'flex-1'} flex items-center justify-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-sm`}
+                className={`${sidebarCollapsed ? 'flex-1' : 'flex-1'} flex items-center justify-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors text-xs md:text-sm`}
                 title="Ana Sayfa"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
-                {!sidebarCollapsed && <span>Ana Sayfa</span>}
+                {!sidebarCollapsed && <span className="hidden sm:inline">Ana Sayfa</span>}
               </Link>
               
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
-                className={`${sidebarCollapsed ? 'flex-1' : 'flex-1'} flex items-center justify-center gap-2 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm`}
+                className={`${sidebarCollapsed ? 'flex-1' : 'flex-1'} flex items-center justify-center gap-1 md:gap-2 px-2 md:px-3 py-1.5 md:py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-xs md:text-sm`}
                 title="Çıkış Yap"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                {!sidebarCollapsed && <span>Çıkış</span>}
+                {!sidebarCollapsed && <span className="hidden sm:inline">Çıkış</span>}
               </button>
             </div>
           </div>

@@ -90,7 +90,7 @@ export default function SignIn() {
             <h1 className="text-2xl font-bold bg-gradient-to-r from-red-700 to-orange-600 bg-clip-text text-transparent">
               ANEF
             </h1>
-            <p className="text-sm text-gray-600 mt-1">Elazığ Dernekler Federasyonu</p>
+            <p className="text-sm text-gray-600 mt-1">Anadolu Elazığlılar Dernekler Federasyonu</p>
             <p className="text-gray-600 mt-2">Yönetici hesabınıza giriş yapın</p>
           </div>
 

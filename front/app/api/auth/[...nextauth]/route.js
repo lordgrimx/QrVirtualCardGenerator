@@ -12,7 +12,7 @@ const handler = NextAuth({
       async authorize(credentials) {
         try {
           // Use environment variable or fallback to production URL
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com'
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr'
           
           console.log('🔐 NextAuth authorize() çağrıldı')
           console.log('🔐 Email:', credentials.email)

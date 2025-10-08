@@ -30,7 +30,7 @@ export default function Dashboard() {
     try {
       setDashboardData(prev => ({ ...prev, loading: true, error: null }));
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://qrvirtualcardgenerator.onrender.com'}/api/dashboard/stats`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://backend.anefuye.com.tr'}/api/dashboard/stats`);
       const data = await response.json();
       
       if (data.success) {
@@ -125,13 +125,13 @@ export default function Dashboard() {
   return (
     <AdminLayout activeMenu="dashboard" setActiveMenu={() => {}}>
         {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-center">
+      <main className="max-w-7xl mx-auto">
+        <div className="mb-6 md:mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-            <p className="text-gray-600">İşletme yönetim paneliniz</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-1 md:mb-2">Dashboard</h2>
+            <p className="text-sm md:text-base text-gray-600">İşletme yönetim paneliniz</p>
             {dashboardData.stats.last_updated && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-xs md:text-sm text-gray-500 mt-1">
                 Son güncelleme: {new Date(dashboardData.stats.last_updated).toLocaleString('tr-TR')}
               </p>
             )}
@@ -139,7 +139,7 @@ export default function Dashboard() {
           <button
             onClick={fetchDashboardData}
             disabled={dashboardData.loading}
-            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            className="flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 text-sm md:text-base w-full sm:w-auto"
           >
             <svg className={`w-4 h-4 ${dashboardData.loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -149,158 +149,158 @@ export default function Dashboard() {
         </div>
 
         {/* Dashboard Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           
           {/* Quick Stats */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
+            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Bu Ay NFC Tarama</h3>
-                <p className="text-2xl font-bold text-green-600">{dashboardData.stats.monthly.nfc_scans.toLocaleString()}</p>
+              <div className="min-w-0">
+                <h3 className="text-sm md:text-lg font-bold text-gray-900 truncate">Bu Ay NFC Tarama</h3>
+                <p className="text-xl md:text-2xl font-bold text-green-600">{dashboardData.stats.monthly.nfc_scans.toLocaleString()}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">+{dashboardData.stats.monthly.growth_rate}% geçen aya göre</p>
+            <p className="text-xs md:text-sm text-gray-600">+{dashboardData.stats.monthly.growth_rate}% geçen aya göre</p>
           </div>
 
           {/* Active Campaigns */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-xl border border-white/20">
+            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">QR Doğrulama</h3>
-                <p className="text-2xl font-bold text-blue-600">{dashboardData.stats.monthly.qr_verifications.toLocaleString()}</p>
+              <div className="min-w-0">
+                <h3 className="text-sm md:text-lg font-bold text-gray-900 truncate">QR Doğrulama</h3>
+                <p className="text-xl md:text-2xl font-bold text-blue-600">{dashboardData.stats.monthly.qr_verifications.toLocaleString()}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">Bu ay toplam doğrulama</p>
+            <p className="text-xs md:text-sm text-gray-600">Bu ay toplam doğrulama</p>
           </div>
 
           {/* Customer Count */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-white/20">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-6 shadow-xl border border-white/20 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Toplam Üye</h3>
-                <p className="text-2xl font-bold text-purple-600">{dashboardData.stats.totals.members.toLocaleString()}</p>
+              <div className="min-w-0">
+                <h3 className="text-sm md:text-lg font-bold text-gray-900 truncate">Toplam Üye</h3>
+                <p className="text-xl md:text-2xl font-bold text-purple-600">{dashboardData.stats.totals.members.toLocaleString()}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">+{dashboardData.stats.monthly.new_members} yeni üye bu ay</p>
+            <p className="text-xs md:text-sm text-gray-600">+{dashboardData.stats.monthly.new_members} yeni üye bu ay</p>
           </div>
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           
           {/* Business Management */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-8 shadow-xl border border-white/20">
+            <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">İşletme Yönetimi</h3>
-                <p className="text-gray-600">İşletme bilgilerinizi güncelleyin</p>
+              <div className="min-w-0">
+                <h3 className="text-base md:text-xl font-bold text-gray-900">İşletme Yönetimi</h3>
+                <p className="text-xs md:text-sm text-gray-600 truncate">İşletme bilgilerinizi güncelleyin</p>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                <span className="font-semibold text-gray-900">İşletme Bilgileri</span>
-                <p className="text-sm text-gray-600">Ad, açıklama, iletişim bilgileri</p>
+            <div className="space-y-2 md:space-y-3">
+              <button className="w-full text-left p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <span className="font-semibold text-sm md:text-base text-gray-900">İşletme Bilgileri</span>
+                <p className="text-xs md:text-sm text-gray-600">Ad, açıklama, iletişim bilgileri</p>
               </button>
-              <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                <span className="font-semibold text-gray-900">Çalışma Saatleri</span>
-                <p className="text-sm text-gray-600">Açılış ve kapanış saatlerini ayarlayın</p>
+              <button className="w-full text-left p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <span className="font-semibold text-sm md:text-base text-gray-900">Çalışma Saatleri</span>
+                <p className="text-xs md:text-sm text-gray-600">Açılış ve kapanış saatlerini ayarlayın</p>
               </button>
-              <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                <span className="font-semibold text-gray-900">Fotoğraf Galerisi</span>
-                <p className="text-sm text-gray-600">İşletme fotoğraflarını yönetin</p>
+              <button className="w-full text-left p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <span className="font-semibold text-sm md:text-base text-gray-900">Fotoğraf Galerisi</span>
+                <p className="text-xs md:text-sm text-gray-600">İşletme fotoğraflarını yönetin</p>
               </button>
             </div>
           </div>
 
           {/* Campaign Management */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-white/20">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-pink-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-8 shadow-xl border border-white/20">
+            <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-r from-pink-500 to-pink-600 rounded-lg md:rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
               </div>
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Kampanya Yönetimi</h3>
-                <p className="text-gray-600">İndirimler ve promosyonlar oluşturun</p>
+              <div className="min-w-0">
+                <h3 className="text-base md:text-xl font-bold text-gray-900">Kampanya Yönetimi</h3>
+                <p className="text-xs md:text-sm text-gray-600 truncate">İndirimler ve promosyonlar oluşturun</p>
               </div>
             </div>
             
-            <div className="space-y-3">
-              <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                <span className="font-semibold text-gray-900">Yeni Kampanya</span>
-                <p className="text-sm text-gray-600">İndirim veya promosyon oluşturun</p>
+            <div className="space-y-2 md:space-y-3">
+              <button className="w-full text-left p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <span className="font-semibold text-sm md:text-base text-gray-900">Yeni Kampanya</span>
+                <p className="text-xs md:text-sm text-gray-600">İndirim veya promosyon oluşturun</p>
               </button>
-              <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                <span className="font-semibold text-gray-900">Aktif Kampanyalar</span>
-                <p className="text-sm text-gray-600">Mevcut kampanyaları yönetin</p>
+              <button className="w-full text-left p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <span className="font-semibold text-sm md:text-base text-gray-900">Aktif Kampanyalar</span>
+                <p className="text-xs md:text-sm text-gray-600">Mevcut kampanyaları yönetin</p>
               </button>
-              <button className="w-full text-left p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
-                <span className="font-semibold text-gray-900">Kampanya Analizi</span>
-                <p className="text-sm text-gray-600">Performans raporlarını görüntüleyin</p>
+              <button className="w-full text-left p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors">
+                <span className="font-semibold text-sm md:text-base text-gray-900">Kampanya Analizi</span>
+                <p className="text-xs md:text-sm text-gray-600">Performans raporlarını görüntüleyin</p>
               </button>
             </div>
           </div>
         </div>
 
         {/* API İstatistikleri */}
-        <div className="mt-8 bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl p-8 text-white">
-          <h3 className="text-2xl font-bold mb-6">Son 30 Gün API İstatistikleri</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold">{dashboardData.stats.last_30_days.total_nfc_scans.toLocaleString()}</div>
-              <div className="text-blue-100">Toplam NFC Tarama</div>
-              <div className="text-sm text-blue-200 mt-1">
+        <div className="mt-6 md:mt-8 bg-gradient-to-r from-red-500 to-orange-600 rounded-xl md:rounded-2xl p-4 md:p-8 text-white">
+          <h3 className="text-lg md:text-2xl font-bold mb-4 md:mb-6">Son 30 Gün API İstatistikleri</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <div className="text-center p-3 md:p-0">
+              <div className="text-xl md:text-3xl font-bold">{dashboardData.stats.last_30_days.total_nfc_scans.toLocaleString()}</div>
+              <div className="text-xs md:text-base text-white/90 mt-1">Toplam NFC Tarama</div>
+              <div className="text-xs md:text-sm text-white/80 mt-1">
                 Başarılı: {dashboardData.stats.last_30_days.successful_nfc_scans.toLocaleString()}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{dashboardData.stats.last_30_days.total_qr_verifications.toLocaleString()}</div>
-              <div className="text-blue-100">QR Doğrulama</div>
-              <div className="text-sm text-blue-200 mt-1">
+            <div className="text-center p-3 md:p-0">
+              <div className="text-xl md:text-3xl font-bold">{dashboardData.stats.last_30_days.total_qr_verifications.toLocaleString()}</div>
+              <div className="text-xs md:text-base text-white/90 mt-1">QR Doğrulama</div>
+              <div className="text-xs md:text-sm text-white/80 mt-1">
                 Başarılı: {dashboardData.stats.last_30_days.successful_qr_verifications.toLocaleString()}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{dashboardData.stats.last_30_days.total_api_calls.toLocaleString()}</div>
-              <div className="text-blue-100">Toplam API Çağrısı</div>
-              <div className="text-sm text-blue-200 mt-1">
+            <div className="text-center p-3 md:p-0">
+              <div className="text-xl md:text-3xl font-bold">{dashboardData.stats.last_30_days.total_api_calls.toLocaleString()}</div>
+              <div className="text-xs md:text-base text-white/90 mt-1">Toplam API Çağrısı</div>
+              <div className="text-xs md:text-sm text-white/80 mt-1">
                 Başarılı: {dashboardData.stats.last_30_days.successful_api_calls.toLocaleString()}
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">{dashboardData.stats.totals.active_campaigns}</div>
-              <div className="text-blue-100">Aktif Kampanya</div>
-              <div className="text-sm text-blue-200 mt-1">
+            <div className="text-center p-3 md:p-0">
+              <div className="text-xl md:text-3xl font-bold">{dashboardData.stats.totals.active_campaigns}</div>
+              <div className="text-xs md:text-base text-white/90 mt-1">Aktif Kampanya</div>
+              <div className="text-xs md:text-sm text-white/80 mt-1">
                 Toplam İşletme: {dashboardData.stats.totals.businesses}
               </div>
             </div>
           </div>
           {dashboardData.stats.chart_data.dates.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-blue-400">
-              <h4 className="text-lg font-semibold mb-3">Son 7 Gün Aktivite</h4>
-              <div className="text-sm text-blue-100">
+            <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t border-white/30">
+              <h4 className="text-base md:text-lg font-semibold mb-2 md:mb-3">Son 7 Gün Aktivite</h4>
+              <div className="text-xs md:text-sm text-white/90">
                 Günlük ortalama: {Math.round(dashboardData.stats.chart_data.nfc_scans.reduce((a, b) => a + b, 0) / dashboardData.stats.chart_data.nfc_scans.length)} NFC tarama
               </div>
             </div>

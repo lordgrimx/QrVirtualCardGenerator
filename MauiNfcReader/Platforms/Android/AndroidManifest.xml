@@ -6,7 +6,7 @@
                  android:icon="@mipmap/appicon" 
                  android:roundIcon="@mipmap/appicon_round" 
                  android:supportsRtl="true"
-                 android:label="ELFED NFC Okuyucu"
+                 android:label="ANEF - NFC Okuyucu"
                  android:theme="@style/MainTheme">
     </application>
 	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

@@ -133,3 +133,59 @@ public class ByteArrayToHexConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotImplementedException();
 }
+
+/// <summary>
+/// Boolean bağlantı durumunu renge çeviren converter
+/// </summary>
+public class BoolToConnectionColorConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isConnected)
+        {
+            return isConnected ? Color.FromArgb("#10B981") : Color.FromArgb("#EF4444");
+        }
+        return Color.FromArgb("#9CA3AF");
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
+
+/// <summary>
+/// Boolean ters çevirici (InverseBoolConverter alias)
+/// </summary>
+public class InverseBoolConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool boolValue)
+            return !boolValue;
+        return false;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool boolValue)
+            return !boolValue;
+        return false;
+    }
+}
+
+/// <summary>
+/// Boolean okuma durumunu metne çeviren converter
+/// </summary>
+public class BoolToReadingStatusConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isReading)
+        {
+            return isReading ? "📖 Kart Okunuyor..." : "✅ Hazır";
+        }
+        return "Bekleniyor...";
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+        => throw new NotImplementedException();
+}
