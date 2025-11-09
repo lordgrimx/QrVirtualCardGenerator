@@ -375,7 +375,7 @@ export default function NfcScreen() {
         <View style={styles.lastReadCard}>
           <Text style={styles.sectionTitle}>Son Okuma</Text>
           <View style={styles.cardInfo}>
-            <InfoItem label="UID" value={lastCard.uidHex || 'N/A'} />
+            <InfoItem label="UID" value={lastCard.uidHex || lastCard.uid || 'N/A'} />
             <InfoItem label="Kart Türü" value={lastCard.cardType || 'Bilinmeyen'} />
             <InfoItem
               label="Durum"
@@ -386,7 +386,15 @@ export default function NfcScreen() {
               label="Zaman"
               value={lastCard.timestamp.toLocaleTimeString('tr-TR')}
             />
+            {lastCard.errorMessage && (
+              <InfoItem 
+                label="Hata" 
+                value={lastCard.errorMessage}
+                valueColor="#EF4444"
+              />
+            )}
           </View>
+
         </View>
       )}
 
@@ -413,7 +421,7 @@ export default function NfcScreen() {
               />
               <View style={styles.historyItemText}>
                 <Text style={styles.historyItemTitle}>
-                  {item.uidHex || 'UID yok'}
+                  {item.uidHex || item.uid || 'UID yok'}
                 </Text>
                 <Text style={styles.historyItemSubtitle}>
                   {item.timestamp.toLocaleString('tr-TR')}
@@ -573,6 +581,7 @@ const styles = StyleSheet.create({
   cardInfo: {
     gap: 8,
   },
+
   infoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -589,6 +598,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#111827',
+    flex: 1,
+    textAlign: 'right',
   },
   historySection: {
     flex: 1,

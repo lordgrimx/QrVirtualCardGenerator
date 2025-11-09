@@ -243,9 +243,8 @@ RwIDAQAB
 
         # Kompakt veri hazırlığı
         mid = str(member_data.get("membershipId") or member_data.get("membership_id") or "")
-        # Membership ID'yi kısalt (CC-2024-001 formatında)
-        if len(mid) > 12:
-            mid = mid[:12]
+        # NTAG215 kapasitesi yeterli olduğu için üyelik numarasını TAM olarak kullan
+        mid = mid.strip()
         
         name = str(member_data.get("fullName") or member_data.get("name") or "")
         name = name.strip()

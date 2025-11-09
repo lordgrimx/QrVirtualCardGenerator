@@ -1841,7 +1841,15 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
         
         # Üye bilgilerini database'den getir
         membership_id = nfc_data['mid']
+        print(f"🔍 Decrypted Membership ID: '{membership_id}' (length: {len(membership_id)})")
+        print(f"🔍 Full NFC Data: {nfc_data}")
         member = db.query(DBMember).filter(DBMember.membership_id == membership_id).first()
+        
+        if not member:
+            print(f"❌ Member not found with ID: '{membership_id}'")
+            # DB'deki tüm membership ID'leri logla (debug için)
+            all_members = db.query(DBMember.membership_id).limit(5).all()
+            print(f"📋 Sample membership IDs in DB: {[m.membership_id for m in all_members]}")
         
         member_info = {
             "membershipId": membership_id,

@@ -240,10 +240,26 @@ class NfcService {
    */
   private async processTag(tag: any): Promise<NfcCardData> {
     try {
-      const uid = tag.id;
-      const uidHex = Array.isArray(uid)
-        ? uid.map((b: number) => b.toString(16).padStart(2, '0')).join(':')
-        : '';
+      // UID'yi platform bağımsız ve güvenilir şekilde üret
+      const tagId: any = tag?.id;
+      let uidString: string | undefined;
+      let uidHex: string | undefined;
+
+      if (typeof tagId === 'string') {
+        // Android çoğunlukla düz HEX string döndürür (örn: "0418D3A1672681")
+        const cleaned = tagId.replace(/[^0-9a-fA-F]/g, '');
+        uidString = cleaned.toUpperCase();
+        const pairs = cleaned.match(/.{1,2}/g) || [];
+        uidHex = pairs.map(p => p.toUpperCase()).join(':');
+      } else if (Array.isArray(tagId)) {
+        // Bazı cihazlar byte array döndürebilir
+        const bytes: number[] = tagId as number[];
+        uidHex = bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(':');
+        uidString = bytes.map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+      } else {
+        uidString = undefined;
+        uidHex = undefined;
+      }
 
       let rawData: number[] = [];
       let rawText: string | undefined;
@@ -278,7 +294,7 @@ class NfcService {
       const cardType = tag.techTypes ? tag.techTypes[0] : 'Unknown';
 
       return {
-        uid: uidHex,
+        uid: uidString,
         uidHex,
         cardType,
         rawData,
