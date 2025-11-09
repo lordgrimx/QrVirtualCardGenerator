@@ -15,13 +15,13 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # If DATABASE_URL is not set, build it from individual components
 if not DATABASE_URL:
     DB_HOST = os.getenv("DB_HOST", "localhost")
-    DB_PORT = os.getenv("DB_PORT", "3306")
+    DB_PORT = os.getenv("DB_PORT", "5432")
     DB_NAME = os.getenv("DB_NAME", "qrvirtualcard")
-    DB_USER = os.getenv("DB_USER", "root")
+    DB_USER = os.getenv("DB_USER", "postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "password")
     
-    # MySQL connection string with PyMySQL driver
-    DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
+    # PostgreSQL connection string with psycopg2 driver
+    DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Create SQLAlchemy engine
 # Pool ayarları: optimize edilmiş havuz, pre_ping ile bağlantı sağlığı kontrolü, recycle ile uzun bağlantıları yenile
@@ -34,7 +34,7 @@ if DATABASE_URL and 'postgresql' in DATABASE_URL:
         'connect_timeout': 10,  # 10 saniye connection timeout
     }
 elif DATABASE_URL and 'mysql' in DATABASE_URL:
-    # MySQL için
+    # MySQL için (geriye dönük durumda)
     connect_args = {
         'connect_timeout': 10,  # 10 saniye connection timeout
         'read_timeout': 10,     # 10 saniye read timeout
@@ -154,8 +154,7 @@ class Member(Base):
     address = Column(Text, nullable=False)
     date_of_birth = Column(String(10), nullable=False)  # YYYY-MM-DD format
     emergency_contact = Column(String(20), nullable=False)
-    membership_type = Column(String(50), nullable=False)
-    role = Column(String(50), nullable=False)
+    association = Column(String(100), nullable=False)  # Member's association/dernek
     status = Column(String(20), default="active")
     profile_photo = Column(Text, nullable=True)  # Base64 encoded profile photo
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -328,8 +328,7 @@ class MemberCreate(BaseModel):
     address: str
     dateOfBirth: str
     emergencyContact: str
-    membershipType: str
-    role: str
+    association: str
     status: str = "active"
     profilePhoto: Optional[str] = None  # Base64 encoded image
 
@@ -340,8 +339,7 @@ class MemberUpdate(BaseModel):
     address: Optional[str] = None
     dateOfBirth: Optional[str] = None
     emergencyContact: Optional[str] = None
-    membershipType: Optional[str] = None
-    role: Optional[str] = None
+    association: Optional[str] = None
     status: Optional[str] = None
     profilePhoto: Optional[str] = None  # Base64 encoded image
 
@@ -468,8 +466,7 @@ class MemberResponse(BaseModel):
     address: str
     dateOfBirth: str
     emergencyContact: str
-    membershipType: str
-    role: str
+    association: str
     status: str
     createdAt: datetime
     updatedAt: datetime
@@ -1141,8 +1138,7 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
             address=member.address,
             date_of_birth=member.dateOfBirth,
             emergency_contact=member.emergencyContact,
-            membership_type=member.membershipType,
-            role=member.role,
+            association=member.association,
             status=member.status,
             profile_photo=profile_photo
         )
@@ -1162,8 +1158,7 @@ async def create_member(member: MemberCreate, db: Session = Depends(get_db)):
             "address": db_member.address,
             "dateOfBirth": db_member.date_of_birth,
             "emergencyContact": db_member.emergency_contact,
-            "membershipType": db_member.membership_type,
-            "role": db_member.role,
+            "association": db_member.association,
             "status": db_member.status,
             "createdAt": db_member.created_at,
             "updatedAt": db_member.updated_at
@@ -1206,8 +1201,7 @@ async def get_all_members(db: Session = Depends(get_db)):
                 "address": member.address,
                 "dateOfBirth": member.date_of_birth,
                 "emergencyContact": member.emergency_contact,
-                "membershipType": member.membership_type,
-                "role": member.role,
+                "association": member.association,
                 "status": member.status,
                 "profilePhoto": member.profile_photo,  # Profil fotoğrafını ekle
                 "createdAt": member.created_at,
@@ -1262,8 +1256,7 @@ async def get_member(member_id: int, db: Session = Depends(get_db)):
         "address": member.address,
         "dateOfBirth": member.date_of_birth,
         "emergencyContact": member.emergency_contact,
-        "membershipType": member.membership_type,
-        "role": member.role,
+        "association": member.association,
         "status": member.status,
         "profilePhoto": member.profile_photo,  # Profil fotoğrafını ekle
         "createdAt": member.created_at,
@@ -1303,8 +1296,7 @@ async def get_member_by_membership_id(membership_id: str, db: Session = Depends(
         "address": member.address,
         "dateOfBirth": member.date_of_birth,
         "emergencyContact": member.emergency_contact,
-        "membershipType": member.membership_type,
-        "role": member.role,
+        "association": member.association,
         "status": member.status,
         "profilePhoto": member.profile_photo,  # Profil fotoğrafını ekle
         "createdAt": member.created_at,
@@ -1359,10 +1351,8 @@ async def update_member(member_id: int, member: MemberUpdate, db: Session = Depe
             db_member.date_of_birth = value
         elif field == "emergencyContact":
             db_member.emergency_contact = value
-        elif field == "membershipType":
-            db_member.membership_type = value
-        elif field == "role":
-            db_member.role = value
+        elif field == "association":
+            db_member.association = value
         elif field == "status":
             db_member.status = value
         elif field == "profilePhoto":
@@ -1396,8 +1386,7 @@ async def update_member(member_id: int, member: MemberUpdate, db: Session = Depe
         "address": db_member.address,
         "dateOfBirth": db_member.date_of_birth,
         "emergencyContact": db_member.emergency_contact,
-        "membershipType": db_member.membership_type,
-        "role": db_member.role,
+        "association": db_member.association,
         "status": db_member.status,
         "createdAt": db_member.created_at,
         "updatedAt": db_member.updated_at
@@ -1512,7 +1501,7 @@ async def delete_profile_photo(member_id: int, db: Session = Depends(get_db)):
 # Güvenlik endpoint'leri
 
 @app.post("/api/qr/verify")
-async def verify_qr_code(qr_data: dict):
+async def verify_qr_code(qr_data: dict, db: Session = Depends(get_db)):
     """
     QR kod doğrulama endpoint'i - Mağazalar için
     ISO 20248 benzeri dijital imza doğrulaması
@@ -1531,17 +1520,50 @@ async def verify_qr_code(qr_data: dict):
                 "success": False
             }
         
+        # Temel QR bilgileri
+        member_info = {
+            "memberId": decoded_data.get("member_id"),
+            "membershipId": decoded_data.get("membership_id"), 
+            "name": decoded_data.get("name"),
+            "status": decoded_data.get("status"),
+            "organization": decoded_data.get("org"),
+            "issuedAt": decoded_data.get("issued_at"),
+            "expiresAt": decoded_data.get("expires_at"),
+            "fromDatabase": False
+        }
+        
+        # Database'den üye bilgilerini getir (varsa)
+        membership_id = decoded_data.get("membership_id")
+        if membership_id:
+            member = db.query(DBMember).filter(DBMember.membership_id == membership_id).first()
+            
+            if member:
+                # DB'den tam bilgileri ekle
+                member_info.update({
+                    "fullName": member.full_name,
+                    "email": member.email,
+                    "phoneNumber": member.phone_number,
+                    "role": getattr(member, 'role', 'member'),  # Default: 'member'
+                    "status": member.status,
+                    "membershipType": getattr(member, 'membership_type', 'standard'),  # Default: 'standard'
+                    "joinDate": member.created_at.strftime('%Y-%m-%d'),
+                    "fromDatabase": True,
+                    "profilePhoto": member.profile_photo,  # Base64 encoded profil fotoğrafı
+                    "associationName": member.association,  # Dernek adı
+                })
+            else:
+                # Üye DB'de bulunamadı
+                return {
+                    "valid": False,
+                    "error": "USER_NOT_FOUND",
+                    "message": f"QR kod geçerli ancak üyelik numarası '{membership_id}' ile kayıtlı bir kullanıcı bulunamadı.",
+                    "membershipId": membership_id,
+                    "success": False
+                }
+        
         return {
             "valid": True,
-            "member_data": {
-                "member_id": decoded_data.get("member_id"),
-                "membership_id": decoded_data.get("membership_id"), 
-                "name": decoded_data.get("name"),
-                "status": decoded_data.get("status"),
-                "organization": decoded_data.get("org"),
-                "issued_at": decoded_data.get("issued_at"),
-                "expires_at": decoded_data.get("expires_at")
-            },
+            "member": member_info,
             "verification_time": datetime.utcnow().isoformat(),
             "success": True
         }
@@ -1836,12 +1858,32 @@ async def decrypt_nfc_data(request: NfcDecryptRequest, db: Session = Depends(get
                 "fullName": member.full_name,
                 "email": member.email,
                 "phoneNumber": member.phone_number,
-                "role": member.role,
+                "role": getattr(member, 'role', 'member'),  # Default: 'member'
                 "status": member.status,
-                "membershipType": member.membership_type,
+                "membershipType": getattr(member, 'membership_type', 'standard'),  # Default: 'standard'
                 "joinDate": member.created_at.strftime('%Y-%m-%d'),
-                "fromDatabase": True
+                "fromDatabase": True,
+                "profilePhoto": member.profile_photo,  # Base64 encoded profil fotoğrafı
+                "associationName": member.association,  # Dernek adı
             })
+        else:
+            # Üye DB'de bulunamadı
+            log_nfc_reading(
+                db=db,
+                device_info=device_info,
+                card_uid=card_uid,
+                read_success=False,
+                error_message=f"Üye bulunamadı: {membership_id}",
+                verification_type="online",
+                reader_name="MAUI App"
+            )
+            return {
+                "success": False,
+                "valid": False,
+                "error": "USER_NOT_FOUND",
+                "message": f"Kart başarıyla okundu ancak üyelik numarası '{membership_id}' ile kayıtlı bir kullanıcı bulunamadı.",
+                "membershipId": membership_id
+            }
         
         # Başarılı okuma kaydını log'la
         log_nfc_reading(

@@ -36,22 +36,27 @@ public class AndroidNfcService : Java.Lang.Object, INfcService
     public AndroidNfcService(ILogger<AndroidNfcService> logger)
     {
         _logger = logger;
-        _logger.LogInformation("Android NFC Service init");
-        Initialize();
+        _logger.LogInformation("🔵 Android NFC Service oluşturuldu (lazy init)");
+        // Initialize'i lazy olarak yapacağız - ilk kullanımda
     }
 
-    private void Initialize()
+    private bool _initialized = false;
+    private void EnsureInitialized()
     {
+        if (_initialized) return;
+
         var activity = Platform.CurrentActivity;
         if (activity == null)
         {
-            _logger.LogWarning("CurrentActivity null - NFC adapter alınamadı");
+            _logger.LogWarning("⚠️ CurrentActivity null - NFC adapter alınamadı");
             return;
         }
+        
         _nfcAdapter = NfcAdapter.GetDefaultAdapter(activity);
         if (_nfcAdapter == null)
         {
-            _logger.LogWarning("Bu cihaz NFC desteklemiyor");
+            _logger.LogWarning("⚠️ Bu cihaz NFC desteklemiyor");
+            _initialized = true; // Tekrar denemeyi önle
             return;
         }
 
@@ -64,51 +69,83 @@ public class AndroidNfcService : Java.Lang.Object, INfcService
             flags |= PendingIntentFlags.Mutable;
         }
         _pendingIntent = PendingIntent.GetActivity(activity, 0, intent, flags);
+        
+        _initialized = true;
+        _logger.LogInformation("✅ NFC adapter başlatıldı");
     }
 
     public Task<IEnumerable<string>> GetAvailableReadersAsync()
     {
+        EnsureInitialized();
+        
         var hasNfc = _nfcAdapter?.IsEnabled ?? false;
         var list = hasNfc ? new[] { "Android Device NFC" } : Array.Empty<string>();
+        
+        _logger.LogInformation($"📱 NFC Durum - Adapter: {_nfcAdapter != null}, Etkin: {hasNfc}, Okuyucu sayısı: {list.Length}");
+        
         return Task.FromResult<IEnumerable<string>>(list);
     }
 
-    public Task<bool> ConnectToReaderAsync(string readerName)
+    public async Task<bool> ConnectToReaderAsync(string readerName)
     {
-        var activity = Platform.CurrentActivity;
-        if (_nfcAdapter == null || activity == null)
+        var tcs = new TaskCompletionSource<bool>();
+        
+        // EnableForegroundDispatch UI thread'de çalışmalı
+        await MainThread.InvokeOnMainThreadAsync(() =>
         {
-            _isConnected = false;
-            return Task.FromResult(false);
-        }
+            try
+            {
+                // UI thread'de initialize
+                EnsureInitialized();
+                
+                var activity = Platform.CurrentActivity;
+                if (_nfcAdapter == null || activity == null)
+                {
+                    _logger.LogWarning($"⚠️ NFC adapter veya activity null - Adapter: {_nfcAdapter != null}, Activity: {activity != null}");
+                    _isConnected = false;
+                    tcs.SetResult(false);
+                    return;
+                }
 
-        try
-        {
-            _nfcAdapter.EnableForegroundDispatch(activity, _pendingIntent, null, _techLists);
-            _isConnected = true;
-            _connectedReaderName = readerName;
-            _logger.LogInformation("Android NFC foreground dispatch etkin");
-            return Task.FromResult(true);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Foreground dispatch etkinleştirme hatası");
-            _isConnected = false;
-            return Task.FromResult(false);
-        }
+                _logger.LogInformation($"🔄 NFC Foreground Dispatch etkinleştiriliyor...");
+                _nfcAdapter.EnableForegroundDispatch(activity, _pendingIntent, null, _techLists);
+                _isConnected = true;
+                _connectedReaderName = readerName;
+                _logger.LogInformation($"✅ Android NFC foreground dispatch etkinleştirildi - Okuyucu: {readerName}");
+                tcs.SetResult(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Foreground dispatch etkinleştirme hatası");
+                _isConnected = false;
+                tcs.SetResult(false);
+            }
+        });
+
+        return await tcs.Task;
     }
 
-    public Task DisconnectAsync()
+    public async Task DisconnectAsync()
     {
-        var activity = Platform.CurrentActivity;
-        if (_nfcAdapter != null && activity != null)
+        await MainThread.InvokeOnMainThreadAsync(() =>
         {
-            try { _nfcAdapter.DisableForegroundDispatch(activity); } catch { }
-        }
-        _isConnected = false;
-        _connectedReaderName = null;
-        _lastTag = null;
-        return Task.CompletedTask;
+            var activity = Platform.CurrentActivity;
+            if (_nfcAdapter != null && activity != null)
+            {
+                try 
+                { 
+                    _nfcAdapter.DisableForegroundDispatch(activity);
+                    _logger.LogInformation("✅ Android NFC foreground dispatch devre dışı");
+                } 
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "DisableForegroundDispatch hatası (göz ardı edildi)");
+                }
+            }
+            _isConnected = false;
+            _connectedReaderName = null;
+            _lastTag = null;
+        });
     }
 
     public Task<bool> IsCardPresentAsync()

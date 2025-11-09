@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '../components/AdminLayout';
+import { formatTurkishDate } from '../utils/dateUtils';
 
 // Static generation'dan hariç tut - auth bağımlı
 export const dynamic = 'force-dynamic';
@@ -132,7 +133,10 @@ export default function Dashboard() {
             <p className="text-sm md:text-base text-gray-600">İşletme yönetim paneliniz</p>
             {dashboardData.stats.last_updated && (
               <p className="text-xs md:text-sm text-gray-500 mt-1">
-                Son güncelleme: {new Date(dashboardData.stats.last_updated).toLocaleString('tr-TR')}
+                Son güncelleme: {formatTurkishDate(dashboardData.stats.last_updated, {
+                  format: 'long',
+                  includeTime: true
+                })}
               </p>
             )}
           </div>

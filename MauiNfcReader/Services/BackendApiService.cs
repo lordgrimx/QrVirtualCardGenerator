@@ -12,12 +12,17 @@ public class BackendApiService : IBackendApiService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<BackendApiService> _logger;
-    private readonly string _baseUrl;
+    private readonly List<string> _backendUrls;
+    private string _activeBaseUrl;
 
     public BackendApiService(IHttpClientFactory httpClientFactory, ILogger<BackendApiService> logger)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        
+        // Deneme sırasına göre URL listesi
+        _backendUrls = new List<string>();
+        
         // 1) Derleme türüne göre Resources/Raw içindeki env dosyasını oku
         string? baseUrlFromEnvFile = null;
         try
@@ -35,8 +40,7 @@ public class BackendApiService : IBackendApiService
 
         if (!string.IsNullOrWhiteSpace(baseUrlFromEnvFile))
         {
-            _baseUrl = baseUrlFromEnvFile!.TrimEnd('/');
-            Preferences.Default.Set("BackendBaseUrl", _baseUrl);
+            _backendUrls.Add(baseUrlFromEnvFile!.TrimEnd('/'));
         }
         else
         {
@@ -44,14 +48,39 @@ public class BackendApiService : IBackendApiService
             var envUrl = Environment.GetEnvironmentVariable("BACKEND_BASE_URL");
             if (!string.IsNullOrWhiteSpace(envUrl))
             {
-                _baseUrl = envUrl.TrimEnd('/');
-            }
-            else
-            {
-                // 3) Önceden kaydedilmiş tercih ya da son çare default
-                _baseUrl = Preferences.Default.Get("BackendBaseUrl", "https://backend.anefuye.com.tr");
+                _backendUrls.Add(envUrl.TrimEnd('/'));
             }
         }
+
+        // 3) Production URL'i ekle (eğer zaten eklenmemişse)
+        var productionUrl = "https://backend.anefuye.com.tr";
+        if (!_backendUrls.Contains(productionUrl))
+        {
+            _backendUrls.Add(productionUrl);
+        }
+
+        // 4) Localhost URL'lerini ekle (Android emulator ve fiziksel cihaz için)
+        // Android emulator'den host makineye erişim için 10.0.2.2
+        var localhostUrls = new List<string> 
+        { 
+            "http://10.0.2.2:8000",  // Android Emulator -> Host localhost
+            "http://localhost:8000",  // Direct localhost (iOS/Windows)
+            "http://192.168.1.100:8000"  // LAN üzerinden (IP'nizi buraya yazabilirsiniz)
+        };
+        
+        foreach (var url in localhostUrls)
+        {
+            if (!_backendUrls.Contains(url))
+            {
+                _backendUrls.Add(url);
+            }
+        }
+
+        // İlk URL'i aktif olarak ayarla
+        _activeBaseUrl = _backendUrls.FirstOrDefault() ?? productionUrl;
+        
+        _logger.LogInformation($"Backend URL'leri yapılandırıldı. Deneme sırası: {string.Join(", ", _backendUrls)}");
+        _logger.LogInformation($"Aktif başlangıç URL: {_activeBaseUrl}");
     }
 
     private static string? TryReadEnvValue(string fileName, string key)
@@ -79,7 +108,7 @@ public class BackendApiService : IBackendApiService
     private HttpClient CreateClient()
     {
         var client = _httpClientFactory.CreateClient();
-        client.Timeout = TimeSpan.FromSeconds(30); // Timeout'u 30 saniyeye çıkardık
+        client.Timeout = TimeSpan.FromSeconds(10); // Timeout 10 saniye (her URL için ayrı)
         
         // User-Agent header ekle
         client.DefaultRequestHeaders.Add("User-Agent", "MauiNfcReader/1.0");
@@ -90,13 +119,51 @@ public class BackendApiService : IBackendApiService
         return client;
     }
 
+    /// <summary>
+    /// Birden fazla backend URL'ini sırayla deneyen yardımcı metod
+    /// </summary>
+    private async Task<(bool success, T? result, string? error)> TryMultipleBackendsAsync<T>(
+        Func<HttpClient, string, Task<(bool success, T? result, string? error)>> requestFunc,
+        CancellationToken ct = default)
+    {
+        var errors = new List<string>();
+        
+        foreach (var baseUrl in _backendUrls)
+        {
+            try
+            {
+                _logger.LogInformation($"Backend deneniyor: {baseUrl}");
+                var client = CreateClient();
+                var (success, result, error) = await requestFunc(client, baseUrl);
+                
+                if (success)
+                {
+                    _logger.LogInformation($"✅ Backend başarılı: {baseUrl}");
+                    _activeBaseUrl = baseUrl; // Başarılı URL'i kaydet
+                    Preferences.Default.Set("BackendBaseUrl", baseUrl);
+                    return (true, result, null);
+                }
+                
+                _logger.LogWarning($"❌ Backend başarısız ({baseUrl}): {error}");
+                errors.Add($"{baseUrl}: {error}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"❌ Backend bağlantı hatası ({baseUrl}): {ex.Message}");
+                errors.Add($"{baseUrl}: {ex.Message}");
+            }
+        }
+        
+        var combinedError = $"Tüm backend URL'leri başarısız:\n{string.Join("\n", errors)}";
+        _logger.LogError(combinedError);
+        return (false, default, combinedError);
+    }
+
     public async Task<(bool ok, string? publicKeyPem, string? error)> GetPublicKeyAsync(CancellationToken ct = default)
     {
-        try
+        return await TryMultipleBackendsAsync<string>(async (client, baseUrl) =>
         {
-            var client = CreateClient();
-            var url = $"{_baseUrl}/api/qr/public-key";
-            
+            var url = $"{baseUrl}/api/qr/public-key";
             _logger.LogInformation($"Backend URL: {url}");
             
             var resp = await client.GetAsync(url, ct);
@@ -121,20 +188,14 @@ public class BackendApiService : IBackendApiService
                 return (true, json.public_key, null);
 
             return (false, null, $"Geçersiz yanıt - Success: {json?.success}, PublicKey Empty: {string.IsNullOrEmpty(json?.public_key)}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Public key alınamadı - Detaylı hata");
-            return (false, null, $"Exception: {ex.Message} | Inner: {ex.InnerException?.Message}");
-        }
+        }, ct);
     }
 
     public async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyQrAsync(string qrData, CancellationToken ct = default)
     {
-        try
+        return await TryMultipleBackendsAsync<QrVerificationResult>(async (client, baseUrl) =>
         {
-            var client = CreateClient();
-            var url = $"{_baseUrl}/api/qr/verify";
+            var url = $"{baseUrl}/api/qr/verify";
             var payload = new { qr_code = qrData };
             var resp = await client.PostAsJsonAsync(url, payload, ct);
             if (!resp.IsSuccessStatusCode)
@@ -155,12 +216,7 @@ public class BackendApiService : IBackendApiService
             }
 
             return (false, null, json?.error ?? "Doğrulama başarısız");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "QR doğrulama hatası");
-            return (false, null, ex.Message);
-        }
+        }, ct);
     }
 
     public async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyCardRawAsync(string rawText, CancellationToken ct = default)
@@ -171,10 +227,9 @@ public class BackendApiService : IBackendApiService
 
     public async Task<(bool ok, QrVerificationResult? result, string? error)> VerifyAndReadFromServerAsync(CancellationToken ct = default)
     {
-        try
+        return await TryMultipleBackendsAsync<QrVerificationResult>(async (client, baseUrl) =>
         {
-            var client = CreateClient();
-            var url = $"{_baseUrl}/api/nfc/verify-and-read";
+            var url = $"{baseUrl}/api/nfc/verify-and-read";
             var resp = await client.PostAsync(url, null, ct);
             if (!resp.IsSuccessStatusCode)
                 return (false, null, $"HTTP {(int)resp.StatusCode}");
@@ -194,22 +249,16 @@ public class BackendApiService : IBackendApiService
             }
 
             return (false, null, json?.error ?? "Sunucu NFC okuma/ doğrulama başarısız");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Sunucu NFC doğrulama hatası");
-            return (false, null, ex.Message);
-        }
+        }, ct);
     }
 
     public async Task<(bool ok, List<MemberInfo> members, string? error)> SearchMembersAsync(string query, CancellationToken ct = default)
     {
-        try
+        return await TryMultipleBackendsAsync<List<MemberInfo>>(async (client, baseUrl) =>
         {
-            var client = CreateClient();
             var url = string.IsNullOrWhiteSpace(query)
-                ? $"{_baseUrl}/api/members?limit=20"
-                : $"{_baseUrl}/api/members/search?q={Uri.EscapeDataString(query)}&limit=20";
+                ? $"{baseUrl}/api/members?limit=20"
+                : $"{baseUrl}/api/members/search?q={Uri.EscapeDataString(query)}&limit=20";
 
             var resp = await client.GetAsync(url, ct);
             if (!resp.IsSuccessStatusCode)
@@ -228,20 +277,14 @@ public class BackendApiService : IBackendApiService
                 return (true, list, null);
             }
             return (false, new List<MemberInfo>(), json?.error ?? "Üye aranamadı");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Üye arama hatası");
-            return (false, new List<MemberInfo>(), ex.Message);
-        }
+        }, ct);
     }
 
     public async Task<(bool ok, NfcDecryptResult? result, string? error)> DecryptNfcAsync(string encryptedData, string? deviceInfo = null, CancellationToken ct = default)
     {
-        try
+        return await TryMultipleBackendsAsync<NfcDecryptResult>(async (client, baseUrl) =>
         {
-            var client = CreateClient();
-            var url = $"{_baseUrl}/api/nfc/decrypt";
+            var url = $"{baseUrl}/api/nfc/decrypt";
             var payload = new { encryptedData, deviceInfo };
             
             var resp = await client.PostAsJsonAsync(url, payload, ct);
@@ -275,12 +318,7 @@ public class BackendApiService : IBackendApiService
             }
 
             return (false, null, json?.error ?? json?.message ?? "NFC şifre çözme başarısız");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "NFC şifre çözme hatası");
-            return (false, null, ex.Message);
-        }
+        }, ct);
     }
 
     internal sealed class MemberSearchResponse

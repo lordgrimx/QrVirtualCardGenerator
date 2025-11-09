@@ -106,3 +106,26 @@ body {
   transform: rotateY(-180deg);
   z-index: 1;
 }
+
+/* Turkish Date Input Styling */
+input[type="date"].date-input-turkish {
+  position: relative;
+}
+
+input[type="date"].date-input-turkish::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+input[type="date"].date-input-turkish::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Ensure date input respects Turkish locale */
+input[type="date"][lang="tr"],
+input[type="date"].date-input-turkish {
+  text-transform: capitalize;
+}

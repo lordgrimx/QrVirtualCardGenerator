@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '../components/AdminLayout';
+import { formatTurkishDateShort, formatTurkishDate } from '../utils/dateUtils';
 
 // Static generation'dan hariç tut - backend'e bağımlı
 export const dynamic = 'force-dynamic';
@@ -33,11 +34,7 @@ const NfcReadingChart = () => {
           if (data.success && data.readings) {
             // API'den gelen veriyi formatla
             const formattedData = data.readings.map(reading => ({
-              date: new Date(reading.date).toLocaleDateString('tr-TR', { 
-                weekday: 'short', 
-                day: 'numeric', 
-                month: 'short' 
-              }),
+              date: formatTurkishDateShort(reading.date),
               successful: reading.successful || 0,
               failed: reading.failed || 0
             }));
@@ -60,7 +57,7 @@ const NfcReadingChart = () => {
             date.setDate(date.getDate() - i);
             
             data.push({
-              date: date.toLocaleDateString('tr-TR', { weekday: 'short', day: 'numeric', month: 'short' }),
+              date: formatTurkishDateShort(date),
               successful: Math.floor(Math.random() * 50) + 10,
               failed: Math.floor(Math.random() * 10) + 1
             });
@@ -177,8 +174,7 @@ export default function AdminPage() {
     address: '',
     dateOfBirth: '',
     emergencyContact: '',
-    membershipType: '',
-    role: '',
+    association: '',
     status: 'active',
     profilePhoto: ''
   });
@@ -825,8 +821,7 @@ export default function AdminPage() {
           address: '',
           dateOfBirth: '',
           emergencyContact: '',
-          membershipType: '',
-          role: '',
+          association: '',
           status: 'active',
           profilePhoto: ''
         });
@@ -1338,6 +1333,7 @@ export default function AdminPage() {
                               value={eventFormData.start_date}
                               onChange={handleEventInputChange}
                               className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
+                              lang="tr"
                               required
                             />
                           </div>
@@ -1351,6 +1347,7 @@ export default function AdminPage() {
                               value={eventFormData.end_date}
                               onChange={handleEventInputChange}
                               className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black"
+                              lang="tr"
                               required
                             />
                           </div>
@@ -1475,7 +1472,7 @@ export default function AdminPage() {
                       value={formData.fullName}
                       onChange={handleInputChange}
                       placeholder="Ad soyad girin"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
                   </div>
@@ -1491,7 +1488,7 @@ export default function AdminPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="E-posta adresini girin"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
                   </div>
@@ -1507,7 +1504,7 @@ export default function AdminPage() {
                       value={formData.phoneNumber}
                       onChange={handleInputChange}
                       placeholder="+90 5XX XXX XXXX"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
                   </div>
@@ -1524,48 +1521,30 @@ export default function AdminPage() {
                       onChange={handleInputChange}
                       max={today}
                       lang="tr"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md date-input-turkish"
                       required
                     />
                   </div>
 
-                  {/* Membership Type */}
-                  <div className="space-y-2">
+                  {/* Association */}
+                  <div className="space-y-2 col-span-2">
                     <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Üyelik Tipi
+                      Dernek
                     </label>
                     <select
-                      name="membershipType"
-                      value={formData.membershipType}
+                      name="association"
+                      value={formData.association}
                       onChange={handleInputChange}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     >
-                      <option value="">Üyelik tipini seçin</option>
-                      <option value="standard">Standart</option>
-                      <option value="premium">Premium</option>
-                      <option value="vip">VIP</option>
-                      <option value="corporate">Kurumsal</option>
-                    </select>
-                  </div>
-
-                  {/* Role */}
-                  <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-800 mb-2">
-                      Rol
-                    </label>
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleInputChange}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
-                      required
-                    >
-                      <option value="">Rol seçin</option>
-                      <option value="member">Üye</option>
-                      <option value="volunteer">Gönüllü</option>
-                      <option value="staff">Personel</option>
-                      <option value="admin">Yönetici</option>
+                      <option value="">Dernek seçin</option>
+                      <option value="aliaga">ALİAĞA ELAZIĞLILAR KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="izmir-agin">İZMİR AĞIN KÜLTÜR VE YARDIMLAŞMA DERNEĞİ</option>
+                      <option value="izmir-elazig">İZMİR ELAZIĞ KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="korfez">KÖRFEZ ELAZIĞLILAR KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="menderes">MENDERES ELAZIĞ KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="urla">URLA ELAZIĞLILAR DERNEĞİ</option>
                     </select>
                   </div>
 
@@ -1578,7 +1557,7 @@ export default function AdminPage() {
                       name="status"
                       value={formData.status}
                       onChange={handleInputChange}
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       <option value="active">Aktif</option>
                       <option value="pending">Beklemede</option>
@@ -1597,7 +1576,7 @@ export default function AdminPage() {
                       value={formData.emergencyContact}
                       onChange={handleInputChange}
                       placeholder="+90 5XX XXX XXXX"
-                      className="w-full h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="w-full min-w-[200px] h-12 px-4 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md"
                       required
                     />
                   </div>
@@ -1613,7 +1592,7 @@ export default function AdminPage() {
                       onChange={handleInputChange}
                       placeholder="Tam adresi girin"
                       rows={3}
-                      className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
+                      className="w-full min-w-[200px] px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm hover:shadow-md resize-none"
                       required
                     />
                   </div>
@@ -1718,7 +1697,7 @@ export default function AdminPage() {
                             <div className="flex justify-between items-center">
                               <span className="text-sm text-gray-600">Member Since:</span>
                               <span className="text-sm text-gray-900 font-medium">
-                                {new Date(member.createdAt).toLocaleDateString()}
+                                {formatTurkishDate(member.createdAt, { format: 'numeric' })}
                               </span>
                             </div>
                           </div>
@@ -1862,7 +1841,7 @@ export default function AdminPage() {
                               <div className="w-2 h-2 bg-gray-600 rounded"></div>
                             </div>
                             <span className="text-sm text-gray-700">
-                              {new Date(business.created_at).toLocaleDateString('tr-TR')}
+                              {formatTurkishDate(business.created_at, { format: 'numeric' })}
                             </span>
                           </div>
                         </div>
@@ -1961,7 +1940,7 @@ export default function AdminPage() {
                       </div>
                       <div>
                         <span className="block text-sm font-medium text-red-700 mb-1">Son Giriş:</span>
-                        <span className="text-blue-900 font-semibold">{new Date().toLocaleDateString('tr-TR')}</span>
+                        <span className="text-blue-900 font-semibold">{formatTurkishDate(new Date(), { format: 'numeric' })}</span>
                       </div>
                     </div>
                   </div>
@@ -2175,7 +2154,7 @@ export default function AdminPage() {
                         name="fullName"
                         value={editFormData.fullName || ''}
                         onChange={handleEditInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                         required
                       />
                     </div>
@@ -2188,7 +2167,7 @@ export default function AdminPage() {
                         name="phoneNumber"
                         value={editFormData.phoneNumber || ''}
                         onChange={handleEditInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                         required
                       />
                     </div>
@@ -2203,7 +2182,7 @@ export default function AdminPage() {
                       name="email"
                       value={editFormData.email || ''}
                       onChange={handleEditInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       required
                     />
                   </div>
@@ -2217,7 +2196,7 @@ export default function AdminPage() {
                       value={editFormData.address || ''}
                       onChange={handleEditInputChange}
                       rows="3"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 bg-white"
+                      className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 bg-white"
                       required
                     />
                   </div>
@@ -2232,7 +2211,8 @@ export default function AdminPage() {
                         name="dateOfBirth"
                         value={editFormData.dateOfBirth || ''}
                         onChange={handleEditInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white date-input-turkish"
+                        lang="tr"
                         required
                       />
                     </div>
@@ -2245,49 +2225,31 @@ export default function AdminPage() {
                         name="emergencyContact"
                         value={editFormData.emergencyContact || ''}
                         onChange={handleEditInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                         required
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Üyelik Türü *
-                      </label>
-                      <select
-                        name="membershipType"
-                        value={editFormData.membershipType || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                        required
-                      >
-                        <option value="">Seçiniz</option>
-                        <option value="standard">Standard</option>
-                        <option value="premium">Premium</option>
-                        <option value="vip">VIP</option>
-                        <option value="corporate">Corporate</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Rol *
-                      </label>
-                      <select
-                        name="role"
-                        value={editFormData.role || ''}
-                        onChange={handleEditInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                        required
-                      >
-                        <option value="">Seçiniz</option>
-                        <option value="member">Member</option>
-                        <option value="volunteer">Volunteer</option>
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Dernek *
+                    </label>
+                    <select
+                      name="association"
+                      value={editFormData.association || ''}
+                      onChange={handleEditInputChange}
+                      className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      required
+                    >
+                      <option value="">Dernek seçin</option>
+                      <option value="aliaga">ALİAĞA ELAZIĞLILAR KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="izmir-agin">İZMİR AĞIN KÜLTÜR VE YARDIMLAŞMA DERNEĞİ</option>
+                      <option value="izmir-elazig">İZMİR ELAZIĞ KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="korfez">KÖRFEZ ELAZIĞLILAR KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="menderes">MENDERES ELAZIĞ KÜLTÜR VE DAYANIŞMA DERNEĞİ</option>
+                      <option value="urla">URLA ELAZIĞLILAR DERNEĞİ</option>
+                    </select>
                   </div>
 
                   <div>
@@ -2298,7 +2260,7 @@ export default function AdminPage() {
                       name="status"
                       value={editFormData.status || ''}
                       onChange={handleEditInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                      className="w-full min-w-[200px] px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       required
                     >
                       <option value="active">Active</option>
@@ -2420,7 +2382,7 @@ export default function AdminPage() {
                       
                       <div>
                         <h4 className="text-sm font-semibold text-red-700 mb-2">Kayıt Tarihi</h4>
-                        <p className="text-blue-900">{new Date(selectedBusiness.created_at).toLocaleDateString('tr-TR')}</p>
+                        <p className="text-blue-900">{formatTurkishDate(selectedBusiness.created_at, { format: 'numeric' })}</p>
                       </div>
                     </div>
                   </div>
@@ -2490,12 +2452,12 @@ export default function AdminPage() {
                               
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Başlangıç:</span>
-                                <span className="font-semibold">{new Date(event.start_date).toLocaleDateString('tr-TR')}</span>
+                                <span className="font-semibold">{formatTurkishDate(event.start_date, { format: 'numeric' })}</span>
                               </div>
                               
                               <div className="flex justify-between">
                                 <span className="text-gray-600">Bitiş:</span>
-                                <span className="font-semibold">{new Date(event.end_date).toLocaleDateString('tr-TR')}</span>
+                                <span className="font-semibold">{formatTurkishDate(event.end_date, { format: 'numeric' })}</span>
                               </div>
                             </div>
                           </div>

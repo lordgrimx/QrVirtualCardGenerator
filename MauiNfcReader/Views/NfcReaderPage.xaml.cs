@@ -83,27 +83,8 @@ public partial class NfcReaderPage : ContentPage
     {
         if (_viewModel == null) return;
 
-        MainThread.BeginInvokeOnMainThread(() =>
-        {
-            var status = _viewModel.StatusMessage?.ToLower() ?? "";
-            
-            if (status.Contains("bağlandı") || status.Contains("connected"))
-            {
-                ReaderStatusDot.Color = Color.FromArgb("#10B981"); // Green
-            }
-            else if (status.Contains("bağlanıyor") || status.Contains("connecting") || status.Contains("okunuyor"))
-            {
-                ReaderStatusDot.Color = Color.FromArgb("#F59E0B"); // Yellow
-            }
-            else if (status.Contains("hata") || status.Contains("error") || status.Contains("başarısız"))
-            {
-                ReaderStatusDot.Color = Color.FromArgb("#EF4444"); // Red
-            }
-            else
-            {
-                ReaderStatusDot.Color = Color.FromArgb("#9CA3AF"); // Gray
-            }
-        });
+        // StatusIndicator already updated via UpdateConnectionStatusUI
+        // This method is kept for compatibility but functionality moved to UpdateConnectionStatusUI
     }
 
     private void UpdateConnectionStatusUI()
@@ -125,62 +106,9 @@ public partial class NfcReaderPage : ContentPage
 
     private void OnReaderSelected(object? sender, EventArgs e)
     {
-        if (ReaderPicker.SelectedItem is string selectedReader && !string.IsNullOrEmpty(selectedReader))
-        {
-            _logger?.LogInformation($"Okuyucu seçildi: {selectedReader}");
-            
-            MainThread.BeginInvokeOnMainThread(async () =>
-            {
-                try
-                {
-                    // Daha önce otomatik bağlantı tercihi kaydedilmiş mi kontrol et
-                    string autoConnectKey = $"AutoConnect_{selectedReader}";
-                    
-                    // Preferences.Default.ContainsKey ile kontrol et
-                    bool alreadyAsked = Preferences.Default.ContainsKey(autoConnectKey);
-                    bool autoConnect = false;
-                    
-                    if (alreadyAsked)
-                    {
-                        // Kaydedilmiş tercih varsa onu kullan
-                        autoConnect = Preferences.Default.Get(autoConnectKey, false);
-                        _logger?.LogInformation($"Kaydedilmiş otomatik bağlantı tercihi kullanılıyor: {autoConnect}");
-                    }
-                    else
-                    {
-                        // İlk kez soruluyorsa kullanıcıya sor ve kaydet
-                        autoConnect = await DisplayAlert(
-                            "Otomatik Bağlantı", 
-                            $"'{selectedReader}' okuyucusuna otomatik bağlanmak ister misiniz?", 
-                            "Evet", 
-                            "Hayır"
-                        );
-                        
-                        // Tercihi kaydet
-                        Preferences.Default.Set(autoConnectKey, autoConnect);
-                        _logger?.LogInformation($"Otomatik bağlantı tercihi kaydedildi: {autoConnect}");
-                    }
-                    
-                    if (autoConnect && _viewModel?.ConnectCommand.CanExecute(null) == true)
-                    {
-                        await _viewModel.ConnectCommand.ExecuteAsync(null);
-                        // Bağlantı yapıldıktan sonra otomatik algılamayı durdur
-                        StopUsbDetection();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "Otomatik bağlantı kontrolünde hata");
-                    // Hata durumunda yine de bağlantı komutunu çalıştır
-                    if (_viewModel?.ConnectCommand.CanExecute(null) == true)
-                    {
-                        await _viewModel.ConnectCommand.ExecuteAsync(null);
-                        // Bağlantı yapıldıktan sonra otomatik algılamayı durdur
-                        StopUsbDetection();
-                    }
-                }
-            });
-        }
+        // Simplified UI: ReaderPicker no longer exists in simplified UI
+        // Auto-detection and connection is now handled automatically in ViewModel
+        // This method is kept for compatibility but is no longer used
     }
 
     private void StartUsbDetection()
@@ -305,115 +233,115 @@ public partial class NfcReaderPage : ContentPage
         await Navigation.PopAsync();
     }
 
-    // Mode Toggle Functions (Windows Only)
-    private void OnReadModeClicked(object sender, EventArgs e)
-    {
-#if WINDOWS
-        // Update UI
-        ReadModeFrame.BackgroundColor = Color.FromArgb("#7C2D12");
-        WriteModeFrame.BackgroundColor = Colors.Transparent;
-        
-        var readButton = (Button)ReadModeFrame.Content;
-        readButton.TextColor = Colors.White;
-        
-        var writeButton = (Button)WriteModeFrame.Content;
-        writeButton.TextColor = Color.FromArgb("#6B7280");
-        
-        // Show/Hide sections
-        ReadingSection.IsVisible = true;
-        WritingSection.IsVisible = false;
-        
-        _logger?.LogInformation("Okuma moduna geçildi");
-#endif
-    }
+    // Mode Toggle Functions - Removed (simplified UI)
+    // private void OnReadModeClicked(object sender, EventArgs e)
+    // {
+    // #if WINDOWS
+    //     // Update UI
+    //     ReadModeFrame.BackgroundColor = Color.FromArgb("#7C2D12");
+    //     WriteModeFrame.BackgroundColor = Colors.Transparent;
+    //
+    //     var readButton = (Button)ReadModeFrame.Content;
+    //     readButton.TextColor = Colors.White;
+    //
+    //     var writeButton = (Button)WriteModeFrame.Content;
+    //     writeButton.TextColor = Color.FromArgb("#6B7280");
+    //
+    //     // Show/Hide sections
+    //     ReadingSection.IsVisible = true;
+    //     WritingSection.IsVisible = false;
+    //
+    //     _logger?.LogInformation("Okuma moduna geçildi");
+    // #endif
+    // }
 
-    private void OnWriteModeClicked(object sender, EventArgs e)
-    {
-#if WINDOWS
-        // Update UI
-        ReadModeFrame.BackgroundColor = Colors.Transparent;
-        WriteModeFrame.BackgroundColor = Color.FromArgb("#7C2D12");
-        
-        var readButton = (Button)ReadModeFrame.Content;
-        readButton.TextColor = Color.FromArgb("#6B7280");
-        
-        var writeButton = (Button)WriteModeFrame.Content;
-        writeButton.TextColor = Colors.White;
-        
-        // Show/Hide sections
-        ReadingSection.IsVisible = false;
-        WritingSection.IsVisible = true;
-        
-        _logger?.LogInformation("Yazma moduna geçildi");
-#endif
-    }
+    // private void OnWriteModeClicked(object sender, EventArgs e)
+    // {
+    // #if WINDOWS
+    //     // Update UI
+    //     ReadModeFrame.BackgroundColor = Colors.Transparent;
+    //     WriteModeFrame.BackgroundColor = Color.FromArgb("#7C2D12");
+    //
+    //     var readButton = (Button)ReadModeFrame.Content;
+    //     readButton.TextColor = Color.FromArgb("#6B7280");
+    //
+    //     var writeButton = (Button)WriteModeFrame.Content;
+    //     writeButton.TextColor = Colors.White;
+    //
+    //     // Show/Hide sections
+    //     ReadingSection.IsVisible = false;
+    //     WritingSection.IsVisible = true;
+    //
+    //     _logger?.LogInformation("Yazma moduna geçildi");
+    // #endif
+    // }
 
-    private async void OnWriteCardClicked(object sender, EventArgs e)
-    {
-#if WINDOWS
-        try
-        {
-            // Validate inputs
-            if (string.IsNullOrWhiteSpace(MemberIdEntry.Text))
-            {
-                await DisplayAlert("Hata", "Lütfen üye numarasını girin.", "Tamam");
-                return;
-            }
+    // private async void OnWriteCardClicked(object sender, EventArgs e)
+    // {
+    // #if WINDOWS
+    //     try
+    //     {
+    //         // Validate inputs
+    //         if (string.IsNullOrWhiteSpace(MemberIdEntry.Text))
+    //         {
+    //             await DisplayAlert("Hata", "Lütfen üye numarasını girin.", "Tamam");
+    //             return;
+    //         }
 
-            if (string.IsNullOrWhiteSpace(MemberNameEntry.Text))
-            {
-                await DisplayAlert("Hata", "Lütfen üye adını girin.", "Tamam");
-                return;
-            }
+    //         if (string.IsNullOrWhiteSpace(MemberNameEntry.Text))
+    //         {
+    //             await DisplayAlert("Hata", "Lütfen üye adını girin.", "Tamam");
+    //             return;
+    //         }
 
-            // Prepare data
-            var memberData = new
-            {
-                MemberId = MemberIdEntry.Text,
-                MemberName = MemberNameEntry.Text,
-                Email = EmailEntry.Text,
-                Phone = PhoneEntry.Text
-            };
+    //         // Prepare data
+    //         var memberData = new
+    //         {
+    //             MemberId = MemberIdEntry.Text,
+    //             MemberName = MemberNameEntry.Text,
+    //             Email = EmailEntry.Text,
+    //             Phone = PhoneEntry.Text
+    //         };
 
-            _logger?.LogInformation($"Karta yazılacak veri: {System.Text.Json.JsonSerializer.Serialize(memberData)}");
+    //         _logger?.LogInformation($"Karta yazılacak veri: {System.Text.Json.JsonSerializer.Serialize(memberData)}");
 
-            // Show animation
-            WritePulseCircle.IsVisible = true;
-            WriteCardBtn.IsEnabled = false;
-            WriteCardBtn.Text = "✍️ Yazılıyor...";
+    //         // Show animation
+    //         WritePulseCircle.IsVisible = true;
+    //         WriteCardBtn.IsEnabled = false;
+    //         WriteCardBtn.Text = "✍️ Yazılıyor...";
 
-            // TODO: Implement actual NFC write functionality
-            // For now, simulate a write operation
-            await Task.Delay(2000);
+    //         // TODO: Implement actual NFC write functionality
+    //         // For now, simulate a write operation
+    //         await Task.Delay(2000);
 
-            // Show success
-            LastWriteStatusFrame.IsVisible = true;
-            WriteStatusLabel.Text = "✅ Yazma Başarılı";
-            WriteStatusMessage.Text = $"Üye {MemberNameEntry.Text} ({MemberIdEntry.Text}) kartına başarıyla yazıldı!";
+    //         // Show success
+    //         LastWriteStatusFrame.IsVisible = true;
+    //         WriteStatusLabel.Text = "✅ Yazma Başarılı";
+    //         WriteStatusMessage.Text = $"Üye {MemberNameEntry.Text} ({MemberIdEntry.Text}) kartına başarıyla yazıldı!";
 
-            // Clear form
-            MemberIdEntry.Text = string.Empty;
-            MemberNameEntry.Text = string.Empty;
-            EmailEntry.Text = string.Empty;
-            PhoneEntry.Text = string.Empty;
+    //         // Clear form
+    //         MemberIdEntry.Text = string.Empty;
+    //         MemberNameEntry.Text = string.Empty;
+    //         EmailEntry.Text = string.Empty;
+    //         PhoneEntry.Text = string.Empty;
 
-            await DisplayAlert("Başarılı", "Veri başarıyla karta yazıldı!", "Tamam");
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Kart yazma hatası");
-            await DisplayAlert("Hata", $"Kart yazılırken hata oluştu: {ex.Message}", "Tamam");
+    //         await DisplayAlert("Başarılı", "Veri başarıyla karta yazıldı!", "Tamam");
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         _logger?.LogError(ex, "Kart yazma hatası");
+    //         await DisplayAlert("Hata", $"Kart yazılırken hata oluştu: {ex.Message}", "Tamam");
             
-            LastWriteStatusFrame.IsVisible = true;
-            WriteStatusLabel.Text = "❌ Yazma Başarısız";
-            WriteStatusMessage.Text = $"Hata: {ex.Message}";
-        }
-        finally
-        {
-            WritePulseCircle.IsVisible = false;
-            WriteCardBtn.IsEnabled = true;
-            WriteCardBtn.Text = "✍️ Karta Yaz";
-        }
-#endif
-    }
+    //         LastWriteStatusFrame.IsVisible = true;
+    //         WriteStatusLabel.Text = "❌ Yazma Başarısız";
+    //         WriteStatusMessage.Text = $"Hata: {ex.Message}";
+    //     }
+    //     finally
+    //     {
+    //         WritePulseCircle.IsVisible = false;
+    //         WriteCardBtn.IsEnabled = true;
+    //         WriteCardBtn.Text = "✍️ Karta Yaz";
+    //     }
+    // #endif
+    // }
 }

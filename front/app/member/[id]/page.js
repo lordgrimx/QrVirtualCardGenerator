@@ -7,6 +7,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import domtoimage from 'dom-to-image-more';
 import html2canvas from 'html2canvas';
 import Image from 'next/image';
+import { formatTurkishDate } from '../../utils/dateUtils';
 
 // Static generation'dan hariç tut - backend'e bağımlı
 export const dynamic = 'force-dynamic';
@@ -96,10 +97,9 @@ export default function MemberPage() {
           role: data.member.role,
           status: data.member.status,
           memberId: data.member.membershipId,
-          joinDate: new Date(data.member.createdAt).toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+          joinDate: formatTurkishDate(data.member.createdAt, {
+            format: 'long',
+            includeDay: true
           }),
           emergencyContact: data.member.emergencyContact,
           membershipType: data.member.membershipType,
@@ -1147,7 +1147,7 @@ export default function MemberPage() {
               <div className="border border-gray-200 border-t-0 p-4">
                 <p className="text-sm text-gray-600 mb-2">Doğum Tarihi</p>
                 <p className="text-sm text-gray-900 font-medium">
-                  {userInfo.dateOfBirth ? new Date(userInfo.dateOfBirth).toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
+                  {userInfo.dateOfBirth ? formatTurkishDate(userInfo.dateOfBirth, { format: 'long' }) : 'Belirtilmemiş'}
                 </p>
               </div>
               <div className="border border-gray-200 border-l-0 border-t-0 p-4">

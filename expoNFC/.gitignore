@@ -1,0 +1,62 @@
+# Expo
+.expo/
+dist/
+web-build/
+.expo-shared/
+
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.ipa
+*.apk
+*.aab
+
+# Metro
+.metro-health-check*
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Ruby
+.direnv/
+
+# macOS
+.DS_Store
+*.pem
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Debug
+*.log*
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temp
+*.tmp
+*.temp
+.tmp/
+
+# Android
+android/
+!android/app/src/main/res/values/strings.xml
+
+# iOS
+ios/
+!ios/Podfile
+
+# Generated files
+*.generated.*
