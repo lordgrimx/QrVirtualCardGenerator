@@ -1,0 +1,54 @@
+{
+  "name": "desktopnfc",
+  "version": "1.0.0",
+  "private": true,
+  "main": "electron-main.cjs",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "electron": "wait-on http://localhost:5173 && electron .",
+    "electron:dev": "concurrently -k \"npm:dev\" \"npm:electron\"",
+    "build": "vite build && electron-builder",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "base-64": "^1.0.0",
+    "axios": "^1.7.2",
+    "ndef": "^0.1.3",
+    "nfc-pcsc": "^0.8.1",
+    "qr-scanner": "^1.4.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^8.2.2",
+    "electron": "^31.2.0",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.4.5",
+    "vite": "^5.4.8",
+    "wait-on": "^7.0.1"
+  },
+  "build": {
+    "appId": "com.anefuye.desktopnfc",
+    "productName": "ANEF NFC Desktop",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron-main.cjs",
+      "electron-preload.cjs",
+      "assets/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/anef-logo.png"
+    }
+  }
+}
+
+

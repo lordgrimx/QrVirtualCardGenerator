@@ -6,13 +6,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   slug: 'exponfc',
   version: '1.0.0',
   orientation: 'portrait',
-  icon: './assets/icon.png',
+  icon: './assets/anef-logo.png',
   userInterfaceStyle: 'light',
   scheme: 'exponfc',
   splash: {
-    image: './assets/splash-icon.png',
+    image: './assets/anef-logo.png',
     resizeMode: 'contain',
-    backgroundColor: '#ffffff'
+    backgroundColor: '#7C2D12'
   },
   assetBundlePatterns: [
     '**/*'
@@ -30,8 +30,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#ffffff'
+      foregroundImage: './assets/anef-logo.png',
+      backgroundColor: '#7C2D12'
     },
     package: 'com.anefuye.exponfc',
     permissions: [
